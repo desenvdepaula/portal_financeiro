@@ -1,0 +1,197 @@
+{% extends './base.html' %}
+{% load static %}
+
+{% block body %}
+
+<main role="main" class="main-content">
+    <div class="container-fluid">
+      <div class="row justify-content-center">
+        <div class="col-12">
+          {% include 'components/alertas.html' %}
+          <div class="row">
+            <!-- Recent orders -->
+            <div class="col-md-4">
+              <div class="card shadow eq-card">
+                <div class="card-header">
+                  <strong class="card-title">Licenciamento de Bombeiros</strong>
+                  <a class="float-right small text-muted" href="{% url 'solicitacoes_licenciamento' %}">View all</a>
+                </div>
+                <div class="card-body">
+                  <table class="table table-hover table-borderless table-striped mt-n3 mb-n1">
+                    <thead>
+                      <tr>
+                        <th>Vencimentos</th>
+                        <th>Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if licenca_bombeiro.avisos_vencidos > 0 %}
+                        <tr>
+                          <td>AVISO VENCENDO</td>
+                          <td><span class="dot dot-lg bg-danger mr-2"></span> {{licenca_bombeiro.avisos_vencidos}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licenca_bombeiro.licencas_vencidas > 0 %}
+                        <tr>
+                          <td>LICENÇA VENCENDO</td>
+                          <td><span class="dot dot-lg bg-warning mr-2"></span> {{licenca_bombeiro.licencas_vencidas}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licenca_bombeiro.taxas > 0 %}
+                        <tr>
+                          <td>CONTROLE DE TAXAS</td>
+                          <td><span class="dot dot-lg bg-warning mr-2"></span> {{licenca_bombeiro.taxas}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licenca_bombeiro.novas_empresas > 0 %}
+                        <tr>
+                          <td>NOVAS EMPRESAS</td>
+                          <td><span class="dot dot-lg bg-info mr-2"></span> {{licenca_bombeiro.novas_empresas}}</td>
+                        </tr>
+                      {% endif %}
+                      <tr>
+                        <td class="text-danger">Total Solicitações</td>
+                        <td class="text-danger"><span class="dot dot-lg bg-info mr-2"></span> {{licenca_bombeiro.total}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div> <!-- .card-body -->
+              </div> <!-- .card -->
+            </div> <!-- / .col-md-8 -->
+
+            <div class="col-md-4">
+              <div class="card shadow eq-card">
+                <div class="card-header">
+                  <strong class="card-title">Licenças Sanitárias</strong>
+                  <a class="float-right small text-muted" href="{% url 'list_licenciamento_sanitario' %}">View all</a>
+                </div>
+                <div class="card-body">
+                  <table class="table table-hover table-borderless table-striped mt-n3 mb-n1">
+                    <thead>
+                      <tr>
+                        <th>Vencimentos</th>
+                        <th>Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if licencas_sanitarias.licencas_vencidas > 0 %}
+                        <tr>
+                          <td>LICENÇAS VENCENDO</td>
+                          <td><span class="dot dot-lg bg-warning mr-2"></span> {{licencas_sanitarias.licencas_vencidas}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licencas_sanitarias.avisos > 0 %}
+                        <tr>
+                          <td>AVISOS VENCENDO</td>
+                          <td><span class="dot dot-lg bg-danger mr-2"></span> {{licencas_sanitarias.avisos}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licencas_sanitarias.novas_empresas > 0 %}
+                        <tr>
+                          <td>NOVA EMPRESA</td>
+                          <td><span class="dot dot-lg bg-info mr-2"></span> {{licencas_sanitarias.novas_empresas}}</td>
+                        </tr>
+                      {% endif %}
+                      <tr>
+                        <td class="text-danger">Total Solicitações</td>
+                        <td class="text-danger"><span class="dot dot-lg bg-info mr-2"></span> {{licencas_sanitarias.total}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div> <!-- .card-body -->
+              </div> <!-- .card -->
+            </div> <!-- / .col-md-8 -->
+
+            <div class="col-md-4">
+              <div class="card shadow eq-card">
+                <div class="card-header">
+                  <strong class="card-title">Dispensas Sanitárias</strong>
+                  <a class="float-right small text-muted" href="{% url 'list_dispensa_sanitaria' %}">View all</a>
+                </div>
+                <div class="card-body">
+                  <table class="table table-hover table-borderless table-striped mt-n3 mb-n1">
+                    <thead>
+                      <tr>
+                        <th>Vencimentos</th>
+                        <th>Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if dispensa_sanitarias.dispensa_vencidas > 0 %}
+                        <tr>
+                          <td>DISPENSA VENCENDO</td>
+                          <td><span class="dot dot-lg bg-danger mr-2"></span> {{dispensa_sanitarias.dispensa_vencidas}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if dispensa_sanitarias.novas_empresas > 0 %}
+                        <tr>
+                          <td>NOVA EMPRESA</td>
+                          <td><span class="dot dot-lg bg-warning mr-2"></span> {{dispensa_sanitarias.novas_empresas}}</td>
+                        </tr>
+                      {% endif %}
+                      <tr>
+                        <td class="text-danger">Total Solicitações</td>
+                        <td class="text-danger"><span class="dot dot-lg bg-info mr-2"></span> {{dispensa_sanitarias.total}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div> <!-- .card-body -->
+              </div> <!-- .card -->
+            </div> <!-- / .col-md-8 -->
+
+            <div class="col-md-4">
+              <div class="card shadow eq-card">
+                <div class="card-header">
+                  <strong class="card-title">Alvarás Policiais</strong>
+                  <a class="float-right small text-muted" href="{% url 'cadastro_alvara_licenciamento_policial' %}">View all</a>
+                </div>
+                <div class="card-body">
+                  <table class="table table-hover table-borderless table-striped mt-n3 mb-n1">
+                    <thead>
+                      <tr>
+                        <th>Vencimentos</th>
+                        <th>Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if licencas_policiais.alvaras_vencidos > 0 %}
+                        <tr>
+                          <td>ALVARÁS VENCENDO</td>
+                          <td><span class="dot dot-lg bg-danger mr-2"></span> {{licencas_policiais.alvaras_vencidos}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licencas_policiais.nao_solicitados > 0 %}
+                        <tr>
+                          <td>NÃO SOLICITADOS</td>
+                          <td><span class="dot dot-lg bg-primary mr-2"></span> {{licencas_policiais.nao_solicitados}}</td>
+                        </tr>
+                      {% endif %}
+                      {% if licencas_policiais.novas_empresas > 0 %}
+                        <tr>
+                          <td>NOVA EMPRESA</td>
+                          <td><span class="dot dot-lg bg-warning mr-2"></span> {{licencas_policiais.novas_empresas}}</td>
+                        </tr>
+                      {% endif %}
+                      <tr>
+                        <td class="text-danger">Total Solicitações</td>
+                        <td class="text-danger"><span class="dot dot-lg bg-info mr-2"></span> {{licencas_policiais.total}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div> <!-- .card-body -->
+              </div> <!-- .card -->
+            </div> <!-- / .col-md-8 -->
+
+          </div> <!-- end section -->
+        </div> <!-- .col-12 -->
+      </div> <!-- .row -->
+    </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+<script>
+  setTimeout(() => {
+      $('.alert').alert('close')
+  }, 1000)
+</script>
+{% endblock %}
+    
