@@ -10,7 +10,7 @@
     <meta name="author" content="">
     <title>PORTAL FINANCEIRO</title>
     <script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
-    <link rel="icon" href="{% static './img/logo/dp.png' %}">
+    <link rel="icon" href="{% static 'assets/logo/dp.jpg' %}">
     <!-- Simple bar CSS -->
     <link rel="stylesheet" href="{% static 'css/simplebar.css' %}">
     <!-- Fonts CSS -->
@@ -39,7 +39,7 @@
         <form class="col-lg-3 col-md-4 col-10 mx-auto text-center mb-5" method="POST" action="{% url 'login' %}">
           {% bootstrap_messages messages %}
           {% csrf_token %}
-          <h1 class="mb-5 text-white"><i>Login - Portal Financeiro<i></h1>
+          <h1 class="mb-5 text-white"><i> Portal Financeiro </i> <i class="fe fe-dollar-sign"></i></h1>
           <div class="form-group">
             <label for="login" class="sr-only">Username</label>
             <input type="text" name="login" id="login" class="form-control form-control-lg" placeholder="Username" required autofocus="">
