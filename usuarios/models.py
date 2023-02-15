@@ -36,6 +36,8 @@ class UsuarioManager(BaseUserManager):
 class Usuario(AbstractUser):
     nr_contato = models.CharField("N° de Contato", max_length = 25)
     foto = models.ImageField("Foto",upload_to=get_file_path, blank=True)
+    
+    _default_manager = 'pid_db'
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['first_name','last_name','email']
@@ -44,6 +46,7 @@ class Usuario(AbstractUser):
         return self.email
 
     objects = UsuarioManager()
+    objects = objects.db_manager('pid_db')
 
     class Meta:
         permissions = [

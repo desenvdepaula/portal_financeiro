@@ -23,7 +23,7 @@ def validate_groups(grupos):
     for grupo in grupos:
         groups.append(grupo.name)
     
-    if 'Diretoria' in groups or 'Legalizacao' in groups:
+    if 'Diretoria' in groups or 'Financeiro' in groups:
         return True
     else:
         return False

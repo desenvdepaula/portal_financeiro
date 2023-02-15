@@ -14,6 +14,8 @@ SECRET_KEY = '6%!q_x9-seq8nuozd=5wpe+529e^22zb)90ffp3!x6ln_e9z)%'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+SESSION_COOKIE_NAME = "sessionid_financeiro"
+
 ALLOWED_HOSTS = ['*']
 
 FILE_UPLOAD_HANDLERS = ['django.core.files.uploadhandler.TemporaryFileUploadHandler', "django.core.files.uploadhandler.MemoryFileUploadHandler"]
@@ -81,6 +83,14 @@ if system == '/':
             'PORT': '3306',
             'USER': 'humhub_prod',
             'PASSWORD': 'd1011p523',
+        },
+        'pid_db': {
+            'NAME': 'pid',
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+            'USER': 'humhub_prod',
+            'PASSWORD': 'd1011p523',
         }
     }
 else:
@@ -93,7 +103,15 @@ else:
             'PORT': '3306',
             'USER': 'root',
             'PASSWORD': 'adminroot',
-        }
+        },
+        'pid_db': {
+            'NAME': 'pid',
+            'ENGINE': 'django.db.backends.mysql',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+            'USER': 'root',
+            'PASSWORD': 'adminroot',
+        },
     }
 
 
