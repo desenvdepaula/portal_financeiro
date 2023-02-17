@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'usuarios',
     'Database',
     'core',
+    'utilitarios',
     'bootstrap4',
 ]
 
@@ -163,3 +164,4 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 LOGIN_URL = 'request_login'
 AUTH_USER_MODEL = 'usuarios.Usuario'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

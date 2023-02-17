@@ -1,0 +1,186 @@
+{% extends '../../base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+
+<style>
+    .chip-generator{
+        margin: 5px;
+        border:none;
+        outline: none;
+        color: #4e40b6;
+        font-size: 20px;
+        font-weight: 720px;
+        border-bottom: 1px solid #4e40b6;
+        transition: width 1s, height 0.5s;
+    }
+    .chip-generator:focus{
+        border-bottom: 2px solid #4e40b6;          
+    }
+    .chip-generator::placeholder{
+        font-size: 18px;
+        color:  #695cc9;
+        transition: 0.4s;
+    }
+    
+    .chip-generator:focus::placeholder{          
+        font-size: 20px;
+        font-weight: 660px;
+        transition: 0.4s;
+    }
+    .btn-chip{
+        margin: 0px;
+        display: inline;
+    }
+
+    .chip{
+        margin: 3px;
+        display:inline-block;
+        padding-left: 10px; padding-right: 10px;
+        text-align: center;
+        vertical-align: middle;
+        color: rgb(248, 244, 255);
+        border-radius: 35px;
+        font-size: 20px;
+        font-weight: 670px;            
+        line-height: 30px;
+        background-color:  #4e40b6;
+        transition: 0.2s;
+    }
+    .chip:hover{
+        padding-left: 16px; padding-right: 16px;
+        background-color:  #6255c0;
+        transition: 0.2s;
+    }
+    .closebtn {
+        padding-left: 10px;
+        color: #888;
+        font-weight: bold;
+        float: right;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .closebtn:hover {
+        color: #000;
+    }
+    .v2{
+        color: #6f42c1;
+        border-color: #6f42c1;
+        max-height: 38px;
+    }
+    .v2:hover{
+        background-color: #6f42c1;
+        color: #fff;
+    }
+    p{
+        font-size: 13pt;
+    }
+</style>
+
+<main role="main" class="main-content">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="row my-4">
+                    <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                        {% bootstrap_messages messages %}
+                        <div class="collapse" id="collapseExample">
+                            <div class="card card-body">
+                                <center><strong><p><i class="far fa-question-circle"></i> Este processo é utilizado quando existe recebimentos que não constam no retorno do banco.<br>
+                                    Por exemplo: Pix, TED e pagamento presencial seja ele em espécie, cheque ou cartão.<p></strong></center>
+                            </div><br><br>
+                        </div>
+                        <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                            <div class="card-body">
+                                <form method="POST" action="{% url 'emissao-nf-manual' %}"> 
+                                    {% csrf_token %}
+                                    <center><h4 class="text-purple">EMISSÃO NF MANUAL</h4></center><br>
+                                    <div class="form-row mt-5">
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label><strong>{{ form.data.label }}</strong></label>
+                                                {% bootstrap_field form.data show_label=False %}
+                                            </div>
+                                        </div>      
+                                        <div class="col-6">
+                                            <div class="form-group">
+                                                <label><strong>{{ form.acoes.label }}</strong></label>
+                                                {% bootstrap_field form.acoes show_label=False %}
+                                            </div>
+                                        </div>      
+                                    </div>
+                                    <div class="mt-5 d-flex align-items-center">
+                                        <input id="chip-generator" class="chip-generator form-control col-6" placeholder="Adicionar Empresa" type="text" size="15">
+
+                                        <button id="chip-button" class="btn btn-outline v2 btn-chip ml-3" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="ADICONAR EMPRESA"> 
+                                            <i class="fe fe-plus fe-24"></i>
+                                        </button>
+
+                                        <button class="btn btn-outline v2 btn-chip ml-2" onclick='limpar_chips()' data-toggle="popover" data-trigger="hover" data-content="LIMPAR LISTA DE EMPRESAS">
+                                            <i class="fe fe-trash-2 fe-24"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    {% for i in validation_errors %}
+                                        <small class="text-danger"><strong>{{i}}</strong></small><br>
+                                    {% endfor %}
+                                        
+                                    <br>
+                                    <div id="chip-box">
+                                        
+                                    </div> 
+                                    <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                        <i class="fe fe-help-circle fe-16 mr-2"></i> <strong> MAIS INFORMAÇÕES </strong>
+                                    </button>
+                                    <button class="btn btn-outline-success float-right mt-4"> 
+                                        <i class="fe fe-file-text fe-16 mr-2"></i> <strong> Gerar Emissão </strong>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- .col-12 -->
+        </div> <!-- .row -->
+    </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+<script>
+
+    function get_self(element){
+        var chip = "#div-"+$(element).attr("id");
+        var ipt = "#ipt-"+$(element).attr("id");
+        close(chip);
+        close(ipt);
+    }
+
+    function close(id){
+        $(id).remove();
+    }
+
+    function limpar_chips(){
+        event.preventDefault();
+        $("#chip-box").children().remove();
+    }
+
+    $(function(){
+        $("#chip-button").click(function(event){
+            event.preventDefault();
+            var cod = $("#chip-generator").val();
+            if (cod){
+                var id = cod.replace('/','')
+                var chip = "<div id='div-"+id+"' class='chip'>"+cod+"<span class='closebtn' id='"+id+"' onclick='get_self(this)'>&times;</span></div>";
+                var ipt = "<input id='ipt-"+id+"' type='hidden' name='empresas' value='"+cod+"'>";
+                $("#chip-box").append(chip);
+                $("#chip-box").append(ipt);
+                $("#chip-generator").val("");
+            }
+        });           
+    });
+
+</script>
+
+{% endblock %}
+    
