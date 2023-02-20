@@ -1,0 +1,67 @@
+{% extends '../../base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+    <style>
+        p{
+            font-size: 13pt;
+        }
+    </style>
+    
+    <br>
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                    {% bootstrap_messages messages %}
+                    <div class="collapse" id="collapseExample">
+                        <div class="card card-body">
+                            <p class="text-justify"><i class="far fa-question-circle"></i> Este processo lista os clientes que já possuem notas emitidas antecipadamente, evitando a emissão em duplicidade.<br></p>
+                            <p>O documento em .TXT a ser postado é o <strong>""UP EMISSAO NF RETORNO PID</strong> e está no caminho <strong>\192.168.1.36\Financeiro\CONTROLE DE DÉBITOS\2021\RQD Nfe Antecipada</p></strong>
+                        </div><br><br>
+                    </div>
+                  <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                      <div class="card-body">
+                        <form method="POST" action="{% url 'emissao-nf-retorno' %}" enctype="multipart/form-data"> 
+                            {% csrf_token %}
+                            <center><h4 class="text-purple mb-4">EMISSÃO NF RETORNO</h4></center><br>
+                            <div class="form-row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label><strong>{{ form.data.label }}</strong></label>
+                                        {% bootstrap_field form.data show_label=False %}
+                                    </div>
+                                </div>     
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label><strong>Documento com as Empresas (.TXT)</strong></label>
+                                        <div class="custom-file">
+                                            {{ form.arquivo }}
+                                            <label class="custom-file-label" for="ARQUIVO">{{ form.arquivo.label }}</label>
+                                        </div>                                        
+                                    </div>
+                                </div>       
+                            </div>
+                            <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
+                            </button>
+                            <button class="btn btn-outline-success float-right mt-4"> 
+                                <i class="far fa-file-excel"></i> <strong> Gerar Emissão </strong>
+                            </button>
+                       </form>
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        $(".custom-file-input").on("change", function() {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
+    </script>
+{% endblock %}
+    

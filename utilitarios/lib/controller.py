@@ -8,7 +8,7 @@ import zipfile
 import os
 from PyPDF2 import PdfWriter, PdfReader, PdfFileMerger
 from Database.models import Connection
-from .sql import SQLSNFManual, SQLSNotasAntecipadas, get_inserts, verificar, codigos
+from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno
 
 class Controller():
 
@@ -32,6 +32,65 @@ class Controller():
             print(error)
         finally:
             connection.disconnect()
+            
+    # ---------- EMISSAO NF RETORNO ---------- #
+    def gerar_emissao_NF(self, empresas, data):
+        try:
+            connection = Connection().default_connect()
+            connection.connect()
+            sqls = SQLSNFRetorno()
+            
+            dictEmpresas = { 9501:[501,51,0], 9502:[502,15,0], 9505:[505,55,200], 9567:[567,67,200], 9575:[575,75,200] }
+            self.writer.writerow(['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])
+            listaInserts = []
+
+            for i in dictEmpresas:
+                queries = connection.execute_sql(sqls.get_inserts(i,dictEmpresas[i][0],dictEmpresas[i][2],dictEmpresas[i][1],data, empresas))
+                for i in queries:
+                    listaInserts.append(list(i))
+
+            for i in listaInserts:
+                i[3] = i[3].strftime('%d.%m.%Y')
+                i[15] = "CAST('NOW' AS TIMESTAMP)"
+                valid = self.sql_verificar(i[0], i[1], i[2], i[3], sqls, connection)
+                cod = self.sql_codigos(i[2], sqls, connection)
+                if cod:
+                    if valid:
+                        if i[11] not in [r[4] for r in valid]:
+                            seq = max(r[5] for r in valid if r[0] == i[0] and r[1] == i[1] and r[2] == i[2])+1                
+                            servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {seq}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                            connection.execute_sql(servicovarivel)
+                            connection.commit_changes()
+                        else:
+                            if i[4] not in [r[5] for r in valid]:
+                                servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                                connection.execute_sql(servicovarivel)
+                                connection.commit_changes()
+                            else:
+                                self.writer.writerow(i)
+                    else:
+                        servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                        connection.execute_sql(servicovarivel)
+                        connection.commit_changes()
+                else:
+                    self.writer.writerow(i)
+        except Exception as ex:
+            print("Ocorreu um erro ao executar esta operação: {0}".format(ex))
+        else:
+            self.response['Content-Disposition'] = f"filename=RegistrosNaoImportados_NaoLancados.csv"
+            return self.response
+        finally:
+            connection.disconnect()
+            
+    def sql_verificar(self, escritorio,cliente,servico,data, sqls, connection):
+        query = connection.execute_sql(sqls.verificar(escritorio,cliente,servico,data)).fetchall()
+        lista = [list(i) for i in query]
+        return lista
+
+    def sql_codigos(self, codigo, sqls, connection):
+        query = connection.execute_sql(sqls.codigos(codigo)).fetchall()
+        lista = [list(i) for i in query]
+        return lista
 
     # ---------- EMISSAO NF MANUAL ---------- #
     def gerar_emissao_NF_Manual(self, empresas, acoes, data):

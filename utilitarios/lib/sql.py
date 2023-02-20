@@ -106,91 +106,93 @@ class SQLSNotasAntecipadas:
         """
         return sql
 
-def get_inserts(escritorio,insert,codigo,servico,data, empresas):
-    sql = """
-        SELECT
-            {0} AS CODIGOESCRIT,
-            M.codigocliente,
-            K.CODIGOSERVICOESCRIT+{1} AS CODIGOSERVICOESCRIT,
-            L.DATARCTOCR AS DATASERVVAR,
-            K.SEQSERVNOTAITEM AS SEQSERVVAR,
-            'NULL' AS SERIENS,
-            'NULL' AS NUMERONS,
-            'NULL' AS SEQSERVNOTAITEM,
-            ('1') AS QTDADESERVVAR,
-            K.VALORTOTALSERVNOTAITEM AS VALORUNITSERVVAR,
-            K.VALORTOTALSERVNOTAITEM AS VALORTOTALSERVVAR,
-            L.NUMERODCTOCR AS OBSERVSERVVAR,
-            'NULL' AS SITANTECIPACAO,
-            'NULL' AS SEQLCTO,
-            0 AS CODIGOUSUARIO,
-            L.DATARCTOCR AS DATAHORALCTO,
-            ('3') AS ORIGEMDADO,
-            'NULL' AS CHAVEPGTOANTECIP,
-            'NULL' AS VALORANTERIORUNITSERVVAR,
-            'NULL' AS SEQUENCIACAIXA,
-            'NULL' AS CHAVEORIGEM
-        FROM
-            contarecebida L
-        JOIN serviconota M 
-        ON
-            L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS)
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-1')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-2')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-3')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-4')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-5')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-6')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-7')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-8')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-9')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-10')
-        JOIN SERVICONOTAITEM K
-        ON
-            K.CODIGOESCRIT = M.CODIGOESCRIT
-            AND K.SERIENS = M.SERIENS
-            AND K.NUMERONS = M.NUMERONS
-        WHERE
-            L.codigoescrit = {2}
-            AND M.codigoescrit = {2}
-            AND L.DATARCTOCR = '{4}'
-            AND L.CODIGOCAIXACONTA = {3}
-            AND M.codigocliente NOT IN {5}
-        ORDER BY
-            1,
-            2,
-            3,
-            4
-    """.format(insert,codigo,escritorio,servico,data, empresas)
-    return sql
+class SQLSNFRetorno:
 
-def verificar(escritorio,cliente,servico,data):
-    sql = """
-        SELECT
-            CODIGOESCRIT,
-            CODIGOCLIENTE,
-            CODIGOSERVICOESCRIT,
-            DATASERVVAR,
-            OBSERVSERVVAR,
-            SEQSERVVAR
-        FROM
-            SERVICOVARIAVEL
-        WHERE
-            CODIGOESCRIT = {0}
-            AND CODIGOCLIENTE = {1}
-            AND CODIGOSERVICOESCRIT = {2}
-            AND DATASERVVAR = '{3}'
-    """.format(escritorio,cliente,servico,data)
-    return sql
+    def get_inserts(escritorio,insert,codigo,servico,data, empresas):
+        sql = """
+            SELECT
+                {0} AS CODIGOESCRIT,
+                M.codigocliente,
+                K.CODIGOSERVICOESCRIT+{1} AS CODIGOSERVICOESCRIT,
+                L.DATARCTOCR AS DATASERVVAR,
+                K.SEQSERVNOTAITEM AS SEQSERVVAR,
+                'NULL' AS SERIENS,
+                'NULL' AS NUMERONS,
+                'NULL' AS SEQSERVNOTAITEM,
+                ('1') AS QTDADESERVVAR,
+                K.VALORTOTALSERVNOTAITEM AS VALORUNITSERVVAR,
+                K.VALORTOTALSERVNOTAITEM AS VALORTOTALSERVVAR,
+                L.NUMERODCTOCR AS OBSERVSERVVAR,
+                'NULL' AS SITANTECIPACAO,
+                'NULL' AS SEQLCTO,
+                0 AS CODIGOUSUARIO,
+                L.DATARCTOCR AS DATAHORALCTO,
+                ('3') AS ORIGEMDADO,
+                'NULL' AS CHAVEPGTOANTECIP,
+                'NULL' AS VALORANTERIORUNITSERVVAR,
+                'NULL' AS SEQUENCIACAIXA,
+                'NULL' AS CHAVEORIGEM
+            FROM
+                contarecebida L
+            JOIN serviconota M 
+            ON
+                L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS)
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-1')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-2')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-3')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-4')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-5')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-6')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-7')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-8')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-9')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-10')
+            JOIN SERVICONOTAITEM K
+            ON
+                K.CODIGOESCRIT = M.CODIGOESCRIT
+                AND K.SERIENS = M.SERIENS
+                AND K.NUMERONS = M.NUMERONS
+            WHERE
+                L.codigoescrit = {2}
+                AND M.codigoescrit = {2}
+                AND L.DATARCTOCR = '{4}'
+                AND L.CODIGOCAIXACONTA = {3}
+                AND M.codigocliente NOT IN {5}
+            ORDER BY
+                1,
+                2,
+                3,
+                4
+        """.format(insert,codigo,escritorio,servico,data, empresas)
+        return sql
 
-def codigos(codigo):
-    sql = """
-        SELECT 
-            CODIGOSERVICOESCRIT 
-        FROM 
-            SERVICOESCRIT
-        WHERE
-            CODIGOSERVICOESCRIT = {0}
-    """.format(codigo)
-    return sql
+    def verificar(escritorio,cliente,servico,data):
+        sql = """
+            SELECT
+                CODIGOESCRIT,
+                CODIGOCLIENTE,
+                CODIGOSERVICOESCRIT,
+                DATASERVVAR,
+                OBSERVSERVVAR,
+                SEQSERVVAR
+            FROM
+                SERVICOVARIAVEL
+            WHERE
+                CODIGOESCRIT = {0}
+                AND CODIGOCLIENTE = {1}
+                AND CODIGOSERVICOESCRIT = {2}
+                AND DATASERVVAR = '{3}'
+        """.format(escritorio,cliente,servico,data)
+        return sql
+
+    def codigos(codigo):
+        sql = """
+            SELECT 
+                CODIGOSERVICOESCRIT 
+            FROM 
+                SERVICOESCRIT
+            WHERE
+                CODIGOSERVICOESCRIT = {0}
+        """.format(codigo)
+        return sql
 

@@ -5,7 +5,7 @@ from django.contrib import messages
 from datetime import date, datetime
 import os
 
-from .forms import EmissaoNFManualForm, BoletosForm, NotasAntecipadasForm
+from .forms import EmissaoNFManualForm, BoletosForm, NotasAntecipadasForm, EmissaoNFForm
 from .lib.controller import Controller
 
 def request_notas_antecipadas(request):
@@ -32,6 +32,32 @@ def request_notas_antecipadas(request):
             messages.error(request, "Ocorreu um erro no Formulário, preencha corretamente !")
 
     return render(request, template, context)
+
+class EmissaoNF(View):
+    template_form = "./utilitarios/emissao_nf_retorno/form.html"
+    form_class = EmissaoNFForm
+    
+    def get(self, request, *args, **kwargs):
+        context = {}
+        context['form'] = self.form_class()
+        return render(request, self.template_form, context)
+
+    def post(self, request, *args, **kwargs):
+        context = {'form': self.form_class(request.POST or None, request.FILES or None)}
+
+        if context['form'].is_valid():
+            context['form'].clean_log(request.user.username)
+            try:
+                controller = Controller()
+                return controller.gerar_emissao_NF(
+                    context['form'].cleaned_data['empresas'],
+                    context['form'].cleaned_data['data'].strftime('%d.%m.%Y'),
+                )
+            except Exception as ex:
+                messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
+        else:
+            messages.error(request, "Ocorreu um erro ao executar, Algo no Formulário não esta correto Correto!!")
+        return render(request, self.template_form, context)
 
 class Boletos(View):
     template_form = "./utilitarios/boletos/boletos.html"

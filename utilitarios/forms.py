@@ -1,6 +1,35 @@
 from django import forms
 from core.views import request_project_log
 
+class EmissaoNFForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(EmissaoNFForm, self).__init__(*args, **kwargs)
+        self.fields.get('arquivo').label = str(self.files.get('arquivo')) 
+
+    arquivo = forms.FileField(label="Selecione o TXT", help_text="Somente arquivos .TXT", widget=forms.FileInput(attrs={'type':'file','class':'custom-file-input','id':'ARQUIVO'}))
+    data = forms.DateField(label="Data de Retorno", help_text="", widget=forms.DateInput(attrs={'type': 'date'}))
+
+    def clean(self):
+        if self.cleaned_data['arquivo'].name.split('.')[-1] != 'txt' and self.cleaned_data['arquivo'].name.split('.')[-1] != 'TXT':
+            raise forms.ValidationError("O arquivo precisa ser de formato .txt", code="invalid")
+
+    def clean_log(self, username):
+        arquivo = self.cleaned_data['arquivo'].name
+        data = self.cleaned_data['data']
+        dados = f"Data Retorno: {data} | Nome do Arquivo: {arquivo}"
+        request_project_log(501, dados, "UTILITÁRIOS / EMISSÃO NF RETORNO", username)
+
+    def clean_arquivo(self):
+        arquivoName = self.cleaned_data['arquivo']
+        arquive = arquivoName.temporary_file_path()
+        empresas = []
+        with open(arquive, 'r', encoding='utf-8') as infile:
+            for line in infile:
+                empresas = line.split(",")
+        self.cleaned_data['empresas'] = tuple(empresas)
+        self.fields.get('arquivo').label = "None"
+        return arquivoName
+
 class NotasAntecipadasForm(forms.Form):
 
     escritorio_origem = forms.IntegerField(label="Escritório de Origem:", help_text="Número inteiro que identifica o Escritório de Origem.")
