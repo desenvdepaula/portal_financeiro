@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'Database',
     'core',
     'utilitarios',
+    'recibimentos_empresarial',
     'bootstrap4',
 ]
 

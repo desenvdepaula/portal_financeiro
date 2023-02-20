@@ -1,0 +1,41 @@
+
+{% extends '../../base.html' %}
+
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+    <style>
+        p{
+            font-size: 15pt;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                {% bootstrap_messages messages %}
+                <div class="collapse" id="collapseExample">
+                    <div class="card card-body">
+                        <p class="text-justify"> <i class="far fa-question-circle"></i><strong> Este processo deve ser executado após emissão das notas fiscais (A letra referente as estas notas altera anualmente) e assim as informações dos recebimentos serão enviadas conforme as especificações.</p></strong>
+                    </div><br><br>
+                </div>
+                <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                    <div class="card-body">
+                        <center><h4 class="text-purple mb-4">RECEBIMENTOS EMPRESARIAL </h4></center>
+                        <form method="POST" action="{% url 'recibimentos_empresarial' %}">
+                            {% csrf_token %}
+                            {% bootstrap_form form %}
+                            <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
+                            </button>
+                            <button class="btn btn-outline-success float-right mt-4"><i class="fas fa-cloud-download-alt"></i> <strong> GERAR OS RECEBIMENTOS </strong></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+    
