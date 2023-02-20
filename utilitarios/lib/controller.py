@@ -8,7 +8,7 @@ import zipfile
 import os
 from PyPDF2 import PdfWriter, PdfReader, PdfFileMerger
 from Database.models import Connection
-from .sql import SQLSNFManual, get_inserts, verificar, codigos, sqlNotasAntecipadas
+from .sql import SQLSNFManual, SQLSNotasAntecipadas, get_inserts, verificar, codigos
 
 class Controller():
 
@@ -17,6 +17,21 @@ class Controller():
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
         self.writer = csv.writer(self.response)
+        
+    def lancar_nota_antecipada(self, origem, destino, list_nota, codigos_do_usuario):
+        try:
+            connection = Connection().default_connect()
+            connection.connect()
+            servico = 200 if destino in [505,567,575] else 0
+            notas = tuple(list_nota) if len(list_nota) > 1 else f"({tuple(list_nota)[0]})"
+            cd_usuario = codigos_do_usuario.split("|")[0]
+            svariavel = SQLSNotasAntecipadas.sqlNotasAntecipadas(servico, origem, destino, notas, cd_usuario)
+            connection.execute_sql(svariavel)
+            connection.commit_changes()
+        except Exception as error:
+            print(error)
+        finally:
+            connection.disconnect()
 
     # ---------- EMISSAO NF MANUAL ---------- #
     def gerar_emissao_NF_Manual(self, empresas, acoes, data):

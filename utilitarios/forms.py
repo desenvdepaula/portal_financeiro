@@ -1,6 +1,18 @@
 from django import forms
 from core.views import request_project_log
 
+class NotasAntecipadasForm(forms.Form):
+
+    escritorio_origem = forms.IntegerField(label="Escritório de Origem:", help_text="Número inteiro que identifica o Escritório de Origem.")
+    escritorio_destino = forms.IntegerField(label="Escritório de Destino:", help_text="Número inteiro que identifica o Escritório de Destino.")
+    
+    def clean_log(self, username, notas):
+        cod = 0000
+        escritorio_origem = self.cleaned_data['escritorio_origem']
+        escritorio_destino = self.cleaned_data['escritorio_destino']
+        dados = f"Escritório de Origem: {escritorio_origem} | Escritório de Destino: {escritorio_destino} | Número da Notas: {notas}" 
+        request_project_log(cod, dados, "UTILITÁRIOS / NOTAS ANTECIPADAS", username)
+
 class BoletosForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(BoletosForm, self).__init__(*args, **kwargs)

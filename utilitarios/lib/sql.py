@@ -64,6 +64,48 @@ class SQLSNFManual:
         """
         return sql
 
+class SQLSNotasAntecipadas:
+    
+    @staticmethod
+    def sqlNotasAntecipadas(servico, origem, destino, notas, codigo_usuario):
+        sql = f"""
+            INSERT INTO SERVICOVARIAVEL
+            SELECT
+                {destino} CODIGOESCRIT,
+                N.CODIGOCLIENTE,
+                I.CODIGOSERVICOESCRIT+{servico} CODIGOSERVICOESCRIT,
+                N.DATAEMISSAONS DATAEMISSAONS,
+                I.SEQSERVNOTAITEM,
+                NULL SERIE,
+                NULL NUMERO,
+                NULL SEQ,
+                I.QTDADESERVNOTAITEM,
+                I.VALORUNITSERVNOTAITEM,
+                I.QTDADESERVNOTAITEM*I.VALORUNITSERVNOTAITEM VALORTOTAL,
+                I.OBSSERVNOTAITEM,
+                NULL SITANTECIPACAO,
+                NULL SEQLCTO,
+                {codigo_usuario} CODIGOUSUARIO,
+                CAST('NOW' AS TIMESTAMP) DATAHORALCTO,
+                3 ORIGEMDADO,
+                NULL ANTECIPACAO,
+                NULL VALORANT,
+                NULL SEQCAIXA,
+                NULL CHAVEORIGEM
+            FROM
+                SERVICONOTA N
+            JOIN
+                SERVICONOTAITEM I ON
+                N.CODIGOESCRIT = I.CODIGOESCRIT AND
+                N.SERIENS = I.SERIENS AND
+                N.NUMERONS = I.NUMERONS 
+            WHERE
+                N.CODIGOESCRIT = {origem}
+                AND N.SERIENS = 'F'
+                AND N.NUMERONS IN {notas}
+        """
+        return sql
+
 def get_inserts(escritorio,insert,codigo,servico,data, empresas):
     sql = """
         SELECT
@@ -152,41 +194,3 @@ def codigos(codigo):
     """.format(codigo)
     return sql
 
-def sqlNotasAntecipadas(servico, origem, destino, notas, codigo_usuario):
-    sql = f"""
-        INSERT INTO SERVICOVARIAVEL
-        SELECT
-            {destino} CODIGOESCRIT,
-            N.CODIGOCLIENTE,
-            I.CODIGOSERVICOESCRIT+{servico} CODIGOSERVICOESCRIT,
-            N.DATAEMISSAONS DATAEMISSAONS,
-            I.SEQSERVNOTAITEM,
-            NULL SERIE,
-            NULL NUMERO,
-            NULL SEQ,
-            I.QTDADESERVNOTAITEM,
-            I.VALORUNITSERVNOTAITEM,
-            I.QTDADESERVNOTAITEM*I.VALORUNITSERVNOTAITEM VALORTOTAL,
-            I.OBSSERVNOTAITEM,
-            NULL SITANTECIPACAO,
-            NULL SEQLCTO,
-            {codigo_usuario} CODIGOUSUARIO,
-            CAST('NOW' AS TIMESTAMP) DATAHORALCTO,
-            3 ORIGEMDADO,
-            NULL ANTECIPACAO,
-            NULL VALORANT,
-            NULL SEQCAIXA,
-            NULL CHAVEORIGEM
-        FROM
-            SERVICONOTA N
-        JOIN
-            SERVICONOTAITEM I ON
-            N.CODIGOESCRIT = I.CODIGOESCRIT AND
-            N.SERIENS = I.SERIENS AND
-            N.NUMERONS = I.NUMERONS 
-        WHERE
-            N.CODIGOESCRIT = {origem}
-            AND N.SERIENS = 'F'
-            AND N.NUMERONS IN {notas}
-    """
-    return sql

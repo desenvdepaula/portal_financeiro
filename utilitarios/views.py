@@ -5,8 +5,33 @@ from django.contrib import messages
 from datetime import date, datetime
 import os
 
-from .forms import EmissaoNFManualForm, BoletosForm
+from .forms import EmissaoNFManualForm, BoletosForm, NotasAntecipadasForm
 from .lib.controller import Controller
+
+def request_notas_antecipadas(request):
+    template = "./utilitarios/notas_antecipadas/form.html"
+    context = { 'form': NotasAntecipadasForm(request.POST or None) }
+
+    if request.POST:
+        if context['form'].is_valid():
+            notas = [int(nota) for nota in request.POST.getlist('cod_nota')]
+            context['form'].clean_log(request.user.username, notas)
+            try:
+                controller = Controller()
+                controller.lancar_nota_antecipada(
+                    context['form'].cleaned_data['escritorio_origem'],
+                    context['form'].cleaned_data['escritorio_destino'],
+                    notas,
+                    request.user.nr_contato
+                )
+            except Exception as ex:
+                messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
+            else:
+                messages.success(request, "Finalizado com Sucesso!!")
+        else:
+            messages.error(request, "Ocorreu um erro no Formulário, preencha corretamente !")
+
+    return render(request, template, context)
 
 class Boletos(View):
     template_form = "./utilitarios/boletos/boletos.html"
