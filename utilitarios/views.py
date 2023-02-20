@@ -5,8 +5,35 @@ from django.contrib import messages
 from datetime import date, datetime
 import os
 
-from .forms import EmissaoNFManualForm
+from .forms import EmissaoNFManualForm, BoletosForm
 from .lib.controller import Controller
+
+class Boletos(View):
+    template_form = "./utilitarios/boletos/boletos.html"
+    form_class = BoletosForm
+    
+    def get(self, request, *args, **kwargs):
+        context = {}
+        context['form'] = self.form_class()
+        return render(request, self.template_form, context)
+
+    def post(self, request, *args, **kwargs):
+        context = {'form': self.form_class(request.POST or None, request.FILES or None)}
+
+        if context['form'].is_valid():
+            context['form'].clean_log(request.user.username)
+            try:
+                controller = Controller()
+                return controller.getPdfs(
+                    context['form'].cleaned_data['path'],
+                    context['form'].cleaned_data['data'],
+                    context['form'].cleaned_data['filename']
+                )
+            except Exception as ex:
+                messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
+        else:
+            messages.error(request, "Ocorreu um erro ao executar, O arquivo não é um .PDF, Escolha o Arquivo Correto!!")
+        return render(request, self.template_form, context)
 
 class EmissaoNFManual(View):
     template_form = "./utilitarios/emissao_nf_manual/form.html"

@@ -1,65 +1,68 @@
-def get_inserts_manual(escritorio,insert,codigo,data, empresas):
-    booll = False
-    if len(empresas) > 1:
-        booll = True
-        empresas = tuple(empresas)
+class SQLSNFManual:
+    
+    @staticmethod
+    def get_inserts_manual(escritorio,insert,codigo,data, empresas):
+        booll = False
+        if len(empresas) > 1:
+            booll = True
+            empresas = tuple(empresas)
 
-    sql = f"""
-        SELECT
-            {insert} AS CODIGOESCRIT,
-            M.codigocliente,
-            K.CODIGOSERVICOESCRIT+{codigo} AS CODIGOSERVICOESCRIT,
-            L.DATARCTOCR AS DATASERVVAR,
-            K.SEQSERVNOTAITEM AS SEQSERVVAR,
-            NULL AS SERIENS,
-            NULL AS NUMERONS,
-            NULL AS SEQSERVNOTAITEM,
-            ('1') AS QTDADESERVVAR,
-            ('1') AS VALORUNITSERVVAR,
-            K.VALORTOTALSERVNOTAITEM AS VALORTOTALSERVVAR,
-            NULL AS OBSERVSERVVAR,
-            NULL AS SITANTECIPACAO,
-            NULL AS SEQLCTO,
-            ('3') AS CODIGOUSUARIO,
-            L.DATARCTOCR AS DATAHORALCTO,
-            ('3') AS ORIGEMDADO,
-            NULL AS CHAVEPGTOANTECIP,
-            NULL AS VALORANTERIORUNITSERVVAR,
-            NULL AS SEQUENCIACAIXA,
-            NULL AS CHAVEORIGEM
-        FROM
-            contarecebida L
-        JOIN serviconota M 
-        ON
-            L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS)
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-1')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-2')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-3')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-4')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-5')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-6')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-7')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-8')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-9')
-            OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-10')
-        JOIN SERVICONOTAITEM K
-        ON
-            K.CODIGOESCRIT = M.CODIGOESCRIT
-            AND K.SERIENS = M.SERIENS
-            AND K.NUMERONS = M.NUMERONS
-        WHERE
-            L.codigoescrit = {escritorio}
-            AND M.codigoescrit = {escritorio}
-            AND L.DATARCTOCR = '{data}'
-            AND L.CODIGOCAIXACONTA = 14
-            AND M.CODIGOCLIENTE {'IN' if booll else '='} {empresas if booll else empresas[0]}
-        ORDER BY
-            1,
-            2,
-            3,
-            4
-    """
-    return sql
+        sql = f"""
+            SELECT
+                {insert} AS CODIGOESCRIT,
+                M.codigocliente,
+                K.CODIGOSERVICOESCRIT+{codigo} AS CODIGOSERVICOESCRIT,
+                L.DATARCTOCR AS DATASERVVAR,
+                K.SEQSERVNOTAITEM AS SEQSERVVAR,
+                NULL AS SERIENS,
+                NULL AS NUMERONS,
+                NULL AS SEQSERVNOTAITEM,
+                ('1') AS QTDADESERVVAR,
+                ('1') AS VALORUNITSERVVAR,
+                K.VALORTOTALSERVNOTAITEM AS VALORTOTALSERVVAR,
+                NULL AS OBSERVSERVVAR,
+                NULL AS SITANTECIPACAO,
+                NULL AS SEQLCTO,
+                ('3') AS CODIGOUSUARIO,
+                L.DATARCTOCR AS DATAHORALCTO,
+                ('3') AS ORIGEMDADO,
+                NULL AS CHAVEPGTOANTECIP,
+                NULL AS VALORANTERIORUNITSERVVAR,
+                NULL AS SEQUENCIACAIXA,
+                NULL AS CHAVEORIGEM
+            FROM
+                contarecebida L
+            JOIN serviconota M 
+            ON
+                L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS)
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-1')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-2')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-3')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-4')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-5')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-6')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-7')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-8')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-9')
+                OR L.NUMERODCTOCR =(M.SERIENS || '' || M.NUMERONS || '' || '-10')
+            JOIN SERVICONOTAITEM K
+            ON
+                K.CODIGOESCRIT = M.CODIGOESCRIT
+                AND K.SERIENS = M.SERIENS
+                AND K.NUMERONS = M.NUMERONS
+            WHERE
+                L.codigoescrit = {escritorio}
+                AND M.codigoescrit = {escritorio}
+                AND L.DATARCTOCR = '{data}'
+                AND L.CODIGOCAIXACONTA = 14
+                AND M.CODIGOCLIENTE {'IN' if booll else '='} {empresas if booll else empresas[0]}
+            ORDER BY
+                1,
+                2,
+                3,
+                4
+        """
+        return sql
 
 def get_inserts(escritorio,insert,codigo,servico,data, empresas):
     sql = """

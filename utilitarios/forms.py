@@ -1,6 +1,39 @@
 from django import forms
 from core.views import request_project_log
 
+class BoletosForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(BoletosForm, self).__init__(*args, **kwargs)
+        self.fields.get('arquivo').label = str(self.files.get('arquivo')) 
+    
+    OPTIONS = (
+        ('', ''),
+        ('encerramento', 'encerramento'),
+        ('encerramento unico', 'encerramento unico'),
+        ('honorario contabil', 'honorario contabil'),
+    )
+
+    arquivo = forms.FileField(label="Selecione o PDF", help_text="Somente arquivos .PDF", widget=forms.FileInput(attrs={'type':'file','class':'custom-file-input','id':'ARQUIVO'}))
+    data = forms.CharField(label="Digite a Data no formato MMYYYY:", help_text="Exemplo: 122022")
+    filename = forms.ChoiceField(label="Digite o Nome de Saída dos arquivos:", help_text="Selecione uma das opções (obrigatório)", choices=OPTIONS)
+
+    def clean(self):
+        if self.cleaned_data['arquivo'].name.split('.')[-1] != 'pdf':
+            raise forms.ValidationError("O arquivo precisa ser de formato .pdf", code="invalid")
+
+    def clean_log(self, username):
+        cod = None
+        arquivo = self.cleaned_data['arquivo'].name
+        arquivoName = self.cleaned_data['filename']
+        data = self.cleaned_data['data']
+        dados = f"Nome do ARquivo: {arquivo} | Filename: {arquivoName} | Data: {data}"
+        request_project_log(cod, dados, "UTILITÁRIOS / BOLETOS", username)
+
+    def clean_arquivo(self):
+        arquivoName = self.cleaned_data['arquivo']
+        self.cleaned_data['path'] = arquivoName.temporary_file_path()
+        return arquivoName
+
 class EmissaoNFManualForm(forms.Form):
 
     ACOES = (

@@ -1,0 +1,85 @@
+{% extends '../../base.html' %}
+
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+
+    <style>
+        input[type="file"]{ display: none; margin: 0px; }
+        .file_label{
+            border-radius: 2px;
+            padding: 5px;
+            padding-left: 10px; padding-right: 10px;
+            cursor: pointer;
+        }
+        .file_label:before{
+            font-family: FontAwesome;
+            content: " \f07c ";
+            margin-right: 4px;
+            padding: 0px;
+            font-size: 17px;
+        }
+        p{
+            font-size: 15pt;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                
+                {% bootstrap_messages messages %}
+                <div class="collapse" id="collapseExample">
+                    <div class="card card-body">
+                        <div style="position: relative; width: 100%; height: 0; padding-top: 56.2500%;
+                            padding-bottom: 48px; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+                            border-radius: 8px; will-change: transform;">
+                            <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+                                src="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAFUGfun2ho&#x2F;view?embed">
+                            </iframe>
+                        </div>
+                        <a href="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAFUGfun2ho&#x2F;view?utm_content=DAFUGfun2ho&amp;utm_campaign=designshare&amp;utm_medium=embeds&amp;utm_source=link" target="_blank" rel="noopener">MANUAL FERRAMENTAS GERADOC (ASSISTIR EM TELA CHEIA)</a>
+                        <center><h4 class="text-purple mt-5">SEPARADOR DE BOLETOS</h4></center><br>
+                        <p class="mb-4">Neste Processo separa-se todos os boletos de honorário gerados em lote no formato PDFs. Este programa gerará um arquivo por empresa, no padrão de envio do Tareffa;
+                            Empresas com boletos parcelados, são agrupados em um único PDF.</p>
+                    </div>
+                </div><br>
+                <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                    <div class="card-body">
+                        <form method="POST" action="{% url 'boletos' %}" enctype="multipart/form-data">
+                            <center><strong><h4 class="text-purple mb-5"> SEPARADOR DE BOLETOS </h4></strong></center>
+                            {% csrf_token %}
+                            <div class="form-row mb-5">
+                                {% bootstrap_field form.filename label_class='font-weight-bold' form_group_class="col-6 col-sm-6" %}
+                                {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-6 col-sm-6" %}
+                            </div>
+                            <div class="form-row">
+                                <label><strong>SELECIONE O BOLETO (Somente arquivos .PDF)</strong></label>
+                                <div class="custom-file">
+                                    {{ form.arquivo }}
+                                    <label class="custom-file-label" for="ARQUIVO">{{ form.arquivo.label }}</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-success float-right mt-5"><i class="fas fa-cloud-download-alt"></i> <strong> Baixar os Boletos </strong></button>
+                            <button class="btn btn-outline-primary float-left mt-5" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $(".custom-file-input").on("change", function() {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
+
+        document.getElementById('id_data').setAttribute("pattern", "[0-9]{6}")
+    </script>
+{% endblock %}
+    
