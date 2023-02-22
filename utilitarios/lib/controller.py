@@ -6,7 +6,7 @@ import csv
 from django.http import HttpResponse
 import zipfile
 import os
-from PyPDF2 import PdfWriter, PdfReader, PdfFileMerger
+from PyPDF2 import PdfWriter, PdfReader, PdfMerger
 from Database.models import Connection
 from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno
 
@@ -134,30 +134,14 @@ class Controller():
         try:
             connection = Connection().default_connect()
             connection.connect()
-            
-            inputpdf = PdfReader(open(path, "rb"))
             zip_file = zipfile.ZipFile( settings.BASE_DIR / 'temp/files/separador_boletos/Boletos.zip', 'w')
+            
             pathFolder = 'temp/files/separador_boletos/'
             array = []
+            inputpdf = PdfReader(open(path, "rb"))
             for i in range(len(inputpdf.pages)):
                 page = inputpdf.pages[i]
-                verificao = page.extract_text().split('Sacado')[-2].split(' - ')[1]
-                print(verificao)
-                
-                if verificao[0].isdigit():
-                    if "/" in verificao:
-                        fileName = verificao.split("-")[0].split(".")[0][:-2]
-                    else:
-                        fileName = verificao.split("-")[0].split(".")[0][:-3]
-                else:
-                    fileName = page.extract_text().split('Ag./')[0].split('Sacado:')[1].replace(" - ", "_").replace(" ", "_").replace("/", "-").split("_")[-1]
-                
-                if fileName[0] == 'F':
-                    fileName = fileName[2:]
-                elif not fileName.strip()[-1].isdigit():
-                    fileName = page.extract_text().split('Ag./')[0].split('Sacado:')[1].replace(" - ", "_").replace(" ", "_").replace("/", "-").split("_")[-1]
-
-                codigo_empresa = re.sub('[^0-9]', '', fileName)
+                codigo_empresa = page.extract_text().split('Ag./')[0].split("\n")[-1].strip()
 
                 if nameArquivo == 'encerramento unico':
                     if len(codigo_empresa) > 4:
@@ -244,7 +228,7 @@ class Controller():
         try:
             for file in diretorio:
                 if not ".py" in file and not '.zip' in file:
-                    os.remove(f'{dirpath}{file}')
+                    os.remove(f'{dirpath}/{file}')
         except OSError as e:
             print(f"Error:{ e }")
     
@@ -262,7 +246,7 @@ class Controller():
     def mergeArquivos(self, pdf, pathFolder):
         try:
             arquivos = [f for f in os.listdir(pathFolder) if pdf.split(" - ")[0] == f.split(" - ")[0] ]
-            merger = PdfFileMerger()
+            merger = PdfMerger()
             for filename in arquivos:
                 merger.append(PdfReader(os.path.join(pathFolder, filename), "rb"))
 
