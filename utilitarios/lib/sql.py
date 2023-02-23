@@ -67,7 +67,7 @@ class SQLSNFManual:
 class SQLSNotasAntecipadas:
     
     @staticmethod
-    def sqlNotasAntecipadas(self, servico, origem, destino, notas, codigo_usuario):
+    def sqlNotasAntecipadas(servico, origem, destino, notas, codigo_usuario):
         sql = f"""
             INSERT INTO SERVICOVARIAVEL
             SELECT
