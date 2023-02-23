@@ -67,7 +67,7 @@ class SQLSNFManual:
 class SQLSNotasAntecipadas:
     
     @staticmethod
-    def sqlNotasAntecipadas(servico, origem, destino, notas, codigo_usuario):
+    def sqlNotasAntecipadas(self, servico, origem, destino, notas, codigo_usuario):
         sql = f"""
             INSERT INTO SERVICOVARIAVEL
             SELECT
@@ -108,7 +108,7 @@ class SQLSNotasAntecipadas:
 
 class SQLSNFRetorno:
 
-    def get_inserts(escritorio,insert,codigo,servico,data, empresas):
+    def get_inserts(self, escritorio,insert,codigo,servico,data, empresas):
         sql = """
             SELECT
                 {0} AS CODIGOESCRIT,
@@ -166,7 +166,7 @@ class SQLSNFRetorno:
         """.format(insert,codigo,escritorio,servico,data, empresas)
         return sql
 
-    def verificar(escritorio,cliente,servico,data):
+    def verificar(self, escritorio,cliente,servico,data):
         sql = """
             SELECT
                 CODIGOESCRIT,
@@ -185,7 +185,7 @@ class SQLSNFRetorno:
         """.format(escritorio,cliente,servico,data)
         return sql
 
-    def codigos(codigo):
+    def codigos(self, codigo):
         sql = """
             SELECT 
                 CODIGOSERVICOESCRIT 
