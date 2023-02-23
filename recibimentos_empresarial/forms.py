@@ -24,7 +24,7 @@ class RecibimentosForm(forms.Form):
     operacao = forms.ChoiceField(label="Operação", choices=OPERACAO)
     
     def clean(self):
-        if self.cleaned_data['inicio_periodo'] > self.cleaned_data['fim_periodo'] or self.cleaned_data['inicio_periodo'] == self.cleaned_data['fim_periodo']:
+        if self.cleaned_data['inicio_periodo'] > self.cleaned_data['fim_periodo']:
             raise ValidationError("Verifique as Datas Novamente.", code="invalid")
 
     def clean_log(self, username):

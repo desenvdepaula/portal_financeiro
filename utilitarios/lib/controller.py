@@ -116,7 +116,7 @@ class Controller():
                 newDFlist.append(row)
                 
             newDF = pd.DataFrame(newDFlist,columns=['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])        
-            newDF.to_csv(f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, lineterminator='\r\n', encoding="utf8")
+            newDF.to_csv(f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, encoding="utf8")
 
         except Exception as ex:
             print("Ocorreu um erro ao executar esta operação: {0}".format(ex))
