@@ -2,6 +2,7 @@ from django.db import models
 
 import fdb
 import pyodbc
+import psycopg2
 
 class Connection():
 
@@ -36,6 +37,58 @@ class Connection():
         self.database = '/home/firebird/questor.fdb'
         self.user = 'sysdba'
         self.password = 'masterkey'
+        return self
+
+    def disconnect(self):
+        self.cursor.close()
+        self.connection.close()
+
+    def execute_sql(self, sql):
+        return self.cursor.execute(sql)
+    
+    def commit_changes(self):
+        self.connection.commit()
+
+    def run_query(self, params):
+        self.connect()
+        context = {
+            param['name']: self.execute_sql(param['query']).fetchonemap() if param['many'] == False else self.execute_sql(param['query']).fetchallmap()
+            for param in params
+        }
+        self.disconnect()
+        return context
+    
+class TareffaConnection():
+
+    def __init__(self, *args, **kwargs):
+        self.host = kwargs.get('host')
+        self.database = kwargs.get('database')
+        self.user = kwargs.get('user')
+        self.password = kwargs.get('password')
+    
+    def connect(self):
+        self.connection  = psycopg2.connect(
+            host = self.host,
+            database= self.database,
+            user=self.user,
+            password=self.password
+        )
+        self.cursor = self.connection.cursor()
+
+    def conn(self):
+        self.connection  = psycopg2.connect(
+            host = self.host,
+            database= self.database,
+            user=self.user,
+            password=self.password
+        )
+        return self.connection
+    
+    def default_connect(self):    
+        self.host = 'ec2-52-5-29-151.compute-1.amazonaws.com'
+        self.database = 'd5cjhu9om6udeu'
+        self.user = 'user_depaula'
+        self.password = 'p6f3e0ad2304ce92ab5a5eec1898d1bcb18e163acede7158d316bd0f2bcb9a18c'
         return self
 
     def disconnect(self):

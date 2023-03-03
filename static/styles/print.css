@@ -1,0 +1,17 @@
+body{
+    background-color: blueviolet; 
+    background-position: -1cm -4cm;
+    background-repeat: no-repeat;
+    background-size: 794px 1123px;
+    color: blueviolet;
+}
+
+@page{
+    /*size: A4;*/
+    background-color: blueviolet;
+    margin: 0px
+}
+@page:left{padding: 6cm;}
+@page:start{padding: 3cm;}
+@page:right{padding: 2cm;}
+@page:end{padding: 2cm;}

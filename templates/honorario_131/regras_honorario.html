@@ -1,0 +1,464 @@
+{% extends '../base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block body %}
+
+<style>
+  .btn-orange{
+    background-color: #FD7E14;
+  }
+  input[type='checkbox'] {
+    -webkit-appearance:none;
+    width:25px;
+    height:25px;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+  }
+  input[type='checkbox']:checked {
+      background: #6F46B7;
+  }
+</style>
+
+<main role="main" class="main-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">Controle de Regras Honorário 131</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            {% bootstrap_messages messages %}
+            <div id="alert_geral_sucesso"></div>
+            <div class="card shadow">
+              <div class="card-header">
+                <label class="font-weight-bold" for="find_status">Filtrar Por SITUAÇÃO: </label>
+                <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search()" >
+                  <option value=""></option>
+                  <option value="CALCULAR">CALCULAR</option>
+                  <option value="SEM USO">SEM USO</option>
+                  <option value="SOMAR FILIAIS">SOMAR FILIAIS</option>
+                  <option value="NÃO SOMAR">NÃO SOMAR</option>
+                </select>
+                <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_crete_regra()">Adicionar Regra</a>
+                <a class="btn btn-primary float-right ml-3" style="color:#fff;" onclick="open_modal_calculo()">Realizar Cálculo</a>
+                <a class="btn btn-orange float-right ml-3" style="color:#fff;" onclick="">Realizar Auditoria</a>
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-1">
+                  <thead>
+                    <tr>
+                      <th>Financeiro</th>
+                      <th>Empresa</th>
+                      <th>Filial</th>
+                      <th>Razão Social</th>
+                      <th>Calcular</th>
+                      <th>Somar Filiais</th>
+                      <th>Limite</th>
+                      <th>Valor</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for regra in regras %}
+                      <tr>
+                        <td class="h6">{{regra.cd_financeiro}}</td>
+                        <td class="h6">{{regra.cd_empresa}}</td>
+                        <td class="h6">{{regra.cd_filial}}</td>
+                        <td class="h6">{{regra.razao_social}}</td>
+
+                        {% if regra.calcular == 'CALCULAR' %}
+                          <td class="h6 text-success">{{regra.calcular}}</td>
+                        {% else %}
+                          <td class="h6 text-danger">{{regra.calcular}}</td>
+                        {% endif %}
+
+                        {% if regra.somar_filiais == 'SOMAR FILIAIS' %}
+                          <td class="h6 text-success">{{regra.somar_filiais}}</td>
+                        {% else %}
+                          <td class="h6 text-danger">{{regra.somar_filiais}}</td>
+                        {% endif %}
+
+                        <td class="h6">{{regra.limite}}</td>
+                        <td class="h6">{{regra.valor}}</td>
+                        <td>
+                          <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="text-muted sr-only">Action</span>
+                          </button>
+                          <div class="dropdown-menu dropdown-menu-right">
+                            <button class="dropdown-item text-primary" onclick="open_modal_update({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}', '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
+
+                            <button class="dropdown-item text-danger" onclick="open_modal_deletar({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Regra</button>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- simple table -->
+        </div>
+      </div> <!-- .col-12 -->
+    </div> <!-- .row -->
+  </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+<!-- MODAL Create Regra -->
+<div class="modal fade" id="modalRegra" tabindex="-1" role="dialog" aria-labelledby="modalRegraLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalRegraLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'regras_honorario_131' %}">
+                {% csrf_token %}
+                <div id="error_aviso"></div>
+
+                <div class="form-row mt-1">
+                    <div class="col-12 col-sm-12">
+                      <label class="font-weight-bold" for="cd_empresa">Cd. Empresa:</label>
+                      <div class="input-group mb-3">
+                        <input type="number" class="form-control cd_empresa" id="cd_empresa" name="cd_empresa" placeholder="Cd. Empresa:" aria-label="Cd. Empresa:" aria-describedby="button-addon2" onkeypress="buscar_empresa(event)" required>
+                        <button class="btn btn-outline-info" type="button" onclick="buscar_empresa(event)" id="button-addon2">Buscar Empresa</button>
+                      </div>
+                    </div>
+                </div>
+                <div class="form-row mt-4">
+                    <div class="col-8 col-sm-8">
+                        <label class="font-weight-bold" for="razao_social">Nome da Empresa:</label>
+                        <input type="text" id="razao_social" name="razao_social" class="form-control" readonly required>
+                    </div>
+                    <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="cd_filial">Filial:</label>
+                      <select class="custom-select" id="cd_filial" name="cd_filial" required>
+                        <option selected></option>
+                      </select>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-row mt-4">
+                  <div class="col-6 col-sm-6">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="somar_filiais" name="somar_filiais">
+                      <label class="form-check-label ml-3 h5" for="somar_filiais">Somar Filiais ?</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-6">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="calcular" name="calcular" checked>
+                      <label class="form-check-label ml-3 h5" for="calcular">Calcular Honorário s/Folha ?</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row mt-5">
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="cd_financeiro">Código Financeiro</label>
+                      <input type="number" id="cd_financeiro" name="cd_financeiro" class="form-control" placeholder="Código Financeiro:" required>
+                  </div>
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="limite">Limite de Empregados</label>
+                      <input type="number" id="limite" name="limite" class="form-control" placeholder="Limite de Empregados:" required>
+                  </div>
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="valor">Valor Unitário</label>
+                      <input type="text" id="valor" name="valor" class="form-control input-money" placeholder="Valor Unitário:" required>
+                  </div>
+                </div>
+
+                <center>
+                  <button class="btn btn-outline-primary mt-5" onclick="validar_regra_honorario(event)">
+                      <strong>Validar Cadastro da Regra</strong>
+                  </button>
+                </center>
+
+                <button class="btn btn-outline-success float-right mt-5" id="id_button_regra" disabled>
+                    <strong>Cadastrar Nova Regra</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL Edit Regra -->
+<div class="modal fade" id="modalEditRegra" tabindex="-1" role="dialog" aria-labelledby="modalEditRegraLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalEditRegraLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'update_regra_honorario' %}">
+                {% csrf_token %}
+                <div id="error_aviso_edit"></div>
+                <div class="form-row mt-4">
+                  <div class="col-6 col-sm-6">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="somar_filiais_update" name="somar_filiais_update">
+                      <label class="form-check-label ml-3 h5" for="somar_filiais_update">Somar Filiais ?</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-6">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="calcular_update" name="calcular_update" checked>
+                      <label class="form-check-label  ml-3 h5" for="calcular_update">Calcular Honorário s/Folha ?</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row mt-5">
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="cd_financeiro_update">Código Financeiro</label>
+                      <input type="number" id="cd_financeiro_update" name="cd_financeiro_update" class="form-control" placeholder="Código Financeiro:" readonly>
+                  </div>
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="limite_update">Limite de Empregados</label>
+                      <input type="number" id="limite_update" name="limite_update" class="form-control" placeholder="Limite de Empregados:" required>
+                  </div>
+                  <div class="col-4 col-sm-4">
+                      <label class="font-weight-bold" for="valor_update">Valor Unitário</label>
+                      <input type="text" id="valor_update" name="valor_update" class="form-control input-money" placeholder="Valor Unitário:" required>
+                  </div>
+                </div>
+
+                <button class="btn btn-outline-success float-right mt-5" id="id_button_regra">
+                    <strong>Atualizar Regra de Honorário</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal fade" id="modalDeleteRegra" tabindex="-1" role="dialog" aria-labelledby="modalDeleteRegraLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalDeleteRegraLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_delete"></div>
+          <center>
+              <button class="btn btn-outline-success btn-lg mt-5" id="button_delete_regra">
+                <strong>Deletar Regra</strong>
+              </button>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REALIZAR CALCULO -->
+<div class="modal fade" id="modalCalculo" tabindex="-1" role="dialog" aria-labelledby="modalCalculoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalCalculoLabel">Deseja Realizar o Calculo dos Honorários ?</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div class="card card-body">
+            <p class="text-justify h5"> Este processo importará e calculará o serviço variável para cobrança de número de empregados por empresa.
+          </div><br>
+          <center>
+            <form method="POST" action="{% url 'realizar_calculo_honorario_131' %}">
+              {% csrf_token %}
+              <button class="btn btn-outline-success btn-lg">
+                <strong>Realizar Cálculo</strong>
+              </button>
+            </form>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function open_modal_crete_regra(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalRegra'))
+    document.getElementById('modalRegraLabel').textContent = "Adicionar Nova Regra de Honorário"
+    document.getElementById('cd_empresa').value = ''
+    document.getElementById('razao_social').value = ''
+    document.getElementById('cd_filial').value = ''
+    document.getElementById('somar_filiais').checked = false
+    document.getElementById('calcular').checked = true
+    document.getElementById('cd_financeiro').value = ''
+    document.getElementById('limite').value = ''
+    document.getElementById('valor').value = ''
+    myModal.toggle()
+  }
+
+  function open_modal_update(cd_financeiro, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor){
+      var myModal = new bootstrap.Modal(document.getElementById('modalEditRegra'))
+      document.getElementById('modalEditRegraLabel').textContent = `Editar Regra de Honorário da ${cd_empresa}/${cd_filial} - ${razao_social}`
+      document.getElementById('somar_filiais_update').checked = somar_filiais === 'SOMAR FILIAIS'
+      document.getElementById('calcular_update').checked = calcular === 'CALCULAR'
+      document.getElementById('cd_financeiro_update').value = cd_financeiro
+      document.getElementById('limite_update').value = limite
+      document.getElementById('valor_update').value = valor
+      myModal.toggle()
+  }
+
+  function open_modal_deletar(cd_financeiro, cd_empresa, cd_filial, razao_social){
+    var myModal = new bootstrap.Modal(document.getElementById('modalDeleteRegra'))
+    document.getElementById('modalDeleteRegraLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa}/${cd_filial}: ${razao_social}`
+    document.getElementById('button_delete_regra').setAttribute('onclick', `deletar_regra(event, ${cd_financeiro})`)
+    myModal.toggle()
+  }
+
+  function open_modal_calculo(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalCalculo'))
+    myModal.toggle()
+  }
+
+  function buscar_empresa(event){
+    let input = document.getElementById('cd_empresa')
+    let cd_empresa = input.value
+    
+    if ((event.keyCode === 13 || event.type === 'click') && cd_empresa){
+      event.preventDefault();
+      input.style = 'border: 1px solid green;'
+
+      fetch(`/honorario_131/buscar_empresa_honorario/${cd_empresa}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status != 200){
+            input.style = 'border: 1px solid red;'
+            document.getElementById('error_aviso').innerHTML = `<p class='text-danger'>${data.msg}<p>`
+          }else{
+            document.getElementById('razao_social').value = data.response.nome_empresa
+            let lista = data.response.filiais.map((el) => {
+              return `<option value="${el}">${el}</option>`
+            })
+            document.getElementById('cd_filial').innerHTML = lista.join("\n")
+          }
+        })
+        .catch(error => {
+          console.log(error)
+          input.style = 'border: 1px solid red;'
+          document.getElementById('error_aviso').innerHTML = `<p class='text-danger'>Erro no Servidor<p>`
+        })
+    }else{
+      input.style = 'border: 1px solid red;'
+      return false
+    }
+  }
+
+  function validar_regra_honorario(e){
+    e.preventDefault();
+    cd_financeiro = document.getElementById('cd_financeiro').value
+    cd_empresa = document.getElementById('cd_empresa').value
+    cd_filial = document.getElementById('cd_filial').value
+    somar_filiais = document.getElementById('somar_filiais').checked
+    
+    if (!cd_empresa || !cd_financeiro || !cd_filial){
+      mostrarAlert('error_aviso', 'danger', "Preencha Todos os Campos Corretamente")
+      return false
+    }
+
+    $.ajax({
+      url: "{% url 'validar_regra_honorario' %}",
+      type: 'POST',
+      data: {
+        cd_financeiro,
+        cd_empresa,
+        cd_filial,
+        somar_filiais,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        mostrarAlert('error_aviso', 'success', "Esta Regra está válida, pode Cadastrar !!")
+        document.getElementById('id_button_regra').disabled = false
+      },
+      error: function(data){
+        if (Object.keys(data).includes('responseJSON')){
+          mostrarAlert('error_aviso', 'danger', data.responseJSON.msg)
+        }else{
+          mostrarAlert('error_aviso', 'danger', "Erro no Servidor")
+        }
+      },
+    })
+  }
+
+  function deletar_regra(e, cd_financeiro){
+    e.preventDefault();
+
+    $.ajax({
+      url: "{% url 'deletar_regra_honorario' %}",
+      type: 'POST',
+      data: {
+        cd_financeiro,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        window.location.href = "{% url 'regras_honorario_131' %}";
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function mostrarAlert(div_id_class, type_alert, mensagem){
+    document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
+
+    /*setTimeout(() => {
+      $('.alert').alert('close')
+    }, 5000)*/
+  }
+
+  function fecharModal(modalClass){
+    var myModalEl = document.getElementById(modalClass)
+    var modal = bootstrap.Modal.getOrCreateInstance(myModalEl)
+    modal.hide()
+  }
+    
+</script>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/jquery.mask.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="{% static 'js/uppy.min.js' %}"></script>
+<script src="{% static 'js/quill.min.js' %}"></script>
+
+<script>
+  var table = $('#dataTable-1').DataTable();
+
+  function search(){
+    table.search(document.getElementById("find_status").value).draw();
+  }
+
+  $('.input-money').mask("#.##0,00",
+  {
+    reverse: true
+  });
+  $('.cd_empresa').mask("00000",
+  {
+    reverse: true
+  });
+</script>
+
+{% endblock %}
+    

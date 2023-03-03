@@ -1,0 +1,122 @@
+{% extends '../components/base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+{% load humanize %}
+
+{% block content %}
+    <style>
+        @page {
+            size: A4;
+            margin: 0px;
+            padding: 1.6cm; padding-top: 3.5cm; padding-bottom: 1.6cm;
+        }
+        body{
+            background-image: url("{% static 'img/papel_timbrado.jpg' %}");
+            background-position: -1.6cm -3.5cm;
+            background-repeat: no-repeat;
+            background-size: 784px 1123px;
+            background-size: 794px 1123px;
+        }       
+
+        body div{
+            margin: 0px;
+            padding: 0px;
+            max-width: 674px;
+        }
+
+        p, span, th, td, li{
+            font-size: 14px;
+            line-height: 108%;
+            text-align: justify;
+        }
+        
+        .corpo h6{
+            margin: 3px;
+        }
+
+        .flex-container{ display: flex; justify-content: center;}
+
+        .line-h-default{
+            line-height: normal;
+        }
+        .line-h-large{
+            line-height: 1.6;
+        }
+        .line-h-small{
+            line-height: 108%;
+        }
+        
+        .data-header p{
+            line-height: 95%;
+            margin: 6px;
+        }
+
+        
+        .tabela-sm{ width: 100%; }
+        .tabela-sm tr{ height: 26px; border-bottom: solid 0.6px rgb(182, 191, 206); }
+        .tabela-sm tr:nth-child(even){ background-color:  #dee3eb; }
+        .tabela-sm tbody tr:hover{ background-color: #ced8e7;}
+
+        .tabela-sm th{ border: solid 0.4px black; font-weight: 500; padding: 6px;}
+
+        .tabela-sm td{ font-weight: 600; border: solid 0.6px black; padding: 6px; }
+        .tabela-sm tr td:first-child{ padding-left: 10px;}
+        .tabela-sm tr th:first-child{ padding-left: 10px;}
+
+        ul{ padding-left: 30px; margin: 6px; font-size: 14.4px;}
+        li strong:first-child{ margin-left: -15px; }
+    </style>
+    <div class="d-block">
+        <div>
+            <center><u><h6 class="text-center font-weight-bold mb-5">RELATÓRIO COMPLEMENTAR DO NÚMERO DE EMPREGADOS</h6></u></center>
+            <center><u><h6 class="text-center font-weight-bold mb-5">{{ nome_empresa }} - {{ nr_empresa }}</h6></u></center>
+        </div>
+        <div>
+            <p>
+                Prezado Cliente,
+            <p>
+                Segue abaixo a composição do honorário de nº de empregados, separado por filial, centro de custo e tipo de folha processada. 
+                Sendo um total de <strong>{{totalFuncionarios}} funcionários:</strong>         
+            </p><br>
+
+            <ul style="list-style: none;">
+                {% for filial, valor in filiais.items %}
+                    <li>
+                        <strong>FILIAL - {{ filial }}: {{ valor.funcionariosFilial }} ( {{ valor.porcentagemFuncionarioPorFilial }} )</strong>
+                        <ul style="list-style: none;">
+                            {% for key, value in valor.custo.items %}
+                                <li>
+                                    <strong>CENTRO DE CUSTO - {{value.name}}: {{value.quantid}} ( {{ value.porcentagemFuncionarioPorCusto }} )</strong>
+                                </li>
+                                <ul style="list-style: none;">
+                                    {% if value.quantid > 1 %}
+                                        <li>
+                                            {% if value.type != 'RPA  ' %}
+                                                <strong>{{value.quantid}} - {{value.type}}S PROCESSADAS</strong><br>
+                                            {% else %}
+                                                <strong>{{value.quantid}} - {{value.type}} PROCESSADOS</strong><br>
+                                            {% endif %}
+                                        </li>
+                                    {% else %}
+                                        <li>
+                                            {% if value.type != 'RPA  ' %}
+                                                <strong>{{value.quantid}} - {{value.type}} PROCESSADA</strong><br>
+                                            {% else %}
+                                                <strong>{{value.quantid}} - {{value.type}} PROCESSADO</strong><br>
+                                            {% endif %}
+                                        </li>
+                                    {% endif %}
+                                </ul><br>
+                            {% endfor %}
+                        </ul>
+                        <hr>
+                    </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+    
+    <div>
+        
+
+{% endblock %}
