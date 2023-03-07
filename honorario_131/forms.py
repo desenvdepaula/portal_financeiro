@@ -19,3 +19,17 @@ class RegrasHonorariosUpdateForm(forms.Form):
 
 class RelatorioHonorariosForm(forms.Form):
     empresa = forms.IntegerField(max_value=9999, label="COD. Empresa", required=False)
+    
+class RealizarCalculoForm(forms.Form):
+    data = forms.DateField(widget=forms.DateInput(attrs={"type":"date"}))
+    compet = forms.CharField(label="Período de Competência (Mês e Ano)", help_text="Período de Competência (* Exemplo: 07/2022 *)")
+    
+    def clean_compet(self):
+        periodo = self.cleaned_data['compet']
+        if len(periodo) < 6:
+            raise forms.ValidationError("Digite Corretamente o Período Competencia (MM/AAAA)", 'compet')
+        else:
+            mes_compet, ano_compet = periodo.split("/")
+            self.cleaned_data['compet'] = f"01.{mes_compet}.{ano_compet}"
+
+        return self.cleaned_data['compet']

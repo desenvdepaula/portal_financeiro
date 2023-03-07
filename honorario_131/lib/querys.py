@@ -1,7 +1,7 @@
 class SqlHonorarios131:
 
     @staticmethod
-    def getSqlHonorarios131(empresa):
+    def getSqlHonorarios131(empresa, compet):
         sql = '''
                 SELECT 
                     H.CODIGOEMPRESA EMPRESA,
@@ -37,7 +37,7 @@ class SqlHonorarios131:
                     H.CODIGOPERCALCULO = P.CODIGOPERCALCULO
                 WHERE
                     H.CODIGOEMPRESA IN {0} AND
-                    P.COMPET = '01.01.2023' AND
+                    P.COMPET = '{1}' AND
                     ((CODIGOTIPOCONTR <> 5 AND CODIGOEVENTO = 5021) OR 
                     (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022))
                 GROUP BY
@@ -56,21 +56,21 @@ class SqlHonorarios131:
                     T.CODIGOESTAB = O.CODIGOESTAB AND
                     T.CLASSIFORGAN = O.CLASSIFORGAN
                 WHERE
-                    COMPET = '01.01.2023' AND
+                    COMPET = '{1}' AND
                     T.CODIGOEMPRESA IN {0} AND
                     T.GPSORIGEM IN (1, 3, 9, 5)
                 GROUP BY
                     1,3,4,5
                 ORDER BY
                     1,4,2
-            '''.format(empresa)
+            '''.format(empresa, compet)
         return sql
 
     @staticmethod
-    def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data):
+    def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento):
         sql = f'''
                 INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) 
-                VALUES({cd_escritorio}, {cd_financeiro}, 131, CAST('NOW' AS DATE), 1, NULL, NULL, NULL, {direfenca_quantidade} , {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
+                VALUES({cd_escritorio}, {cd_financeiro}, 131, {data_lancamento}, 1, NULL, NULL, NULL, {direfenca_quantidade} , {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
             '''
         return sql
 

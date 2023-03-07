@@ -8,18 +8,25 @@ from django.contrib import messages
 from django.views import View
 from weasyprint import HTML
 
-from .forms import RelatorioHonorariosForm, RegrasHonorariosForm, RegrasHonorariosUpdateForm
+from .forms import RelatorioHonorariosForm, RegrasHonorariosForm, RegrasHonorariosUpdateForm, RealizarCalculoForm
 
 from .lib.controller import Controller
 from .models import RegrasHonorario
 from .lib.database import ManagerTareffa
 
 def request_realizar_calculo_honorario_131(request):
-    try:
-        controller = Controller()
-        return controller.gerarHonorarios()
-    except Exception as err:
-        messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
+    context = {'form': RealizarCalculoForm(request.POST or None)}
+    if context['form'].is_valid():
+        try:
+            controller = Controller()
+            return controller.gerarHonorarios(
+                context['form'].cleaned_data['compet'],
+                context['form'].cleaned_data['data'],
+            )
+        except Exception as err:
+            messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
+    else:
+        messages.error(request, "Erro no Formulário, tente Novamente !")
         
     return redirect('regras_honorario_131')
 

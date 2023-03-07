@@ -275,14 +275,25 @@
           <div class="card card-body">
             <p class="text-justify h5"> Este processo importará e calculará o serviço variável para cobrança de número de empregados por empresa.
           </div><br>
-          <center>
             <form method="POST" action="{% url 'realizar_calculo_honorario_131' %}">
               {% csrf_token %}
-              <button class="btn btn-outline-success btn-lg">
-                <strong>Realizar Cálculo</strong>
-              </button>
+              <div class="form-row mt-4">
+                <div class="col-6 col-sm-6">
+                  <label class="font-weight-bold" for="id_compet">Competencia da Folha de Pagamento (Mês e Ano)</label>
+                  <input type="text" name="compet" class="form-control" title="Período de Competência (* Exemplo: 07/2022 *)" required id="id_compet" inputmode="text" placeholder="Período de Competência (Mês e Ano)">
+                  <small class="form-text text-muted">Período de Competência (* Exemplo: 07/2022 *)</small>
+                </div>
+                <div class="col-6 col-sm-6">
+                  <label class="font-weight-bold" for="id_data">Data de Lançamento</label>
+                  <input type="date" name="data" class="form-control" placeholder="Data de Lançamento" required id="id_data">
+                </div>
+              </div>
+              <center>
+                <button class="btn btn-outline-success btn-lg mt-5">
+                  <strong>Realizar Cálculo</strong>
+                </button>
+              </center>
             </form>
-          </center>
         </div>
     </div>
   </div>
@@ -445,6 +456,8 @@
 
 <script>
   var table = $('#dataTable-1').DataTable();
+  
+  var im = Inputmask("[9{1,2}\/9{1,4}]").mask( document.getElementById("id_compet") )
 
   function search(){
     table.search(document.getElementById("find_status").value).draw();
