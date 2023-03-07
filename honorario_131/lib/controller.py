@@ -284,8 +284,8 @@ class Controller():
                     dictValidation[cd_financeiro] = int(quantidade)
                     
                 dataFrameSql = self.responseEmpresas(alignCenter, writer, compet)
-                self.honorarioEmpresasSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento)
-                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento)
+                self.honorarioEmpresasSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
+                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
                 
                 writer.close()
                 

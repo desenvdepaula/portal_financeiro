@@ -70,7 +70,7 @@ class SqlHonorarios131:
     def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento):
         sql = f'''
                 INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) 
-                VALUES({cd_escritorio}, {cd_financeiro}, 131, {data_lancamento}, 1, NULL, NULL, NULL, {direfenca_quantidade} , {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
+                VALUES({cd_escritorio}, {cd_financeiro}, 131, '{data_lancamento}', 1, NULL, NULL, NULL, {direfenca_quantidade} , {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
             '''
         return sql
 
