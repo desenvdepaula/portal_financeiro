@@ -330,6 +330,11 @@ class Controller():
         self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento))
         self.manager.commit_changes()
 
+    def returnCompetToValidation(self, compet):
+        _, mes, ano = compet.split('.')
+        mes = int(mes)
+        return f"{mes}/{ano}"
+    
     def gerarHonorarios(self, compet, data_lancamento):
         try:
             
@@ -340,7 +345,8 @@ class Controller():
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 
-                validation = self.retornaListadeEmpresasValidation(compet)
+                dataValidation = self.returnCompetToValidation(compet)
+                validation = self.retornaListadeEmpresasValidation(dataValidation)
                 dictValidation = {}
                 
                 for cd_financeiro, _, quantidade in validation:
