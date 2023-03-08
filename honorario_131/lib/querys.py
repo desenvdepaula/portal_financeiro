@@ -75,7 +75,7 @@ class SqlHonorarios131:
         return sql
 
     @staticmethod
-    def getSqlValidador131(mes):
+    def getSqlValidador131(data):
         sql = f'''
             SELECT
                 CODIGOCLIENTE,
@@ -84,7 +84,7 @@ class SqlHonorarios131:
             FROM
                 SERVICOVARIAVEL
             WHERE
-                EXTRACT(MONTH FROM DATASERVVAR) = {mes}
+                OBSERVSERVVAR LIKE '%{data}%'
                 AND CODIGOSERVICOESCRIT = 131
                 AND CODIGOESCRIT >= 9000
                 AND CODIGOUSUARIO = 0

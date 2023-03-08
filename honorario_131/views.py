@@ -13,10 +13,12 @@ from .forms import RelatorioHonorariosForm, RegrasHonorariosForm, RegrasHonorari
 from .lib.controller import Controller
 from .models import RegrasHonorario
 from .lib.database import ManagerTareffa
+from core.views import request_project_log
 
 def request_realizar_calculo_honorario_131(request):
     context = {'form': RealizarCalculoForm(request.POST or None)}
     if context['form'].is_valid():
+        context['form'].clean_log(request.user.username)
         try:
             controller = Controller()
             return controller.gerarHonorarios(
@@ -31,7 +33,13 @@ def request_realizar_calculo_honorario_131(request):
     return redirect('regras_honorario_131')
 
 def request_realizar_auditoria_honorario_131(request):
-    pass
+    try:
+        controller = Controller(active_database_tareffa=True)
+        return controller.gerarAuditoria()
+    except Exception as err:
+        messages.error(request, f"Ocorreu um erro: {err}")
+        
+    return redirect('regras_honorario_131')
     
 class RegrasHonorarioView(View):
     
@@ -50,6 +58,7 @@ class RegrasHonorarioView(View):
     def post(self, request, *args, **kwargs):
         context = { 'form': self.form(request.POST or None) }
         if context['form'].is_valid():
+            context['form'].clean_log(request.user.username)
             try:
                 RegrasHonorario.objects.create(
                     cd_financeiro = context['form'].cleaned_data['cd_financeiro'],
@@ -113,6 +122,7 @@ class RegrasHonorarioView(View):
     
     def delete(request):
         try:
+            request_project_log(int(request.POST.get('cd_financeiro')), "Deletar Regra", "HONORARIO 131 / DELETAR REGRA", request.user.username)
             RegrasHonorario.objects.get(cd_financeiro=int(request.POST.get('cd_financeiro'))).delete()
             return JsonResponse({'msg': 'correto'})
         except Exception as err:
@@ -121,6 +131,7 @@ class RegrasHonorarioView(View):
     def update(request):
         context = { 'form': RegrasHonorariosUpdateForm(request.POST or None) }
         if context['form'].is_valid():
+            context['form'].clean_log(request.user.username)
             try:
                 regrasCalculadas = []
                 regra = RegrasHonorario.objects.get(cd_financeiro=int(context['form'].cleaned_data['cd_financeiro_update']))

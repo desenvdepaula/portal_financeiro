@@ -5,16 +5,79 @@ import pandas as pd
 from django.http import HttpResponse
 from ..models import RegrasHonorario
 from .querys import SqlHonorarios131
-from .database import Manager
+from .database import Manager, ManagerTareffa
 
 class Controller():
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, active_database_tareffa=False, *args, **kwargs):
         self.manager = Manager(*args, **kwargs).default_connect()
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
         self.writer = csv.writer(self.response)
+        if active_database_tareffa:
+            self.managerTareffa = ManagerTareffa(*args, **kwargs)
 
+    #------------------ AUDITORIA 131 ------------------#
+    
+    def gerarAuditoria(self):
+        try:
+            with BytesIO() as b:
+                writer = pd.ExcelWriter(b, engine='xlsxwriter')
+                pd.set_option('max_colwidth', None)
+                workbook = writer.book
+                alignCenter = workbook.add_format({'align': 'left'})
+                empresasForaDasRegras = []
+                RegrasInvalidas = []
+                
+                empresas = self.managerTareffa.get_empresa_ativas()
+                codigos = [empresa[0] for empresa in empresas]
+                
+                regrasGeral = RegrasHonorario.objects.filter(calcular=True)
+                regrasGeralSomadas = [regra.cd_empresa for regra in regrasGeral if regra.somar_filiais]
+                regrasGeralNaoSomadas = [f'{regra.cd_empresa}/{regra.cd_filial}' for regra in regrasGeral if not regra.somar_filiais]
+                
+                for empresa in empresas:
+                    if str(empresa[0]) not in regrasGeralSomadas and f"{empresa[0]}/{empresa[1]}" not in regrasGeralNaoSomadas:
+                        empresasForaDasRegras.append(empresa)
+                
+                for regra in regrasGeral:
+                    if int(regra.cd_empresa) not in codigos:
+                        RegrasInvalidas.append([
+                            regra.cd_financeiro, 
+                            regra.cd_empresa, 
+                            regra.cd_filial, 
+                            regra.razao_social, 
+                            "CALCULA", 
+                            "SOMA FILIAIS" if regra.somar_filiais else "NÃO SOMA FILIAIS",
+                            "Esta Regra se Refere a uma Empresa Não Ativa no Tareffa"
+                        ])
+                        
+                dfEmpresasSemRegras = pd.DataFrame(empresasForaDasRegras, columns=['CD_EMPRESA', 'CD_ESTAB', 'NOME', "CARACTERISTICA"])
+                dfEmpresasSemRegras.to_excel(writer, sheet_name='Empresa Sem Regras', index = False)
+                writer.sheets['Empresa Sem Regras'].set_column('A:B', 20, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('C:C', 80, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('D:D', 25, alignCenter)
+                
+                dfRegrasInvalidadas = pd.DataFrame(RegrasInvalidas, columns=['CD_FIANANCEIRO', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA ?", "SOMA FILIAIS", "DESCRIÇÃO"])
+                dfRegrasInvalidadas.to_excel(writer, sheet_name='Regras Inválidas', index = False)
+                writer.sheets['Regras Inválidas'].set_column('A:C', 20, alignCenter)
+                writer.sheets['Regras Inválidas'].set_column('D:D', 80, alignCenter)
+                writer.sheets['Regras Inválidas'].set_column('E:F', 20, alignCenter)
+                writer.sheets['Regras Inválidas'].set_column('G:G', 60, alignCenter)
+                
+                writer.close()
+                
+                filename = 'AuditoriaHonorario.xlsx'
+                response = HttpResponse(
+                    b.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                return response
+                
+        except Exception as err:
+            raise Exception(err)
+    
     #------------------ HONORARIO 131 ------------------#
 
     def responseEmpresas(self, alignCenter, writer, compet):
@@ -258,8 +321,8 @@ class Controller():
         response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Find()).fetchall()
         return response
 
-    def retornaListadeEmpresasValidation(self, mes):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlValidador131(mes)).fetchall()
+    def retornaListadeEmpresasValidation(self, data):
+        response = self.manager.execute_sql(SqlHonorarios131.getSqlValidador131(data)).fetchall()
         return response
 
     def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento):
@@ -277,7 +340,7 @@ class Controller():
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 
-                validation = self.retornaListadeEmpresasValidation(data_lancamento.strftime('%m'))
+                validation = self.retornaListadeEmpresasValidation(compet)
                 dictValidation = {}
                 
                 for cd_financeiro, _, quantidade in validation:

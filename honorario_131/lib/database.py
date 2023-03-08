@@ -14,7 +14,7 @@ class Manager(Connection):
         return sql
     
 class ManagerTareffa(TareffaConnection):
-    def __init__(self, codigo_empresa):
+    def __init__(self, codigo_empresa=0):
         self.codigo_empresa = codigo_empresa
         self.default_connect()
 
@@ -39,6 +39,37 @@ class ManagerTareffa(TareffaConnection):
                             else e.codigoquestor
                         end as int) = {self.codigo_empresa} and
                         estaativa = true
+            """
+            self.execute_sql(sql)
+            result = [list(i) for i in self.cursor.fetchall()]
+        except Exception as err:
+            raise Exception(err)
+        else:
+            return result
+        finally:
+            self.disconnect()
+            
+    def get_empresa_ativas(self):
+        try:
+            self.connect()
+            sql = """
+                select distinct
+                    cast(case	
+                        when position('/' in e.codigoquestor) <> 0 then left(e.codigoquestor, (position('/' in e.codigoquestor))-1)
+                        when position('-' in e.codigoquestor) <> 0 then left(e.codigoquestor, (position('-' in e.codigoquestor))-1)
+                        else e.codigoquestor
+                    end as int) codigoquestor,
+                    cast(case
+                        when position('/' in e.codigoquestor) <> 0 then right(e.codigoquestor, position('/' in reverse(e.codigoquestor))-1)
+                        when position('-' in e.codigoquestor) <> 0 then right(e.codigoquestor, position('-' in reverse(e.codigoquestor))-1)
+                        when position('-' in e.codigoquestor) = 0 and position('/' in e.codigoquestor) = 0 then '1' 
+                    end as int) filial,	
+                    razaosocial, 
+                    regimetributario 
+                from
+                    depaula.view_empresas e
+                where
+                    estaativa = true
             """
             self.execute_sql(sql)
             result = [list(i) for i in self.cursor.fetchall()]
