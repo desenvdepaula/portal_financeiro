@@ -67,11 +67,26 @@ class SqlHonorarios131:
         return sql
 
     @staticmethod
-    def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento):
+    def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial):
         sql = f'''
                 INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) 
-                VALUES({cd_escritorio}, {cd_financeiro}, 131, '{data_lancamento}', 1, NULL, NULL, NULL, {direfenca_quantidade} , {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
+                VALUES({cd_escritorio}, {cd_financeiro}, 131, '{data_lancamento}', {codigo_sequencial}, NULL, NULL, NULL, {direfenca_quantidade}, {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, NULL, 0, CAST('now' as timestamp), 3, NULL, NULL, NULL, NULL);
             '''
+        return sql
+    
+    @staticmethod
+    def getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data):
+        sql = f"""
+                SELECT
+                    MAX(SEQSERVVAR)+ 1
+                FROM
+                    SERVICOVARIAVEL
+                WHERE
+                    CODIGOESCRIT = {cd_escritorio}
+                    AND CODIGOCLIENTE = {cd_financeiro}
+                    AND CODIGOSERVICOESCRIT = 131
+                    AND OBSERVSERVVAR LIKE '%{data}%'
+            """
         return sql
 
     @staticmethod

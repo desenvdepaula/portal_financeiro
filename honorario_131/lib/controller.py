@@ -172,20 +172,39 @@ class Controller():
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
-                            auditoriaGeralNaoSomaFilial.append([
-                                f"Feito novo insert com as diferenças, já tinham lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                empresa,
-                                filial,
-                                cd_financeiro, 
-                                "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                limite, 
-                                data, 
-                                escritorio, 
-                                quantidade, 
-                                "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                novaDiferenca 
-                            ])
-                            self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento)
+                            codigo_sequencial = self.retornaSequencialInsert(int(escritorio), int(cd_financeiro), data)
+                            
+                            if codigo_sequencial:
+                                auditoriaGeralNaoSomaFilial.append([
+                                    f"Feito novo insert com as diferenças, já tinham lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
+                                    empresa,
+                                    filial,
+                                    cd_financeiro, 
+                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
+                                    limite, 
+                                    data, 
+                                    escritorio, 
+                                    quantidade, 
+                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
+                                    novaDiferenca 
+                                ])
+                                
+                                self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento, int(codigo_sequencial))
+                            else:
+                                auditoriaGeralNaoSomaFilial.append([
+                                    "Não foi feito o insert por não ter codigo Sequencial",
+                                    empresa,
+                                    filial,
+                                    cd_financeiro, 
+                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
+                                    limite, 
+                                    data, 
+                                    escritorio, 
+                                    quantidade, 
+                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
+                                    novaDiferenca 
+                                ])
+                                
                         else:
                             auditoriaGeralNaoSomaFilial.append([
                                 f"Não foi realizado Insert, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
@@ -268,19 +287,36 @@ class Controller():
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
-                            auditoriaGeralSomaFilial.append([
-                                f"Feito novo insert com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                empresa,
-                                cd_financeiro, 
-                                "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                limite, 
-                                data, 
-                                int(escritorio), 
-                                int(quantidade), 
-                                "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                novaDiferenca 
-                            ])
-                            self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento)
+                            codigo_sequencial = self.retornaSequencialInsert(int(escritorio), int(cd_financeiro), data)
+                            
+                            if codigo_sequencial:
+                                auditoriaGeralSomaFilial.append([
+                                    f"Feito novo insert com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
+                                    empresa,
+                                    cd_financeiro, 
+                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
+                                    limite, 
+                                    data, 
+                                    int(escritorio), 
+                                    int(quantidade), 
+                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
+                                    novaDiferenca 
+                                ])
+                                self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento, int(codigo_sequencial))
+                            else:
+                                auditoriaGeralSomaFilial.append([
+                                    "Não foi feito o insert por não ter codigo Sequencial",
+                                    empresa,
+                                    cd_financeiro, 
+                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
+                                    limite, 
+                                    data, 
+                                    escritorio, 
+                                    quantidade, 
+                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
+                                    novaDiferenca 
+                                ])
+                                
                         else:
                             auditoriaGeralSomaFilial.append([
                                 f"Não foi realizado Insert, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
@@ -320,14 +356,19 @@ class Controller():
     def retornaListadeEmpresas(self):
         response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Find()).fetchall()
         return response
+    
+    def retornaSequencialInsert(self, cd_escritorio, cd_financeiro, data):
+        response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data)).fetchone()
+        response = response[0]
+        return response
 
     def retornaListadeEmpresasValidation(self, data):
         response = self.manager.execute_sql(SqlHonorarios131.getSqlValidador131(data)).fetchall()
         return response
 
-    def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento):
+    def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial=1):
         self.manager.connection.begin()
-        self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento))
+        self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial))
         self.manager.commit_changes()
 
     def returnCompetToValidation(self, compet):
