@@ -1,0 +1,417 @@
+{% extends '../base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block body %}
+
+<style>
+  .btn-orange{
+    background-color: #FD7E14;
+  }
+  input[type='checkbox'] {
+    -webkit-appearance:none;
+    width:25px;
+    height:25px;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+  }
+  input[type='checkbox']:checked {
+      background: #6F46B7;
+  }
+  .v2-form{
+    color: #6f42c1;
+    border-color: #6f42c1;
+    width: 100%;
+  }
+  .v2-form:hover{
+      background-color: #6f42c1;
+      color: #fff;
+  }
+</style>
+
+<main role="main" class="main-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">Controle de Ordens de Serviços</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            {% bootstrap_messages messages %}
+            <div id="alert_geral_sucesso"></div>
+            <div class="card shadow">
+              <div class="card-header">
+                <a class="btn btn-orange float-right ml-3" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-1">
+                  <thead>
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Nome Empresa</th>
+                      <th>Serviço</th>
+                      <th>Data</th>
+                      <th>Horas</th>
+                      <th>Valor</th>
+                      <th>Criado</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for ordem in ordens %}
+                      <tr>
+                        <td class="h6">{{ordem.cd_empresa}}</td>
+                        <td class="h6">{{ordem.nome_empresa}}</td>
+                        <td class="h6">{{ordem.servico}}</td>
+                        <td class="h6">{{ordem.data_realizado}}</td>
+                        <td class="h6">{{ordem.hora_trabalho}}</td>
+                        <td class="h6">{{ordem.valor}}</td>
+                        <td class="h6">{{ordem.criador_os}}</td>
+
+                        <td>
+                          <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="text-muted sr-only">Action</span>
+                          </button>
+                          <div class="dropdown-menu dropdown-menu-right">
+                            <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-edit fe-16 mr-2"></i> Visualizar Ordem</button>
+
+                            <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
+
+                            <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- simple table -->
+        </div>
+      </div> <!-- .col-12 -->
+    </div> <!-- .row -->
+  </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+<!-- MODAL Create Regra -->
+<div class="modal fade" id="modalEditOrdem" tabindex="-1" role="dialog" aria-labelledby="modalEditOrdemLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalEditOrdemLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="error_aviso"></div>
+            <form method="POST" action="{% url 'list_ordem_servico' %}">
+                {% csrf_token %}
+
+                <input type="number" name="id_ordem" required id="id_ordem_form" style="display: none;">
+                  
+                <div class="form-row">
+                    {% bootstrap_field form.empresa label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-6 col-sm-6"  %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    <div class="col-12 col-sm-12">
+                        <label class="font-weight-bold" for="id_descricao">Descrição:</label>
+                        <textarea name="descricao" cols="40" rows="2" class="form-control" required id="id_descricao" onkeyup="contabilizar(event)"></textarea>
+                        <small class="form-text text-muted">Descrever a Descrição <b id="caracteres_descricao">51 Caracteres</b></small>
+                    </div>                                         
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.descricao_servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.quantidade label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    <div class="col-6 col-sm-6">
+                        <label class="font-weight-bold" for="id_valor">Valor:</label>
+                        <input type="text" name="valor" class="form-control input-money" required id="id_valor">
+                    </div>
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.autorizacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.solicitacaoLocal label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.solicitacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.executado label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+
+                <button class="btn btn-outline v2-form float-right mt-3" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                    <strong>Editar Ordem de Serviço</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal fade" id="modalDeleteOrdem" tabindex="-1" role="dialog" aria-labelledby="modalDeleteOrdemLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalDeleteOrdemLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_delete"></div>
+          <center>
+              <button class="btn btn-outline-success btn-lg" id="button_delete_ordem">
+                <strong>Deletar Ordem</strong>
+              </button>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalViewOrdem" tabindex="-1" role="dialog" aria-labelledby="modalViewOrdemLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalViewOrdemLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" id="view_ordem"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalAuditoria" tabindex="-1" role="dialog" aria-labelledby="modalAuditoriaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalAuditoriaLabel">Baixar Planilha das Ordens de Serviços Cadastrados</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'baixar_planilha_ordens_servico' %}">
+              {% csrf_token %}
+              <center>
+                <button class="btn btn-outline-success btn-lg">
+                  <strong>Baixar Planilha</strong>
+                </button>
+              </center>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function contabilizar(event){
+    let text = document.getElementById('caracteres_descricao').textContent.split(' ')
+    let textDescicao = document.getElementById('id_descricao').value
+    let lenTextDescricao = textDescicao.length
+
+    if (event.keyCode === 8){
+        text[0] = 51 - lenTextDescricao
+        text = text.join(' ')
+        document.getElementById('caracteres_descricao').textContent = text
+    }else{
+        if (lenTextDescricao >= 51){
+            text[0] = '0'
+            text = text.join(' ')
+            document.getElementById('caracteres_descricao').textContent = text
+            document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
+        }else{
+            text[0] = 51 - lenTextDescricao
+            text = text.join(' ')
+            document.getElementById('caracteres_descricao').textContent = text
+        }
+    }
+  }
+
+  function contabilizar_edit(){
+    let text = document.getElementById('caracteres_descricao').textContent.split(' ')
+    let textDescicao = document.getElementById('id_descricao').value
+    let lenTextDescricao = textDescicao.length
+
+    if (lenTextDescricao >= 51){
+        text[0] = '0'
+        text = text.join(' ')
+        document.getElementById('caracteres_descricao').textContent = text
+        document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
+    }else{
+        text[0] = 51 - lenTextDescricao
+        text = text.join(' ')
+        document.getElementById('caracteres_descricao').textContent = text
+    }
+  }
+
+  function open_modal_update(ordem){
+    var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'))
+    document.getElementById('modalEditOrdemLabel').textContent = `Editar Esta Ordem da ${ordem.cd_empresa} - ${ordem.nome_empresa}`
+    document.getElementById('id_ordem_form').value = parseInt(ordem.id)
+    document.getElementById('id_empresa').value = parseInt(ordem.cd_empresa)
+    document.getElementById('id_execucao').value = ordem.hora_trabalho
+    document.getElementById('id_data').value = ordem.data_realizado.split('/').reverse().join('-')
+    document.getElementById('id_data_cobranca').value = ordem.data_cobranca.split('/').reverse().join('-')
+    document.getElementById('id_servico').value = ordem.cd_servico + ' * ' + ordem.servico
+    document.getElementById('id_descricao').value = ordem.ds_servico
+    document.getElementById('id_descricao_servico').value = ordem.observacoes_servico
+    document.getElementById('id_quantidade').value = parseInt(ordem.quantidade)
+    document.getElementById('id_valor').value = ordem.valor.replace("R$ ", '')
+    document.getElementById('id_autorizacao').value = ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO'
+    document.getElementById('id_solicitacaoLocal').value = ordem.type_solicitacao
+    document.getElementById('id_solicitacao').value = ordem.solicitado
+    document.getElementById('id_executado').value = ordem.executado
+    contabilizar_edit()
+    myModal.toggle()
+  }
+
+  function open_modal_deletar(id_ordem, cd_empresa, razao_social){
+    var myModal = new bootstrap.Modal(document.getElementById('modalDeleteOrdem'))
+    document.getElementById('modalDeleteOrdemLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa} - ${razao_social}`
+    document.getElementById('button_delete_ordem').setAttribute('onclick', `deletar_ordem(event, ${id_ordem})`)
+    myModal.toggle()
+  }
+
+  function open_modal_auditoria(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalAuditoria'))
+    myModal.toggle()
+  }
+
+  function abrir_modal_view_ordem(ordem){
+    var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
+    document.getElementById('view_ordem').innerHTML = `
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item h5">Empresa: ${ordem.cd_empresa} - ${ordem.nome_empresa}</li>
+        <li class="list-group-item h5">Serviço: ${ordem.servico}</li>
+        <li class="list-group-item h5">Descrição Serviço: ${ordem.ds_servico}</li>
+        <li class="list-group-item h5">Descrição: ${ordem.observacoes_servico}</li>
+        <li class="list-group-item h5">Quantidade: ${ordem.quantidade}</li>
+        <li class="list-group-item h5">Valor: ${ordem.valor}</li>
+        <li class="list-group-item h5">Horas: ${ordem.hora_trabalho}</li>
+        <li class="list-group-item h5">Data Realizado: ${ordem.data_realizado}</li>
+        <li class="list-group-item h5">Quem Solicitou: ${ordem.solicitado}</li>
+        <li class="list-group-item h5">Quem Realizou: ${ordem.executado} </li>
+        <li class="list-group-item h5">Departamento: ${ordem.departamento}</li>
+        <li class="list-group-item h5">Autorizado: ${ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO'} </li>
+        <li class="list-group-item h5">Tipo: ${ordem.type_solicitacao}</li>
+        <li class="list-group-item h5">Quem Criou a OS: ${ordem.criador_os}</li>
+      </ul>
+    `
+    myModal.toggle()
+  }
+
+  function buscar_ordem_for_id(e, id_ordem, type){
+    e.preventDefault();
+    $.ajax({
+      url: `/ordem_servico/buscar_ordem_servico/${id_ordem}`,
+      type: 'GET',
+      success: function(data){
+        if (type === 'view'){
+          abrir_modal_view_ordem(data)
+        }else{
+          open_modal_update(data)
+        }
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function deletar_ordem(e, id_ordem){
+    e.preventDefault();
+
+    $.ajax({
+      url: "{% url 'delete_ordem_servico' %}",
+      type: 'POST',
+      data: {
+        id_ordem,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        window.location.href = "{% url 'list_ordem_servico' %}";
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function mostrarAlert(div_id_class, type_alert, mensagem){
+    document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
+
+    /*setTimeout(() => {
+      $('.alert').alert('close')
+    }, 5000)*/
+  }
+
+  function fecharModal(modalClass){
+    var myModalEl = document.getElementById(modalClass)
+    var modal = bootstrap.Modal.getOrCreateInstance(myModalEl)
+    modal.hide()
+  }
+    
+</script>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/jquery.mask.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="{% static 'js/uppy.min.js' %}"></script>
+<script src="{% static 'js/quill.min.js' %}"></script>
+
+<script>
+  var table = $('#dataTable-1').DataTable();
+
+  function search(){
+    table.search(document.getElementById("find_status").value).draw();
+  }
+
+  $('.input-money').mask("#.##0,00",
+  {
+    reverse: true
+  });
+  $('.cd_empresa').mask("00000",
+  {
+    reverse: true
+  });
+</script>
+
+{% endblock %}
+    
