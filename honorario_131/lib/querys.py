@@ -39,7 +39,8 @@ class SqlHonorarios131:
                     H.CODIGOEMPRESA IN {0} AND
                     P.COMPET = '{1}' AND
                     ((CODIGOTIPOCONTR <> 5 AND CODIGOEVENTO = 5021) OR 
-                    (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022))
+                    (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022)) AND
+                    P.CODIGOTIPOCALC = 1
                 GROUP BY
                     1,3,4,5
                 UNION
@@ -160,7 +161,8 @@ class SqlHonorarios131:
                             EXTRACT(MONTH FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) ||'.'||
                             EXTRACT(YEAR FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) AND 
                 ((CODIGOTIPOCONTR <> 5 AND CODIGOEVENTO = 5021) OR 
-                (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022))
+                (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022)) AND
+                P.CODIGOTIPOCALC = 1
             GROUP BY 1,3,4,6,7
             UNION
             SELECT T.CODIGOEMPRESA, 
