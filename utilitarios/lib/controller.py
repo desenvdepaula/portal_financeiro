@@ -97,6 +97,7 @@ class Controller():
         try:
             connection = Connection().default_connect()
             connection.connect()
+            dfHeader = ['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM']
             dictEmpresas = { 9501:[501,0], 9502:[502,0], 9505:[505,200], 9567:[567,200], 9575: [575,200] }
             listaInserts = []
 
@@ -104,7 +105,7 @@ class Controller():
             for i in queries:
                 listaInserts.append(list(i))
 
-            df = pd.DataFrame(listaInserts,columns=['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])        
+            df = pd.DataFrame(listaInserts,columns=dfHeader)        
             df['DATASERVVAR'] = pd.to_datetime(df['DATASERVVAR']).dt.strftime('%d/%m/%Y')
             df['DATAHORALCTO'] = pd.to_datetime(df['DATAHORALCTO']).dt.strftime('%d/%m/%Y')
             df['VALORTOTALSERVVAR'] = df['VALORTOTALSERVVAR'].astype(str).str.replace('.',',')
@@ -115,8 +116,8 @@ class Controller():
                     row[10] = row[10] + ",00"
                 newDFlist.append(row)
                 
-            newDF = pd.DataFrame(newDFlist,columns=['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])        
-            newDF.to_csv(f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, lineterminator='\r\n', encoding="utf8")
+            newDF = pd.DataFrame(newDFlist,columns=dfHeader)        
+            newDF.to_csv(f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, line_terminator='\r\n', encoding="utf8")
 
         except Exception as ex:
             print("Ocorreu um erro ao executar esta operação: {0}".format(ex))
