@@ -1,0 +1,78 @@
+from .lib.utils import numeric_to_string
+from decimal import Decimal
+
+class Inadimplencia:
+
+    def __init__(self, *args, **kwargs):
+        self._recebido_apos_prazo = kwargs['recebido_apos_prazo']
+        self._aberto = kwargs['aberto']
+        self._faturado = kwargs['faturado']
+        self._inadimplencia = self.total_inadimplencia()
+        self._indice = self.total_indice()
+        self._data = kwargs['data']
+        self._data1 = kwargs['data1']
+        self._data2 = kwargs['data2']
+
+    def __repr__(self):
+        return f"Inadimplencia({self._recebido_apos_prazo}, {self._aberto}, {self._faturado}, {self._inadimplencia}, {self._indice}, {self._data})"
+
+    @staticmethod
+    def instance_from_database_args(db_data):
+        kwargs = {
+            'recebido_apos_prazo' : '', 
+            'aberto' : '', 
+            'faturado' : '', 
+            'data' : '', 
+            'data1' : '', 
+            'data2' : '', 
+        }
+        for idx, row in enumerate(db_data):
+            if idx == 0:
+                kwargs['recebido_apos_prazo'] = row['SUM'] or Decimal(0.0)
+                kwargs['data'] = row['DATA'] 
+            elif idx == 1:
+                kwargs['aberto'] = row['SUM'] or Decimal(0.0)
+                kwargs['data1'] = row['DATA'] 
+            elif idx == 2:
+                kwargs['faturado'] = row['SUM'] or Decimal(0.0)
+                kwargs['data2'] = row['DATA'] 
+        print(kwargs)
+        return Inadimplencia(**kwargs)
+
+    def total_inadimplencia(self):
+        return self._recebido_apos_prazo + self._aberto
+
+    def total_indice(self):
+        return ( self._inadimplencia / self._faturado ) * 100
+    
+    @property
+    def recebido_apos_prazo(self):
+        return numeric_to_string(self._recebido_apos_prazo)
+
+    @property
+    def aberto(self):
+        return numeric_to_string(self._aberto)
+
+    @property
+    def faturado(self):
+        return numeric_to_string(self._faturado)
+
+    @property
+    def inadimplencia(self):
+        return numeric_to_string(self._inadimplencia)
+
+    @property
+    def indice(self):
+        return numeric_to_string(self._indice)
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def data1(self):
+        return self._data1
+
+    @property
+    def data2(self):
+        return self._data2

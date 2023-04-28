@@ -1,0 +1,144 @@
+{% extends '../../components/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+    <style>
+        @page {
+            size: A4;
+            margin: 0px;
+            padding: 1.6cm; padding-top: 4cm; padding-bottom: 1.6cm;
+        }
+        body{
+            background-image: url("{% static 'img/papel_timbrado.jpg' %}");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }       
+
+        body div{
+            margin: 0px;
+            padding: 0px;
+            max-width: 674px;
+        }
+        .text-content{
+            font-size: 17px;
+        }
+        .corpo{
+            display: flex;
+            flex-direction: column;
+            text-align: justify;
+        }
+
+        .corpo p{
+            font-size: 14.4px;
+            line-height: 108%;
+            margin: 3.5px;
+        }
+        .corpo h6{
+            margin: 3px;
+
+        }
+
+        .flex-container{ display: flex; justify-content: center;}
+
+        .line-h-default{
+            line-height: normal;
+        }
+        .line-h-large{
+            line-height: 1.6;
+        }
+        .line-h-small{
+            line-height: 108%;
+        }
+
+        .data-header p{
+            line-height: 95%;
+            margin: 6px;
+        }
+
+        
+        .tabela-sm{ width: 100%; }
+        .tabela-sm tr{ height: 35px; border-bottom: solid 0.6px rgb(182, 191, 206); }
+        .tabela-sm tr:nth-child(even){ background-color:  #dee3eb; }
+        .tabela-sm tbody tr:hover{ background-color: #ced8e7;}
+
+        .tabela-sm th{ border: solid 0.4px black; font-weight: 500; padding: 6px;}
+
+        .tabela-sm td{ font-weight: 600; border: solid 0.6px black; padding: 10px; }
+        .tabela-sm tr td:first-child{ padding-left: 10px;}
+        .tabela-sm tr th:first-child{ padding-left: 10px;}
+
+        ul{ padding-left: 30px; margin: 6px; font-size: 14.4px;}
+        li strong:first-child{ margin-left: -15px; }
+    </style>
+    
+    <div class="corpo d-block">
+        <h5>DEPARTAMENTO FINANCEIRO</h5><br>
+        <h5>INDICADOR DE INADIMPLÊNCIA </h5>
+        <br>
+
+        <table class="tabela-sm">
+            <tr>
+                <td class="text-center" colspan="3" > <strong>{{ inadimplencia.data|date:"F"|upper }}</strong> </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>A.</strong>
+                </td>
+                <td>
+                    <strong>R$</strong> {{ inadimplencia.recebido_apos_prazo }}
+                </td>
+                <td>
+                    Notas Recebidas vencidas pago depois do dia {{ inadimplencia.data|date:"d/m/Y"}}.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>B.</strong>
+                </td>
+                <td>
+                    <strong>R$</strong> {{ inadimplencia.aberto }}
+                </td>
+                <td>
+                    Notas emitidas em {{ inadimplencia.data1|date:"d/m" }} a {{ inadimplencia.data2|date:"d/m/Y" }} que estão abertas no sistema.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>C.</strong>
+                </td>
+                <td>
+                    <strong>R$</strong> {{ inadimplencia.faturado }}
+                </td>
+                <td>
+                    FATURADO em {{ inadimplencia.data1|date:"d/m" }} a {{ inadimplencia.data2|date:"d/m/Y" }}.
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>D.</strong>
+                </td>
+                <td>
+                    <strong>R$</strong> {{ inadimplencia.inadimplencia }}
+                </td>
+                <td>
+                    INADIMPLENTE.
+                </td>
+            </tr>
+            <tr>
+                <td class="text-center" colspan="3">
+                    <strong>ÍNDICE DO MÊS {{ inadimplencia.indice }}%</strong>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3"></td>
+            </tr>
+        </table>
+
+        <br>
+        <h5>RELATÓRIO GERADO NO DIA {% now "d/m/Y" %}</h5>
+    <div>
+        
+
+{% endblock %}

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'Database',
     'core',
     'utilitarios',
+    'geradoc',
     'honorario_131',
     'ordem_servico',
     'recibimentos_empresarial',

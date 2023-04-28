@@ -1,0 +1,282 @@
+{% extends '../../components/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+    <style>
+        @page {
+            size: A4;
+            margin: 0px;
+            padding: 1.6cm; padding-top: 3.5cm; padding-bottom: 1.6cm;
+        }
+        body{
+            background-image: url("{% static 'img/papel_timbrado.jpg' %}");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }       
+
+        body div{
+            margin: 0px;
+            padding: 0px;
+            max-width: 674px;
+        }
+        .text-content{
+            font-size: 17px;
+        }
+        .corpo{
+            display: flex;
+            flex-direction: column;
+            text-align: justify;
+        }
+
+        .corpo p{
+            font-size: 14.4px;
+            line-height: 108%;
+            margin: 3.5px;
+        }
+        .corpo h6{
+            margin: 3px;
+
+        }
+
+        .flex-container{ display: flex; justify-content: center;}
+
+        .line-h-default{
+            line-height: normal;
+        }
+        .line-h-large{
+            line-height: 1.6;
+        }
+        .line-h-small{
+            line-height: 108%;
+        }
+
+        .data-header p{
+            line-height: 95%;
+            margin: 6px;
+        }
+
+        
+        .tabela-sm{ width: 100%; }
+        .tabela-sm tr{ height: 26px; border-bottom: solid 0.6px rgb(182, 191, 206); }
+        .tabela-sm tr:nth-child(even){ background-color:  #f5f5f5; }
+        .tabela-sm tbody tr:hover{ background-color: #ced8e7;}
+
+        .tabela-sm th{ font-size: 14px; font-weight: 500; padding: 6px; border: solid 0.2px rgb(58, 58, 58);  }
+
+        .tabela-sm td{ font-size: 12px; font-weight: 600; padding: 6px; border: solid 0.2px rgb(58, 58, 58); }
+        .tabela-sm tr td:first-child{ padding-left: 10px;}
+        .tabela-sm tr th:first-child{ padding-left: 10px;}
+
+    </style>
+    <div class="corpo d-block">
+        <table class="tabela-sm">
+            <thead>
+                <tr>
+                    <th class="text-center font-weight-bold" colspan="3">CONTRATO DE PRESTAÇÃO DE SERVIÇOS – ANEXO ÚNICO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="font-weight-bold">EMPRESA</td>
+                    <td class="text-center font-weight-bold">{{ empresa.nome_empresa }}</td>
+                    <td class="text-center font-weight-bold">{{ empresa.codigo }}</td>
+                </tr>
+                <tr>
+                    <td class="font-weight-bold">CNPJ</td>
+                    <td class="text-center font-weight-bold">{{ empresa.inscricao_federal }}</td>
+                    <td class="text-center font-weight-bold">{{ regime_tributario }}</td>
+                </tr>
+
+                <tr> <td colspan="3"></td> </tr>
+
+                <tr>
+                    <td class="text-center font-weight-bold">SERVIÇOS COM HONORÁRIOS MENSAIS</td>
+                    <td class="text-center font-weight-bold">OBSERVAÇÕES</td>
+                    <td class="text-center font-weight-bold">VLR HONORÁRIO</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ESCRITURAÇÃO CONTÁBIL E FISCAL</td>
+                    <td class="text-center">MENSAL</td>
+                    <td class="text-center">{{ honorario }}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">FOLHA DE PAGAMENTO</td>
+                    <td class="text-center">
+                        
+                        {% if limite_empregados > 0 %}
+                            ACIMA DE {{ limite_empregados }}
+                        {% else %}
+                            POR EMPREGADO QUE TRANSITAR
+                        {% endif %}
+                            
+                    </td>
+                    <td class="text-center">{{ valor_por_empregado }}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">E-SOCIAL</td>
+                    <td class="text-center">INCLUSO NOS HONORÁRIOS</td>
+                    <td class="text-center"></td>
+                </tr>
+                <tr>
+                    <td class="text-left">SPED CONTÁBIL</td>
+                    <td class="text-center">INCLUSO NOS HONORÁRIOS</td>
+                    <td class="text-center"></td>
+                </tr>
+                <tr>
+                    <td class="text-left">CAFÉS & NEGÓCIOS, OFICINAS DE TREINAMENTOS</td>
+                    <td class="text-center">INCLUSO NOS HONORÁRIOS</td>
+                    <td class="text-center"></td>
+                </tr>
+                <tr>
+                    <td class="text-left">SPED FISCAL</td>
+                    <td class="text-center">INCLUSO NOS HONORÁRIOS</td>
+                    <td class="text-center"></td>
+                </tr>
+
+                <tr> <td colspan="3"></td> </tr>
+
+                <tr>
+                    <td class="text-center font-weight-bold">SERVIÇOS COM HONORÁRIOS ANUAIS</td>
+                    <td class="text-center font-weight-bold">OBSERVAÇÕES</td>
+                    <td class="text-center font-weight-bold">VLR HONORÁRIO</td>
+                </tr>
+                <tr>
+                    <td class="text-left">RAIS</td>
+                    <td class="text-center">Para empresas do SIMPLES Nacional ou Condomínios. Valor por empregado que transitar na Rais no período ou Rais negativa (se a empresa não tiver empregados)</td>
+                    <td class="text-center">Por empregado</td>
+                </tr>
+                <tr>
+                    <td class="text-left">DIRF</td>
+                    <td class="text-center">Valor por beneficiário que transitar na DIRF no período</td>
+                    <td class="text-center">Por beneficiário</td>
+                </tr>
+                <tr>
+                    <td class="text-left">DMED</td>
+                    <td class="text-center">Somente para empresas na área de saúde</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">DEFIS</td>
+                    <td class="text-center">Somente para as empresas do SIMPLES Nacional</td>
+                    <td class="text-center">30% do honorário</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ECD (Escrituração Contábil Digital)</td>
+                    <td class="text-center">Substitui gastos com encadernações e registros de livro</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">DIMOB</td>
+                    <td class="text-center">Somente para empresas de atividade Imobiliária</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ENCERRAMENTO DO BALANÇO ANUAL</td>
+                    <td class="text-center">
+                        Valor integral de uma mensalidade, em duas parcelas, sendo a primeira com vencimento em 15 de novembro e a segunda em 15 de dezembro
+                    </td>
+                    <td class="text-center">01 Mensalidade</td>
+                </tr>
+                <tr>
+                    <td class="text-left">DIRPF – DECLARAÇÃO IMPOSTO RENDA P. FÍSICA</td>
+                    <td class="text-center">Calculada com base nas operações que forem realizadas no ano, avaliação do tempo na elaboração</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ECF (Escrituração Contábil Fiscal)</td>
+                    <td class="text-center">Para as empresas do Lucro Presumido e Lucro Real</td>
+                    <td class="text-center">50% dos honorários</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ALVARÁ POLICIAL</td>
+                    <td class="text-center">Somente para atividades específicas </td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+
+                <tr style="break-before: always;"> <td colspan="3"></td> </tr>
+
+                <tr>
+                    <td class="text-center font-weight-bold">SERVIÇOS COBRADOS A PARTE CONFORME DEMANDA DO CLIENTE</td>
+                    <td class="text-center font-weight-bold">OBSERVAÇÕES</td>
+                    <td class="text-center font-weight-bold">VLR HONORÁRIO</td>
+                </tr>
+                <tr>
+                    <td class="text-left">ALTERAÇÃO DE CONTRATO</td>
+                    <td class="text-left">Mediante orçamento, de acordo com o que será alterado e suas implicações</td>
+                    <td class="text-center">orçamento</td>
+                </tr>
+                <tr>
+                    <td class="text-left">CERTIDÕES NEGATIVAS CARTÓRIO/ÓRGÃO PUBLICO</td>
+                    <td class="text-left">São cobradas as certidões que demandem pagamento de taxas, deslocamentos ou montagem de processos para fins específicos</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">RECÁLCULO DE GUIAS EM ATRASO, REPROCESSAMENTO DE INFORMAÇÕES</td>
+                    <td class="text-left">Cálculo feito com base na hora do retrabalho executado</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">OUTROS SERVIÇOS SOLICITADOS PELO CLIENTE OU EXIGIDOS POR NOVA DETERMINAÇÃO LEGAL SERÃO COBRADOS POR HORA</td>
+                    <td class="text-left">Serão cobrados de acordo com a hora despedida na execução do trabalho e de acordo com o perfil do profissional que irá executar o referido trabalho</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">CADASTRO BANCOS E PARA O IBGE</td>
+                    <td class="text-left">Honorários cobrados de acordo com a hora de trabalho despendida</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">REGISTRO EM ENTIDADE OU CONSELHO DE CLASSE</td>
+                    <td class="text-left">Honorários cobrados de acordo com a hora de trabalho despendida</td>
+                    <td class="text-center">Valor hora</td>
+                </tr>
+                <tr>
+                    <td class="text-left">BAIXA DE EMPRESA</td>
+                    <td class="text-left">Mediante orçamento, de acordo com a situação da empresa e do número de órgãos que deverá ser efetuada a baixa </td>
+                    <td class="text-center">Orçamento</td>
+                </tr>
+                <tr>
+                    <td class="text-left">RADAR JUNTO A RECEITA FEDERAL – IMPORTADOR</td>
+                    <td class="text-left">Mediante orçamento, de acordo com a situação da empresa, número de sócios, complexidade do processo </td>
+                    <td class="text-center">Orçamento</td>
+                </tr>
+                <tr>
+                    <td class="text-left">CADASTRO NO BACEN – INVESTIMENTO EXTERIOR</td>
+                    <td class="text-left">Mediante orçamento, de acordo com o número de sócios, número de aportes, valores aportados</td>
+                    <td class="text-center">Orçamento</td>
+                </tr>
+                <tr>
+                    <td class="text-left">CERTIFICAÇÃO DIGITAL</td>
+                    <td class="text-left">De acordo com a tabela praticada e certificado emitido</td>
+                    <td class="text-center">Tabela</td>
+                </tr>
+                
+            </tbody>
+        </table>
+        <p class="text-left mt-4 mb-4">
+            Foz do Iguaçu - PR, {% now "d" %} de {% now "F" %} de {% now "Y" %}
+        </p>
+        <div class="d-flex mt-5">
+            <div class="w-50">
+                <p class="text-center">
+                    <strong>{{ empresa.nome_empresa }}</strong><br><br>
+                    _________________________________________________<br>
+                    <strong>{{ socio_administrador.nome }}</strong><br>
+                    
+                </p>
+            </div>
+            <div class="w-50">
+                <p class="text-center">
+                    <strong>DE PAULA CONTADORES EIRELI</strong><br><br>
+                    _________________________________________________<br>
+                    <strong>ELIZANGELA DE PAULA KUHN</strong> <br>
+                    
+                </p>
+            </div>
+        </div>
+    <div>
+        
+
+{% endblock %}
