@@ -35,48 +35,24 @@
     <div class="row justify-content-center">
       <div class="col-12">
         <div class="row my-4">
-          <h2 class="text-center ml-3 mb-3">Controle de Ordens de Serviços</h2>
+          <h2 class="text-center ml-3 mb-3">Ordens de Serviços Arquivados</h2>
           <!-- Small table -->
           <div class="col-md-12">
             {% bootstrap_messages messages %}
             <div id="alert_geral_sucesso"></div>
             <div class="card shadow">
-              <div class="card-header d-flex justify-content-between">
-                <div class="d-lg-flex">
-                  <label class="font-weight-bold" for="find_status">Status: </label>
-                  <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search()" >
-                    <option value=""></option>
-                    <option value="DEBITAR">DEBITAR</option>
-                    <option value="NÃO TRATADO">NÃO TRATADO</option>
-                  </select>
-                </div>
-                <div class="d-lg-flex">
-                  <input 
-                      type="date" 
-                      id="min-date"
-                      class="date-range-filter form-control mr-3"
-                      placeholder="Período Inicial:">
-
-                  <input 
-                      type="date" 
-                      id="max-date" 
-                      class="date-range-filter form-control"
-                      placeholder="Período Final:">
-                </div>
-                <div>
-                  <a class="btn btn-orange" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
-                </div>
+              <div class="card-header">
+                <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
               </div>
               <div class="card-body">
                 <!-- table -->
                 <table class="table datatables table-hover" id="dataTable-1">
                   <thead>
                     <tr>
-                      <th>Empresa</th>
+                      <th>Nome Empresa</th>
                       <th>Serviço</th>
                       <th>Data da Cobrança</th>
                       <th>Valor</th>
-                      <th>Debitar</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -87,7 +63,6 @@
                         <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.servico}}</td>
                         <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.data_cobranca}}</td>
                         <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.valor}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{% if ordem.debitar %} DEBITAR {% else %} NÃO TRATADO {% endif %}</td>
 
                         <td>
                           <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -95,8 +70,6 @@
                           </button>
                           <div class="dropdown-menu dropdown-menu-right">
                             <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-edit fe-16 mr-2"></i> Visualizar Ordem</button>
-
-                            <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
 
                             <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
                           </div>
@@ -113,85 +86,6 @@
     </div> <!-- .row -->
   </div> <!-- .container-fluid -->
 </main> <!-- main -->
-
-<!-- MODAL Create Regra -->
-<div class="modal fade" id="modalEditOrdem" tabindex="-1" role="dialog" aria-labelledby="modalEditOrdemLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="modalEditOrdemLabel"></h5>
-            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div id="error_aviso"></div>
-            <form method="POST" action="{% url 'list_ordem_servico' %}">
-                {% csrf_token %}
-
-                <input type="number" name="id_ordem" required id="id_ordem_form" style="display: none;">
-                  
-                <div class="form-row">
-                    {% bootstrap_field form.empresa label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-6 col-sm-6"  %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    <div class="col-12 col-sm-12">
-                        <label class="font-weight-bold" for="id_descricao">Descrição:</label>
-                        <textarea name="descricao" cols="40" rows="2" class="form-control" required id="id_descricao" onkeyup="contabilizar(event)"></textarea>
-                        <small class="form-text text-muted">Descrever a Descrição <b id="caracteres_descricao">51 Caracteres</b></small>
-                    </div>                                         
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.descricao_servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.quantidade label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    <div class="col-6 col-sm-6">
-                        <label class="font-weight-bold" for="id_valor">Valor:</label>
-                        <input type="text" name="valor" class="form-control input-money" required id="id_valor">
-                    </div>
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.autorizacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.solicitacaoLocal label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.solicitacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.executado label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                </div>
-                <br>
-                <br>
-
-                <button class="btn btn-outline v2-form float-right mt-3" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
-                    <strong>Editar Ordem de Serviço</strong>
-                </button>
-            </form>
-        </div>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL DELETE -->
 <div class="modal fade" id="modalDeleteOrdem" tabindex="-1" role="dialog" aria-labelledby="modalDeleteOrdemLabel" aria-hidden="true">
@@ -226,31 +120,75 @@
             </button>
         </div>
         <div class="modal-body" id="view_ordem"></div>
-        <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-warning" id="button_arquive_view">Arquivar / Ignorar Ordem de Serviço</button>
-          <button type="button" id="button_debito_view"></button>
+        <div class="modal-footer d-flex justify-content-center">
+          <button type="button" class="btn btn-info" id="button_arquive_view">Voltar Ordem de Serviço Para o Controle</button>
         </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="modalAuditoria" tabindex="-1" role="dialog" aria-labelledby="modalAuditoriaLabel" aria-hidden="true">
+<!-- MODAL Create OS -->
+<div class="modal fade" id="modalCreateOrdem" tabindex="-1" role="dialog" aria-labelledby="modalCreateOrdemLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="modalAuditoriaLabel">Baixar Planilha das Ordens de Serviços Cadastrados</h5>
+            <h5 class="modal-title" id="modalCreateOrdemLabel">Registrar uma Ordem Apagada do Questor</h5>
             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
         </div>
         <div class="modal-body">
-            <form method="POST" action="{% url 'baixar_planilha_ordens_servico' %}">
-              {% csrf_token %}
-              <center>
-                <button class="btn btn-outline-success btn-lg">
-                  <strong>Baixar Planilha</strong>
+            <div id="error_aviso"></div>
+            <form method="POST" action="{% url 'list_ordem_servico_arquivados' %}">
+                {% csrf_token %}
+                  
+                <div class="form-row">
+                    {% bootstrap_field form.empresa label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-6 col-sm-6"  %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.descricao_servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.quantidade label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    <div class="col-6 col-sm-6">
+                        <label class="font-weight-bold" for="id_valor">Valor:</label>
+                        <input type="text" name="valor" class="form-control input-money" required id="id_valor">
+                    </div>
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.autorizacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.solicitacaoLocal label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.solicitacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.executado label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+
+                <button class="btn btn-outline v2-form float-right mt-3" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                    <strong>Criar Ordem de Serviço</strong>
                 </button>
-              </center>
             </form>
         </div>
     </div>
@@ -259,67 +197,6 @@
 
 <script>
 
-  function contabilizar(event){
-    let text = document.getElementById('caracteres_descricao').textContent.split(' ')
-    let textDescicao = document.getElementById('id_descricao').value
-    let lenTextDescricao = textDescicao.length
-
-    if (event.keyCode === 8){
-        text[0] = 51 - lenTextDescricao
-        text = text.join(' ')
-        document.getElementById('caracteres_descricao').textContent = text
-    }else{
-        if (lenTextDescricao >= 51){
-            text[0] = '0'
-            text = text.join(' ')
-            document.getElementById('caracteres_descricao').textContent = text
-            document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
-        }else{
-            text[0] = 51 - lenTextDescricao
-            text = text.join(' ')
-            document.getElementById('caracteres_descricao').textContent = text
-        }
-    }
-  }
-
-  function contabilizar_edit(){
-    let text = document.getElementById('caracteres_descricao').textContent.split(' ')
-    let textDescicao = document.getElementById('id_descricao').value
-    let lenTextDescricao = textDescicao.length
-
-    if (lenTextDescricao >= 51){
-        text[0] = '0'
-        text = text.join(' ')
-        document.getElementById('caracteres_descricao').textContent = text
-        document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
-    }else{
-        text[0] = 51 - lenTextDescricao
-        text = text.join(' ')
-        document.getElementById('caracteres_descricao').textContent = text
-    }
-  }
-
-  function open_modal_update(ordem){
-    var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'))
-    document.getElementById('modalEditOrdemLabel').textContent = `Editar Esta Ordem da ${ordem.cd_empresa} - ${ordem.nome_empresa}`
-    document.getElementById('id_ordem_form').value = parseInt(ordem.id)
-    document.getElementById('id_empresa').value = parseInt(ordem.cd_empresa)
-    document.getElementById('id_execucao').value = ordem.hora_trabalho
-    document.getElementById('id_data').value = ordem.data_realizado.split('/').reverse().join('-')
-    document.getElementById('id_data_cobranca').value = ordem.data_cobranca.split('/').reverse().join('-')
-    document.getElementById('id_servico').value = ordem.cd_servico + ' * ' + ordem.servico
-    document.getElementById('id_descricao').value = ordem.ds_servico
-    document.getElementById('id_descricao_servico').value = ordem.observacoes_servico
-    document.getElementById('id_quantidade').value = parseInt(ordem.quantidade)
-    document.getElementById('id_valor').value = ordem.valor.replace("R$ ", '')
-    document.getElementById('id_autorizacao').value = ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO'
-    document.getElementById('id_solicitacaoLocal').value = ordem.type_solicitacao
-    document.getElementById('id_solicitacao').value = ordem.solicitado
-    document.getElementById('id_executado').value = ordem.executado
-    contabilizar_edit()
-    myModal.toggle()
-  }
-
   function open_modal_deletar(id_ordem, cd_empresa, razao_social){
     var myModal = new bootstrap.Modal(document.getElementById('modalDeleteOrdem'))
     document.getElementById('modalDeleteOrdemLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa} - ${razao_social}`
@@ -327,14 +204,13 @@
     myModal.toggle()
   }
 
-  function open_modal_auditoria(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalAuditoria'))
+  function open_modal_add_os(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalCreateOrdem'))
     myModal.toggle()
   }
 
   function abrir_modal_view_ordem(ordem){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
-    let button_debito = document.getElementById('button_debito_view')
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
         <li class="list-group-item h5">Empresa: ${ordem.cd_empresa} - ${ordem.nome_empresa}</li>
@@ -353,9 +229,6 @@
         <li class="list-group-item h5">Quem Criou a OS: ${ordem.criador_os}</li>
       </ul>
     `
-    button_debito.textContent = ordem.debitar ? 'Cancelar Débito da Ordem de Serviço' : 'Debitar Ordem de Serviço'
-    button_debito.className = ordem.debitar ? 'btn btn-danger text-white' : 'btn btn-success text-white'
-    button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${ordem.debitar ? "False" : "True" }')`)
     document.getElementById('button_arquive_view').setAttribute('onclick', `arquivar_os(event, ${ordem.id})`)
     myModal.toggle()
   }
@@ -378,28 +251,10 @@
     })
   }
 
-  function debitar_os(e, id_ordem, bool){
-    e.preventDefault();
-    $.ajax({
-      url: `/ordem_servico/debitar_ordem_servico/${id_ordem}?debitar=${bool}`,
-      type: 'GET',
-      success: function(data){
-        if (Object.values(data).includes('sucesso')){
-          window.location.href = window.location.href
-        }else{
-          mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
-        }
-      },
-      error: function(data){
-        mostrarAlert('error_aviso_view', 'danger', data.statusText)
-      },
-    })
-  }
-
   function arquivar_os(e, id_ordem){
     e.preventDefault();
     $.ajax({
-      url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}?arquivar=True`,
+      url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}?arquivar=False`,
       type: 'GET',
       success: function(data){
         if (Object.values(data).includes('sucesso')){
@@ -425,7 +280,7 @@
         csrfmiddlewaretoken: '{{ csrf_token }}'
       },
       success: function(data){
-        window.location.href = "{% url 'list_ordem_servico' %}";
+        window.location.href = window.location.href;
       },
       error: function(data){
         mostrarAlert('error_aviso_delete', 'danger', data.statusText)
@@ -460,45 +315,18 @@
 <script src="{% static 'js/jquery.validate.min.js' %}"></script>
 <script src="{% static 'js/uppy.min.js' %}"></script>
 <script src="{% static 'js/quill.min.js' %}"></script>
-<script src="{% static 'js/moment.min.js' %}"></script>
 
 <script>
   var table = $('#dataTable-1').DataTable();
-
-  function search(){
-    table.search(document.getElementById("find_status").value).draw();
-  }
 
   $('.input-money').mask("#.##0,00",
   {
     reverse: true
   });
-
   $('.cd_empresa').mask("00000",
   {
     reverse: true
   });
-
-  $.fn.dataTableExt.afnFiltering.push(
-    function( settings, data, dataIndex ) {
-        var min = $('#min-date').val().split("-").reverse().join("/")
-        var max = $('#max-date').val().split("-").reverse().join("/")
-        var createdAt = data[2] || 2;
-        var startDate = moment(min, "DD/MM/YYYY").subtract('1','days');
-        var endDate = moment(max, "DD/MM/YYYY").add('1','days');
-        var diffDate = moment(createdAt, "DD/MM/YYYY");
-        if (
-          (min == "" || max == "") ||
-          (diffDate.isBetween(startDate, endDate))
-        ) {  return true;  }
-        return false;
-    }
-  );
-
-  $('.date-range-filter').change( function() {
-      table.draw();
-  } );
-
 </script>
 
 {% endblock %}

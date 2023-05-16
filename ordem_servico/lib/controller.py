@@ -118,3 +118,39 @@ class Controller():
             raise err
         finally:
             self.manager.disconnect()
+            
+    def create_ordem_servico_arquivado(self, cleaned_data, user):
+        try:
+            self.manager.connect()
+            query = self.manager.execute_sql(f"SELECT NOMEEMPRESA FROM EMPRESA WHERE CODIGOEMPRESA = {cleaned_data.get('empresa')}")
+            list_nomes = [nome for nome in query]
+            if not list_nomes:
+                raise Exception(f"Esta Empresa: {cleaned_data.get('empresa')} Não possui nome, Provavelmente não existe, escreva novamente !")
+            
+            nome_empresa = list(list_nomes[0])[0]
+            cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
+            
+            OrdemServico.objects.create(
+                cd_servico = cd_servico,
+                servico = servicoDesc,
+                ds_servico = "NULL",
+                observacoes_servico = cleaned_data.get('descricao_servico'),
+                cd_empresa = cleaned_data.get('empresa'),
+                nome_empresa = nome_empresa,
+                data_realizado = cleaned_data.get('data'),
+                data_cobranca = cleaned_data.get('data_cobranca'),
+                quantidade = cleaned_data.get('quantidade'),
+                hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M'),
+                valor = cleaned_data.get('valor'),
+                autorizado_pelo_cliente = cleaned_data.get('autorizacao'),
+                type_solicitacao = cleaned_data.get('solicitacaoLocal'),
+                solicitado = cleaned_data.get('solicitacao'),
+                executado = cleaned_data.get('executado'),
+                criador_os = user,
+                arquivado = True
+            )
+            
+        except Exception as err:
+            raise err
+        finally:
+            self.manager.disconnect()

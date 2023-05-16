@@ -18,3 +18,5 @@ class OrdemServico(models.Model):
     solicitado = models.CharField(max_length=255)
     executado = models.CharField(max_length=255)
     criador_os = models.CharField(max_length=255)
+    debitar = models.BooleanField(default=False)
+    arquivado = models.BooleanField(default=False)
