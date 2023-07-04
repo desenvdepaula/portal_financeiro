@@ -128,3 +128,35 @@ class OrdemServicoArquivadosView(View):
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
             
         return redirect('list_ordem_servico_arquivados')
+    
+class OrdemServicoAnaliseHonorariosView(View):
+    
+    template = "ordem_servico/analise_honorarios.html"
+    
+    def get(self, request, *args, **kwargs):
+        context = {}
+        context['ordens'] = OrdemServico.objects.filter(arquivado=False, debitar=True)
+        for ordem in context['ordens']:
+            ordem.data_cobranca = ordem.data_cobranca.strftime('%d/%m/%Y')
+            preco = float(ordem.valor)
+            preco_convertido = f"R$ {preco:_.2f}"
+            preco_final = preco_convertido.replace('.',',').replace('_','.')
+            ordem.valor = preco_final
+            
+        return render(request, self.template, context)
+    
+    def post(self, request, *args, **kwargs):
+        context = { 'form': self.form(request.POST or None) }
+        if context['form'].is_valid():
+            context['form'].clean_log(request.user.username)
+            try:
+                controller = Controller()
+                controller.create_ordem_servico_arquivado(context['form'].cleaned_data, request.user.username)
+            except Exception as ex:
+                messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
+            else:
+                messages.success(request, "Criado com sucesso !!")
+        else:
+            messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
+            
+        return redirect('list_ordem_servico_arquivados')

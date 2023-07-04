@@ -19,6 +19,9 @@
   input[type='checkbox']:checked {
       background: #6F46B7;
   }
+  [hidden] { 
+    display: none !important;
+  }
 </style>
 
 <main role="main" class="main-content">
@@ -40,6 +43,7 @@
                   <option value="SEM USO">SEM USO</option>
                   <option value="SOMAR FILIAIS">SOMAR FILIAIS</option>
                   <option value="NÃO SOMAR">NÃO SOMAR</option>
+                  <option value="SEM REGRAS">SEM NENHUMA REGRA</option>
                 </select>
                 <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_crete_regra()">Adicionar Regra</a>
                 <a class="btn btn-primary float-right ml-3" style="color:#fff;" onclick="open_modal_calculo()">Realizar Cálculo</a>
@@ -88,7 +92,11 @@
                             <span class="text-muted sr-only">Action</span>
                           </button>
                           <div class="dropdown-menu dropdown-menu-right">
-                            <button class="dropdown-item text-primary" onclick="open_modal_update({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}', '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
+                            {% if regra.have_rule  %}
+                              <button class="dropdown-item text-primary" onclick="open_modal_update({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}', '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}', `{{regra.observacoes}}`)"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
+                            {% else %}
+                              <button class="dropdown-item text-primary" onclick="open_modal_visualizer('{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}', `{{regra.observacoes}}`)"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar </button>
+                            {% endif %}
 
                             <button class="dropdown-item text-danger" onclick="open_modal_deletar({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', '{{regra.razao_social}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Regra</button>
                           </div>
@@ -143,44 +151,65 @@
                     </div>
                 </div>
                 <hr>
-                <div class="form-row mt-4">
+
+                <div class="form-row mt-2 mb-2">
                   <div class="col-6 col-sm-6">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" role="switch" id="somar_filiais" name="somar_filiais">
-                      <label class="form-check-label ml-3 h5" for="somar_filiais">Somar Filiais ?</label>
-                    </div>
+                    <label class="font-weight-bold" for="have_rule">Regras: </label>
+                    <select class="custom-select" id="have_rule" name="have_rule" required>
+                      <option value="true">Adicionar Regra</option>
+                      <option value="false">Sem o uso de Regras</option>
+                    </select>
                   </div>
                   <div class="col-6 col-sm-6">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" role="switch" id="calcular" name="calcular" checked>
-                      <label class="form-check-label ml-3 h5" for="calcular">Calcular Honorário s/Folha ?</label>
-                    </div>
-                  </div>
-                </div>
-                <div class="form-row mt-5">
-                  <div class="col-4 col-sm-4">
-                      <label class="font-weight-bold" for="cd_financeiro">Código Financeiro</label>
-                      <input type="number" id="cd_financeiro" name="cd_financeiro" class="form-control" placeholder="Código Financeiro:" required>
-                  </div>
-                  <div class="col-4 col-sm-4">
-                      <label class="font-weight-bold" for="limite">Limite de Empregados</label>
-                      <input type="number" id="limite" name="limite" class="form-control" placeholder="Limite de Empregados:" required>
-                  </div>
-                  <div class="col-4 col-sm-4">
-                      <label class="font-weight-bold" for="valor">Valor Unitário</label>
-                      <input type="text" id="valor" name="valor" class="form-control input-money" placeholder="Valor Unitário:" required>
+                    <label class="font-weight-bold" for="cd_financeiro">Código Financeiro</label>
+                    <input type="number" id="cd_financeiro" name="cd_financeiro" class="form-control" placeholder="Código Financeiro:" required>
                   </div>
                 </div>
 
+                <hr>
+
+                <div id="div_inputs_rules">
+                  <div class="form-row mt-5">
+                    <div class="col-6 col-sm-6">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="somar_filiais" name="somar_filiais">
+                        <label class="form-check-label ml-3 h5" for="somar_filiais">Somar Filiais ?</label>
+                      </div>
+                    </div>
+                    <div class="col-6 col-sm-6">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="calcular" name="calcular" checked>
+                        <label class="form-check-label ml-3 h5" for="calcular">Calcular Honorário s/Folha ?</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row mt-5">
+                    <div class="col-6 col-sm-6">
+                        <label class="font-weight-bold" for="limite">Limite de Empregados</label>
+                        <input type="number" id="limite" name="limite" class="form-control" placeholder="Limite de Empregados:">
+                    </div>
+                    <div class="col-6 col-sm-6">
+                        <label class="font-weight-bold" for="valor">Valor Unitário</label>
+                        <input type="text" id="valor" name="valor" class="form-control input-money" placeholder="Valor Unitário:">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row mt-5">
+                  <div class="col-12 col-sm-12">
+                    <label class="font-weight-bold" for="observacoes_create">Observações sobre a Regra: (*Opcional*)</label>
+                    <textarea name="observacoes" cols="40" rows="5" class="form-control" id="observacoes_create"></textarea>
+                  </div>
+                </div>
                 <center>
                   <button class="btn btn-outline-primary mt-5" onclick="validar_regra_honorario(event)">
                       <strong>Validar Cadastro da Regra</strong>
                   </button>
                 </center>
-
                 <button class="btn btn-outline-success float-right mt-5" id="id_button_regra" disabled>
                     <strong>Cadastrar Nova Regra</strong>
                 </button>
+
             </form>
         </div>
     </div>
@@ -227,6 +256,12 @@
                   <div class="col-4 col-sm-4">
                       <label class="font-weight-bold" for="valor_update">Valor Unitário</label>
                       <input type="text" id="valor_update" name="valor_update" class="form-control input-money" placeholder="Valor Unitário:" required>
+                  </div>
+                </div>
+                <div class="form-row mt-5">
+                  <div class="col-12 col-sm-12">
+                    <label class="font-weight-bold" for="observacoes_update">Observações sobre a Regra: (*Opcional*)</label>
+                    <textarea name="observacoes" cols="40" rows="5" class="form-control" id="observacoes_update"></textarea>
                   </div>
                 </div>
 
@@ -322,7 +357,38 @@
   </div>
 </div>
 
+<div class="modal fade" id="modalViewRegra" tabindex="-1" role="dialog" aria-labelledby="modalViewRegraLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalViewRegraLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="observacoes_view"></div>
+        </div>
+    </div>
+  </div>
+</div>
+
 <script>
+
+  let campo_have_rule = document.getElementById('have_rule');
+  let div_rules = document.getElementById('div_inputs_rules');
+
+  campo_have_rule.addEventListener('change', (event) => {
+    if (event.target.value === "true"){
+      div_rules.hidden = false
+      document.getElementById('limite').required = true
+      document.getElementById('valor').required = true
+    }else{
+      div_rules.hidden = true
+      document.getElementById('limite').required = false
+      document.getElementById('valor').required = false
+    }
+  })
 
   function open_modal_crete_regra(){
     var myModal = new bootstrap.Modal(document.getElementById('modalRegra'))
@@ -338,7 +404,7 @@
     myModal.toggle()
   }
 
-  function open_modal_update(cd_financeiro, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor){
+  function open_modal_update(cd_financeiro, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor, observacoes){
       var myModal = new bootstrap.Modal(document.getElementById('modalEditRegra'))
       document.getElementById('modalEditRegraLabel').textContent = `Editar Regra de Honorário da ${cd_empresa}/${cd_filial} - ${razao_social}`
       document.getElementById('somar_filiais_update').checked = somar_filiais === 'SOMAR FILIAIS'
@@ -346,6 +412,14 @@
       document.getElementById('cd_financeiro_update').value = cd_financeiro
       document.getElementById('limite_update').value = limite
       document.getElementById('valor_update').value = valor
+      document.getElementById('observacoes_update').value = observacoes !== 'None' ? observacoes : ''
+      myModal.toggle()
+  }
+
+  function open_modal_visualizer(cd_empresa, cd_filial, razao_social, observacoes){
+      var myModal = new bootstrap.Modal(document.getElementById('modalViewRegra'))
+      document.getElementById('modalViewRegraLabel').textContent = `${cd_empresa}/${cd_filial} - ${razao_social}`
+      document.getElementById('observacoes_view').innerHTML = `<p class="h4">Observações do Registro: ${observacoes !== 'None' ? observacoes : ''}</p>`
       myModal.toggle()
   }
 

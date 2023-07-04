@@ -80,17 +80,17 @@
 
         <table class="tabela-sm">
             <tr>
-                <td class="text-center" colspan="3" > <strong>{{ inadimplencia.data|date:"F"|upper }}</strong> </td>
+                <td class="text-center" colspan="3" > <strong>{{ inadimplencia.competencia|date:"F"|upper }}</strong> </td>
             </tr>
             <tr>
                 <td>
                     <strong>A.</strong>
                 </td>
                 <td>
-                    <strong>R$</strong> {{ inadimplencia.recebido_apos_prazo }}
+                    <strong>R$</strong> {{ inadimplencia.vl_pagas_mes_seguinte }}
                 </td>
                 <td>
-                    Notas Recebidas vencidas pago depois do dia {{ inadimplencia.data|date:"d/m/Y"}}.
+                    Notas Recebidas vencidas pago depois do dia {{ inadimplencia.competencia|date:"d/m/Y"}}.
                 </td>
             </tr>
             <tr>
@@ -98,10 +98,10 @@
                     <strong>B.</strong>
                 </td>
                 <td>
-                    <strong>R$</strong> {{ inadimplencia.aberto }}
+                    <strong>R$</strong> {{ inadimplencia.vl_notas_aberto }}
                 </td>
                 <td>
-                    Notas emitidas em {{ inadimplencia.data1|date:"d/m" }} a {{ inadimplencia.data2|date:"d/m/Y" }} que estão abertas no sistema.
+                    Notas emitidas em {{ inadimplencia.dt_nota_fiscal1|date:"d/m" }} a {{ inadimplencia.dt_nota_fiscal2|date:"d/m/Y" }} que estão abertas no sistema.
                 </td>
             </tr>
             <tr>
@@ -109,10 +109,10 @@
                     <strong>C.</strong>
                 </td>
                 <td>
-                    <strong>R$</strong> {{ inadimplencia.faturado }}
+                    <strong>R$</strong> {{ inadimplencia.vl_faturado_mes_anterior }}
                 </td>
                 <td>
-                    FATURADO em {{ inadimplencia.data1|date:"d/m" }} a {{ inadimplencia.data2|date:"d/m/Y" }}.
+                    FATURADO em {{ inadimplencia.dt_nota_fiscal1|date:"d/m" }} a {{ inadimplencia.dt_nota_fiscal2|date:"d/m/Y" }}.
                 </td>
             </tr>
             <tr>
@@ -120,7 +120,7 @@
                     <strong>D.</strong>
                 </td>
                 <td>
-                    <strong>R$</strong> {{ inadimplencia.inadimplencia }}
+                    <strong>R$</strong> {{ inadimplencia.vl_inadimplente }}
                 </td>
                 <td>
                     INADIMPLENTE.
@@ -128,7 +128,7 @@
             </tr>
             <tr>
                 <td class="text-center" colspan="3">
-                    <strong>ÍNDICE DO MÊS {{ inadimplencia.indice }}%</strong>
+                    <strong>ÍNDICE DO MÊS {{ inadimplencia.percent_inadimplente }}%</strong>
                 </td>
             </tr>
             <tr>

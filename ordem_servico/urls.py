@@ -1,6 +1,6 @@
 from django.urls import path, include
 from django.contrib.auth.decorators import login_required
-from .views import OrdemServicoView, OrdemServicoArquivadosView
+from .views import OrdemServicoView, OrdemServicoArquivadosView, OrdemServicoAnaliseHonorariosView
 
 urlpatterns = [
     path('list_ordem_servico', login_required(OrdemServicoView.as_view()), name="list_ordem_servico"),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('baixar_planilha_ordens_servico', login_required(OrdemServicoView.request_download_planilha), name="baixar_planilha_ordens_servico"),
     
     path('list_ordem_servico_arquivados', login_required(OrdemServicoArquivadosView.as_view()), name="list_ordem_servico_arquivados"),
+    path('list_ordem_servico_analise_honorarios', login_required(OrdemServicoAnaliseHonorariosView.as_view()), name="list_ordem_servico_analise_honorarios"),
 ]

@@ -50,8 +50,20 @@ class RegrasHonorarioView(View):
         context = { 'form': self.form(request.POST or None) }
         context['regras'] = RegrasHonorario.objects.all()
         for regra in context['regras']:
-            regra.calcular = "CALCULAR" if regra.calcular else "SEM USO"
-            regra.somar_filiais = "SOMAR FILIAIS" if regra.somar_filiais else "NÃO SOMAR"
+            
+            if regra.calcular:
+                regra.calcular = "CALCULAR"
+            elif regra.calcular == False:
+                regra.calcular = "SEM USO"
+            else:
+                regra.calcular = "SEM REGRAS"
+                
+            if regra.somar_filiais:
+                regra.somar_filiais = "SOMAR FILIAIS"
+            elif regra.somar_filiais == False:
+                regra.somar_filiais = "NÃO SOMAR"
+            else:
+                regra.somar_filiais = "SEM REGRAS"
             
         return render(request, self.template, context)
 
@@ -60,19 +72,28 @@ class RegrasHonorarioView(View):
         if context['form'].is_valid():
             context['form'].clean_log(request.user.username)
             try:
-                RegrasHonorario.objects.create(
+                tem_regras = True if context['form'].cleaned_data['have_rule'] == "true" else False
+                regra = RegrasHonorario(
                     cd_financeiro = context['form'].cleaned_data['cd_financeiro'],
                     cd_empresa = context['form'].cleaned_data['cd_empresa'],
                     cd_filial = context['form'].cleaned_data['cd_filial'],
                     razao_social = context['form'].cleaned_data['razao_social'],
-                    calcular = True if 'calcular' in request.POST else False,
-                    somar_filiais = True if 'somar_filiais' in request.POST else False,
-                    limite = context['form'].cleaned_data['limite'],
-                    valor = context['form'].cleaned_data['valor']
+                    observacoes = context['form'].cleaned_data['observacoes'],
                 )
+                if tem_regras:
+                    regra.calcular = True if 'calcular' in request.POST else False
+                    regra.somar_filiais = True if 'somar_filiais' in request.POST else False
+                    regra.limite = context['form'].cleaned_data['limite']
+                    regra.valor = float(self.cleaned_data['valor'].replace('.','').replace(',','.'))
+                else:
+                    regra.have_rule = False
+                    regra.calcular = None
+                    regra.somar_filiais = None
+                    
             except Exception as ex:
                 messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
             else:
+                regra.save()
                 messages.success(request, "Criado com sucesso")
         else:
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
@@ -136,17 +157,20 @@ class RegrasHonorarioView(View):
                 regrasCalculadas = []
                 regra = RegrasHonorario.objects.get(cd_financeiro=int(context['form'].cleaned_data['cd_financeiro_update']))
                 if 'somar_filiais_update' in request.POST: 
-                    for rule in RegrasHonorario.objects.filter(cd_empresa=regra.cd_empresa):
-                        if rule.calcular and rule.cd_filial != regra.cd_filial:
+                    for rule in RegrasHonorario.objects.filter(cd_empresa=regra.cd_empresa).exclude(cd_financeiro=regra.cd_financeiro):
+                        if rule.calcular:
                             regrasCalculadas.append(rule)
-                
+                            
                 if regrasCalculadas:
                     messages.error(request, f'Existem Regras Calculadas na Empresa {regra.cd_empresa} nas Filiais: {[int(row.cd_filial) for row in regrasCalculadas]}')
                 else:
                     regra.calcular = True if 'calcular_update' in request.POST else False
                     regra.somar_filiais = True if 'somar_filiais_update' in request.POST else False
                     regra.limite = context['form'].cleaned_data['limite_update']
+                    regra.observacoes = context['form'].cleaned_data['observacoes']
                     regra.valor = float(context['form'].cleaned_data['valor_update'].replace('.', '').replace(',', '.'))
+                    if regra.calcular != None or regra.somar_filiais != None:
+                        regra.have_rule = True
                     regra.save()
                     messages.success(request, "Alterado com sucesso")
                     

@@ -1,7 +1,7 @@
 from .lib.utils import numeric_to_string
 from decimal import Decimal
 
-class Inadimplencia:
+class InadimplenciaObj:
 
     def __init__(self, *args, **kwargs):
         self._recebido_apos_prazo = kwargs['recebido_apos_prazo']
@@ -14,7 +14,7 @@ class Inadimplencia:
         self._data2 = kwargs['data2']
 
     def __repr__(self):
-        return f"Inadimplencia({self._recebido_apos_prazo}, {self._aberto}, {self._faturado}, {self._inadimplencia}, {self._indice}, {self._data})"
+        return f"Inadimplencia(_recebido_apos_prazo: {self._recebido_apos_prazo}, _aberto: {self._aberto}, _faturado: {self._faturado}, _inadimplencia: {self._inadimplencia}, _indice: {self._indice}, _data: {self._data}), notas fiscal 1: {self._data1}, notas fiscal 2: {self._data2}"
 
     @staticmethod
     def instance_from_database_args(db_data):
@@ -36,8 +36,7 @@ class Inadimplencia:
             elif idx == 2:
                 kwargs['faturado'] = row['SUM'] or Decimal(0.0)
                 kwargs['data2'] = row['DATA'] 
-        print(kwargs)
-        return Inadimplencia(**kwargs)
+        return InadimplenciaObj(**kwargs)
 
     def total_inadimplencia(self):
         return self._recebido_apos_prazo + self._aberto

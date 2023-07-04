@@ -1,74 +1,245 @@
 {% extends '../../base.html' %}
-{% load static %}
 {% load bootstrap4 %}
+{% load static %}
 
 {% block body %}
-    
-    <style>
-        fieldset{ border:1px solid #5040c9; margin-bottom: 10px; margin-top: 10px;}
-        fieldset legend{ color: #5040c9; font-weight: 620; padding-right: 4px; padding-left: 4px;}
-        fieldset p{text-align: justify; font-weight: 500; line-height: 120%;}
 
-        .text-field{
-            outline: none; 
-            padding: 3px; padding-left: 5px; padding-right: 5px;
-            font-size: 16px; font-weight: 500; color: #352a83;
-            border: none; border-bottom: 1px solid #5040c9;   
-            transition: 0.4s;
-        }
-        .text-field:focus{
-            border-bottom: 2px solid #5040c9;   
-            border-top-right-radius: 6px; border-top-left-radius: 6px; 
-            background-color: #e3e1f5;
-            transition: 0.4s;
-        }
-        .button{
-            padding: 5px;
-            border-radius: 2px;
-            border: none; outline: none;
-            transition: 0.4s;
-        }
-        .button:hover{
-            transition: 0.4s;
-            padding: 6px;
-            margin-bottom: -1px;
-            
-        }
-        .btn-purple{
-            background-color: #5040c9;
-            color: white;
-        }
-        .v2{
-            color: #6f42c1;
-            border-color: #6f42c1;
-        }
-        .v2:hover{
-            background-color: #6f42c1;
-            color: #fff;
-        }
-    </style>
+<style>
+  .btn-orange{
+    background-color: #FD7E14;
+  }
+  input[type='checkbox'] {
+    -webkit-appearance:none;
+    width:25px;
+    height:25px;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+  }
+  input[type='checkbox']:checked {
+      background: #6F46B7;
+  }
+</style>
 
-    <br>
-    <br>
-    <section>
-        <div class="row">
-            <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
-                {% bootstrap_messages messages %}
-                <div class="card shadow-lg p-3 mb-5 bg-body rounded">
-                    <div class="card-body">
-                    <form method="POST" action="{% url 'inadimplentes' %}"> 
-                        {% csrf_token %}   
-                        <div class="text-center">
-                            <button class="btn btn-outline v2 " > 
-                                <i class="fas fa-file-download"></i> <strong> BAIXAR INADIMPLENTES</strong>
-                            </button> 
-                        </div>                      
-                    </form>
-                    </div>
-                </div>
+<main role="main" class="main-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">Relação de Inadimplência</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            {% bootstrap_messages messages %}
+            <div id="alert_geral_sucesso"></div>
+            <div class="card shadow">
+              <div class="card-header">
+                <label class="font-weight-bold" for="find_status">Filtrar Por SITUAÇÃO: </label>
+                <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search()" >
+                  <option value=""></option>
+                  <option value="ATIVADA">ATIVADAS</option>
+                  <option value="INATIVA">INATIVAS</option>
+                </select>
+                <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_export()">Exportar Relatório</a>
+                <a class="btn btn-primary float-right ml-3" style="color:#fff;" onclick="open_modal_calculo()">Realizar Cálculo</a>
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-1">
+                  <thead>
+                    <tr>
+                      <th>Competência</th>
+                      <th>% Inadimplente</th>
+                      <th>Data de elaboração</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for inadimplencia in inadimplencias %}
+                      <tr>
+                        <td class="h6 td_compet">{{inadimplencia.competencia}}</td>
+
+                        <td class="h6">{{inadimplencia.percent_inadimplente}} % 
+                          {% if inadimplencia.maior %}
+                            <i class="fas fa-arrow-up text-danger fa-lg ml-3"></i>
+                          {% elif inadimplencia.menor %}
+                            <i class="fas fa-arrow-down text-success fa-lg ml-3"></i>
+                          {% endif %}
+                        </td>
+
+                        <td class="h6">{{inadimplencia.data_elaboracao}}</td>
+
+                        {% if inadimplencia.ativo %}
+                          <td class="h6 text-success">ATIVADA</td>
+                        {% else %}
+                          <td class="h6 text-danger">INATIVA</td>
+                        {% endif %}
+
+                        <td>
+                          <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="text-muted sr-only">Action</span>
+                          </button>
+                          <div class="dropdown-menu dropdown-menu-right">
+                            <button class="dropdown-item text-primary" onclick="open_modal_view('{{inadimplencia.competencia}}', '{{inadimplencia.percent_inadimplente}}', '{{inadimplencia.data_elaboracao}}', '{{inadimplencia.ativo}}', '{{inadimplencia.vl_pagas_mes_seguinte}}', '{{inadimplencia.vl_notas_aberto}}', '{{inadimplencia.vl_faturado_mes_anterior}}', '{{inadimplencia.vl_inadimplente}}')">
+                              <i class="fe fe-eye fe-16 mr-2"></i> Detalhar Inadimplencia
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </div> <!-- simple table -->
         </div>
-    </section>
-    
+      </div> <!-- .col-12 -->
+    </div> <!-- .row -->
+  </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+<!-- MODAL EXPORT -->
+<div class="modal fade" id="modalExport" tabindex="-1" role="dialog" aria-labelledby="modalExportLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalExportLabel">Exportar Relatório</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'export_inadimplentes' %}">
+                {% csrf_token %}
+                <div id="error_aviso_edit"></div>
+
+                <div class="col-12 col-sm-12 mt-4">
+                  <label class="font-weight-bold" for="compet">Escolha a Competência</label>
+                  <select class="custom-select ml-2" style="max-width: 250px" id="compet_relatorio" name="compet" required></select>
+                </div>
+
+                <button class="btn btn-outline-success float-right mt-5">
+                    <strong>Exportar Relatório</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VIEW -->
+<div class="modal fade" id="modalView" tabindex="-1" role="dialog" aria-labelledby="modalViewLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalViewLabel">Visualizar Inadimplência</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <p class="h5">Competência: <strong id="competencia_campo" class="text-info"></strong></p>
+          <p class="h5">Porcentagem da Inadimplência: <strong id="percent_inadimplente_campo" class="text-info"></strong></p>
+          <p class="h5">Data da Realização do Cálculo: <strong id="data_elaboracao_campo" class="text-info"></strong></p>
+          <p class="h5">Ativo? <strong id="ativo_campo" class="text-info"></strong></p>
+          <p class="h5">Pagas Mês Seguinte: <strong id="vl_pagas_mes_seguinte_campo" class="text-info"></strong></p>
+          <p class="h5">Notas em Aberto: <strong id="vl_notas_aberto_campo" class="text-info"></strong></p>
+          <p class="h5">Faturado Mês Anterior: <strong id="vl_faturado_mes_anterior_campo" class="text-info"></strong></p>
+          <p class="h5">Valor Inadimplente: <strong id="vl_inadimplente_campo" class="text-info"></strong></p>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REALIZAR CALCULO -->
+<div class="modal fade" id="modalCalculo" tabindex="-1" role="dialog" aria-labelledby="modalCalculoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+          <h5 class="modal-title" id="modalCalculoLabel">Deseja Realizar o Calculo das Inadimplências ?</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+          </button>
+      </div>
+      <div class="modal-body">
+          <form method="POST" action="{% url 'inadimplentes' %}">
+            {% csrf_token %}
+
+            {% if existsInadimplencia %}
+              <div class="col-12 col-sm-12 mt-4">
+                  <label class="font-weight-bold" for="observacoes">Já existe uma Inadimplência Calculada, justifique a ação:</label>
+                  <textarea name="observacoes" cols="40" rows="4" class="form-control" required id="observacoes"></textarea>
+              </div>
+            {% endif %}
+
+            <center>
+              <button class="btn btn-outline-success btn-lg mt-5" style="width: 100%;">
+                <strong>Realizar Cálculo</strong>
+              </button>
+            </center>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function open_modal_export(){
+    var listCompet = []
+    for (compet of document.getElementsByClassName('td_compet')){
+      if (!listCompet.includes(compet.textContent)){
+        listCompet.push(compet.textContent)
+      }
+      continue
+    }
+    var myModal = new bootstrap.Modal(document.getElementById('modalExport'))
+    document.getElementById('compet_relatorio').innerHTML = `
+      ${listCompet.map((el) => {
+        return `<option value="${el}">${el}</option>\n`
+      })}
+    `
+    myModal.toggle()
+  }
+
+  function open_modal_view(competencia, percent_inadimplente, data_elaboracao, ativo, vl_pagas_mes_seguinte, vl_notas_aberto, vl_faturado_mes_anterior, vl_inadimplente){
+    document.getElementById('percent_inadimplente_campo').innerText = percent_inadimplente.slice(0,4).concat(' %')
+    document.getElementById('ativo_campo').innerText = ativo === 'True' ? 'ATIVA' : 'INATIVA'
+    document.getElementById('vl_pagas_mes_seguinte_campo').innerText = parseFloat(vl_pagas_mes_seguinte.replace(",",'.')).toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+    document.getElementById('vl_notas_aberto_campo').innerText = parseFloat(vl_notas_aberto.replace(",",'.')).toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+    document.getElementById('vl_faturado_mes_anterior_campo').innerText = parseFloat(vl_faturado_mes_anterior.replace(",",'.')).toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+    document.getElementById('vl_inadimplente_campo').innerText = parseFloat(vl_inadimplente.replace(",",'.')).toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+    document.getElementById('competencia_campo').innerText = competencia;
+    document.getElementById('data_elaboracao_campo').innerText = data_elaboracao
+    var myModal = new bootstrap.Modal(document.getElementById('modalView'))
+    myModal.toggle()
+  }
+
+  function open_modal_calculo(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalCalculo'))
+    myModal.toggle()
+  }
+
+</script>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="{% static 'js/uppy.min.js' %}"></script>
+<script src="{% static 'js/quill.min.js' %}"></script>
+
+<script>
+  var table = $('#dataTable-1').DataTable();
+
+  function search(){
+    table.search(document.getElementById("find_status").value).draw();
+  }
+</script>
+
 {% endblock %}
     
