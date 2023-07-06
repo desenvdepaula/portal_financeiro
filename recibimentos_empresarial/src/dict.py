@@ -92,6 +92,13 @@ def get_dicionario():
                             'contabil':142
                         }
                     },
+                    72:{
+                        'NF':{
+                            'corrente':68,
+                            'historico':242,
+                            'contabil':142
+                        }
+                    },
                     71:{
                         'NF':{
                             'corrente':57,
