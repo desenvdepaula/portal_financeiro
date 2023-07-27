@@ -157,15 +157,27 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
 MEDIA_URL = "/media/"
+MEDIA_ROOT =  BASE_DIR / "media"
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-MEDIA_ROOT =  BASE_DIR / "media"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+CORS_ALLOWED_ORIGINS = ['*']
+
+CORS_ALLOW_HEADERS = (
+    'X-KEY',
+    'CONTENT-TYPE',
+    'X-CUSTOM-TOKEN'
+)
+
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 LOGIN_URL = 'request_login'
 AUTH_USER_MODEL = 'usuarios.Usuario'
