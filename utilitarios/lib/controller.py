@@ -137,7 +137,7 @@ class Controller():
             connection.connect()
             zip_file = zipfile.ZipFile( settings.BASE_DIR / 'temp/files/separador_boletos/Boletos.zip', 'w')
             
-            pathFolder = 'temp/files/separador_boletos/'
+            pathFolder = settings.BASE_DIR / 'temp/files/separador_boletos/'
             array = []
             inputpdf = PdfReader(open(path, "rb"))
             for i in range(len(inputpdf.pages)):
@@ -188,14 +188,14 @@ class Controller():
 
                 output = PdfWriter()
                 output.add_page(page)
-                existe = os.path.isfile(f'temp/files/separador_boletos/{fileName}.pdf')
+                existe = os.path.isfile(settings.BASE_DIR / f'temp/files/separador_boletos/{fileName}.pdf')
                 
                 if existe:
-                    with open(f"temp/files/separador_boletos/{fileName}_{i}.pdf", "wb") as outputStream:
+                    with open(settings.BASE_DIR / f"temp/files/separador_boletos/{fileName}_{i}.pdf", "wb") as outputStream:
                         output.write(outputStream)
                     array.append(f"{fileName}.pdf")
                 else:
-                    with open(f"temp/files/separador_boletos/{fileName}.pdf", "wb") as outputStream:
+                    with open(settings.BASE_DIR / f"temp/files/separador_boletos/{fileName}.pdf", "wb") as outputStream:
                         output.write(outputStream)
 
             for pdf in array:
