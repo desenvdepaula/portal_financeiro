@@ -117,7 +117,7 @@ class Controller():
                 newDFlist.append(row)
                 
             newDF = pd.DataFrame(newDFlist,columns=dfHeader)        
-            newDF.to_csv(f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, line_terminator='\r\n', encoding="utf8")
+            newDF.to_csv(settings.BASE_DIR / f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, line_terminator='\r\n', encoding="utf8")
 
         except Exception as ex:
             print("Ocorreu um erro ao executar esta operação: {0}".format(ex))

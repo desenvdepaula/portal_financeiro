@@ -4,6 +4,7 @@ from django.views import View
 from django.contrib import messages
 from datetime import date, datetime
 import os
+from django.conf import settings
 
 from .forms import EmissaoNFManualForm, BoletosForm, NotasAntecipadasForm, EmissaoNFForm
 from .lib.controller import Controller
@@ -116,8 +117,8 @@ class EmissaoNFManual(View):
 
     def excluirArquivos(self):
         try:
-            for file in os.listdir('temp/files/emissao_nf_manual/'):
+            for file in os.listdir(settings.BASE_DIR / 'temp/files/emissao_nf_manual/'):
                 if not ".py" in file:
-                    os.remove(f'temp/files/emissao_nf_manual/{file}')
+                    os.remove(settings.BASE_DIR / f'temp/files/emissao_nf_manual/{file}')
         except OSError as e:
             print(f"Error:{ e }")
