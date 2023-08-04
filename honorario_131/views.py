@@ -84,7 +84,7 @@ class RegrasHonorarioView(View):
                     regra.calcular = True if 'calcular' in request.POST else False
                     regra.somar_filiais = True if 'somar_filiais' in request.POST else False
                     regra.limite = context['form'].cleaned_data['limite']
-                    regra.valor = float(self.cleaned_data['valor'].replace('.','').replace(',','.'))
+                    regra.valor = float(context['form'].cleaned_data['valor'].replace('.','').replace(',','.'))
                 else:
                     regra.have_rule = False
                     regra.calcular = None
