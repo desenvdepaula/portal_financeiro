@@ -12,7 +12,7 @@ from .models import Usuario
 #     list_display = ('first_name', 'last_name', 'email' )
 #     fieldsets = (
 #         (None, { 'fields': ('username','password')}),
-#         ('Informações Pessoais', {'fields':('first_name','last_name','nr_contato','email','foto')}),
+#         ('Informações Pessoais', {'fields':('first_name','last_name', 'email','foto')}),
 #         ('Permissões',{ 'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions') }),
 #         ('Datas Importantes', {'fields': ('last_login','date_joined') })
 #     )

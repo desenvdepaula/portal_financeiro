@@ -34,8 +34,13 @@ class UsuarioManager(BaseUserManager):
         return self.create_user(email,  password, **extra_fields)
             
 class Usuario(AbstractUser):
-    nr_contato = models.CharField("N° de Contato", max_length = 25)
     foto = models.ImageField("Foto",upload_to=get_file_path, blank=True)
+    
+    departamento = models.CharField("Departamento",max_length = 255, blank=True, null=True)
+    cd_tareffa = models.CharField("Código Tareffa",max_length = 10, blank=True, null=True)
+    cd_questor = models.CharField("Código Questor",max_length = 10, blank=True, null=True)
+    cd_folha = models.CharField("Folha",max_length = 10, blank=True, null=True)
+    date_aniversario = models.DateField(blank=True, null=True)
     
     _default_manager = 'pid_db'
 

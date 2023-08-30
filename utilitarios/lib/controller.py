@@ -24,7 +24,7 @@ class Controller():
             connection.connect()
             servico = 200 if destino in [505,567,575] else 0
             notas = tuple(list_nota) if len(list_nota) > 1 else f"({tuple(list_nota)[0]})"
-            cd_usuario = codigos_do_usuario.split("|")[0]
+            cd_usuario = codigos_do_usuario if codigos_do_usuario else 0
             svariavel = SQLSNotasAntecipadas.sqlNotasAntecipadas(servico, origem, destino, notas, cd_usuario)
             connection.execute_sql(svariavel)
             connection.commit_changes()

@@ -23,7 +23,7 @@ def request_notas_antecipadas(request):
                     context['form'].cleaned_data['escritorio_origem'],
                     context['form'].cleaned_data['escritorio_destino'],
                     notas,
-                    request.user.nr_contato
+                    request.user.cd_questor
                 )
             except Exception as ex:
                 messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
