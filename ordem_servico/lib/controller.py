@@ -5,6 +5,7 @@ import pandas as pd
 from django.http import HttpResponse
 from ..models import OrdemServico
 from .database import Manager, ManagerTareffa
+from .querys import filter_planilha
 
 class Controller():
 
@@ -16,8 +17,9 @@ class Controller():
 
     #------------------ AUDITORIA 131 ------------------#
     
-    def gerarPlanilhasOrdens(self):
+    def gerarPlanilhasOrdens(self, filtros):
         try:
+            results = filter_planilha(filtros)
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
@@ -25,7 +27,7 @@ class Controller():
                 alignCenter = workbook.add_format({'align': 'left'})
                 listOrdens = []
                 
-                for ordem in OrdemServico.objects.all():
+                for ordem in results:
                     ordem = vars(ordem)
                     del ordem['_state']
                     del ordem['id']
@@ -80,11 +82,11 @@ class Controller():
                 )
                 response['Content-Disposition'] = 'attachment; filename=%s' % filename
                 return response
-                
+
         except Exception as err:
             raise Exception(err)
     
-    def update_ordem_servico(self, cleaned_data):
+    def update_ordem_servico(self, cleaned_data, user):
         try:
             self.manager.connect()
             query = self.manager.execute_sql(f"SELECT NOMEEMPRESA FROM EMPRESA WHERE CODIGOEMPRESA = {cleaned_data.get('empresa')}")
@@ -95,62 +97,49 @@ class Controller():
             nome_empresa = list(list_nomes[0])[0]
             cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
             
-            ordem = OrdemServico.objects.get(id=cleaned_data.get('id_ordem'))
-            
-            ordem.cd_servico = cd_servico
-            ordem.servico = servicoDesc
-            ordem.ds_servico = cleaned_data.get('descricao')
-            ordem.observacoes_servico = cleaned_data.get('descricao_servico')
-            ordem.cd_empresa = cleaned_data.get('empresa')
-            ordem.nome_empresa = nome_empresa
-            ordem.data_realizado = cleaned_data.get('data')
-            ordem.data_cobranca = cleaned_data.get('data_cobranca')
-            ordem.quantidade = cleaned_data.get('quantidade')
-            ordem.hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M')
-            ordem.valor = cleaned_data.get('valor')
-            ordem.autorizado_pelo_cliente = cleaned_data.get('autorizacao')
-            ordem.type_solicitacao = cleaned_data.get('solicitacaoLocal')
-            ordem.solicitado = cleaned_data.get('solicitacao')
-            ordem.executado = cleaned_data.get('executado')
+            if cleaned_data.get('id_ordem'):
+                ordem = OrdemServico.objects.get(id=cleaned_data.get('id_ordem'))
+                ordem.cd_servico = cd_servico
+                ordem.servico = servicoDesc
+                ordem.ds_servico = cleaned_data.get('descricao')
+                ordem.observacoes_servico = cleaned_data.get('descricao_servico')
+                ordem.cd_empresa = cleaned_data.get('empresa')
+                ordem.nome_empresa = nome_empresa
+                ordem.data_realizado = cleaned_data.get('data')
+                ordem.data_cobranca = cleaned_data.get('data_cobranca')
+                ordem.quantidade = cleaned_data.get('quantidade')
+                ordem.hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M')
+                ordem.valor = cleaned_data.get('valor')
+                ordem.autorizado_pelo_cliente = cleaned_data.get('autorizacao')
+                ordem.type_solicitacao = cleaned_data.get('solicitacaoLocal')
+                ordem.solicitado = cleaned_data.get('solicitacao')
+                ordem.executado = cleaned_data.get('executado')
+            else:
+                ordem = OrdemServico(
+                    cd_servico = cd_servico,
+                    servico = servicoDesc,
+                    ds_servico = "NULL",
+                    observacoes_servico = cleaned_data.get('descricao_servico'),
+                    cd_empresa = cleaned_data.get('empresa'),
+                    nome_empresa = nome_empresa,
+                    data_realizado = cleaned_data.get('data'),
+                    data_cobranca = cleaned_data.get('data_cobranca'),
+                    quantidade = cleaned_data.get('quantidade'),
+                    hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M'),
+                    valor = cleaned_data.get('valor'),
+                    autorizado_pelo_cliente = cleaned_data.get('autorizacao'),
+                    type_solicitacao = cleaned_data.get('solicitacaoLocal'),
+                    solicitado = cleaned_data.get('solicitacao'),
+                    executado = cleaned_data.get('executado'),
+                    criador_os = user
+                )
+                if cleaned_data.get('typeCreate') == 'DEBITADO':
+                    ordem.debitar = True
+                if cleaned_data.get('typeCreate') == 'ARQUIVADO':
+                    ordem.arquivado = True
+        except Exception as err:
+            raise err
+        else:
             ordem.save()
-            
-        except Exception as err:
-            raise err
-        finally:
-            self.manager.disconnect()
-            
-    def create_ordem_servico_arquivado(self, cleaned_data, user):
-        try:
-            self.manager.connect()
-            query = self.manager.execute_sql(f"SELECT NOMEEMPRESA FROM EMPRESA WHERE CODIGOEMPRESA = {cleaned_data.get('empresa')}")
-            list_nomes = [nome for nome in query]
-            if not list_nomes:
-                raise Exception(f"Esta Empresa: {cleaned_data.get('empresa')} Não possui nome, Provavelmente não existe, escreva novamente !")
-            
-            nome_empresa = list(list_nomes[0])[0]
-            cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
-            
-            OrdemServico.objects.create(
-                cd_servico = cd_servico,
-                servico = servicoDesc,
-                ds_servico = "NULL",
-                observacoes_servico = cleaned_data.get('descricao_servico'),
-                cd_empresa = cleaned_data.get('empresa'),
-                nome_empresa = nome_empresa,
-                data_realizado = cleaned_data.get('data'),
-                data_cobranca = cleaned_data.get('data_cobranca'),
-                quantidade = cleaned_data.get('quantidade'),
-                hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M'),
-                valor = cleaned_data.get('valor'),
-                autorizado_pelo_cliente = cleaned_data.get('autorizacao'),
-                type_solicitacao = cleaned_data.get('solicitacaoLocal'),
-                solicitado = cleaned_data.get('solicitacao'),
-                executado = cleaned_data.get('executado'),
-                criador_os = user,
-                arquivado = True
-            )
-            
-        except Exception as err:
-            raise err
         finally:
             self.manager.disconnect()

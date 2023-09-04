@@ -19,15 +19,6 @@
   input[type='checkbox']:checked {
       background: #6F46B7;
   }
-  .v2-form{
-    color: #6f42c1;
-    border-color: #6f42c1;
-    width: 100%;
-  }
-  .v2-form:hover{
-      background-color: #6f42c1;
-      color: #fff;
-  }
 </style>
 
 <main role="main" class="main-content">
@@ -40,31 +31,36 @@
           <div class="col-md-12">
             {% bootstrap_messages messages %}
             <div id="alert_geral_sucesso"></div>
-            <div class="card shadow">
+            <div class="card shadow" id="cardOs">
               <div class="card-header d-flex justify-content-between">
                 <div class="d-lg-flex">
-                  <label class="font-weight-bold" for="find_status">Status: </label>
-                  <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search()" >
-                    <option value=""></option>
+                  <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search(event)" >
+                    <option value="">Status...</option>
                     <option value="DEBITAR">DEBITAR</option>
-                    <option value="NÃO TRATADO">NÃO TRATADO</option>
+                    <option value="DEBITADO">DEBITADO</option>
+                    <option value="ARQUIVADO">ARQUIVADO</option>
                   </select>
                 </div>
                 <div class="d-lg-flex">
                   <input 
                       type="date" 
                       id="min-date"
-                      class="date-range-filter form-control mr-3"
+                      name="min_date"
+                      title="Início do Período"
+                      class="date-range-filter form-control"
                       placeholder="Período Inicial:">
-
+                  &nbsp;&nbsp;
                   <input 
                       type="date" 
                       id="max-date" 
+                      name="max_date" 
+                      title="Fim do Período" 
                       class="date-range-filter form-control"
                       placeholder="Período Final:">
                 </div>
                 <div>
                   <a class="btn btn-orange" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
+                  <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
                 </div>
               </div>
               <div class="card-body">
@@ -76,25 +72,34 @@
                       <th>Serviço</th>
                       <th>Data da Cobrança</th>
                       <th>Valor</th>
-                      <th>Debitar</th>
+                      <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for ordem in ordens %}
                       <tr>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.cd_empresa}} - {{ordem.nome_empresa}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.servico}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.data_cobranca}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{{ordem.valor}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% endif %}">{% if ordem.debitar %} DEBITAR {% else %} NÃO TRATADO {% endif %}</td>
+                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.cd_empresa}} - {{ordem.nome_empresa}}</td>
+                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}}</td>
+                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
+                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}}</td>
+
+                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}"> 
+                          {% if ordem.debitar %} 
+                            DEBITADO
+                          {% elif ordem.arquivado %} 
+                            ARQUIVADO 
+                          {% else %}
+                            DEBITAR
+                          {% endif %}
+                        </td>
 
                         <td>
                           <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="text-muted sr-only">Action</span>
                           </button>
                           <div class="dropdown-menu dropdown-menu-right">
-                            <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-edit fe-16 mr-2"></i> Visualizar Ordem</button>
+                            <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Ordem</button>
 
                             <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
 
@@ -104,6 +109,15 @@
                       </tr>
                     {% endfor %}
                   </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Serviço</th>
+                      <th>Data da Cobrança</th>
+                      <th>Valor</th>
+                      <th id="filterDebitar">Status</th>
+                    </tr>
+                </tfoot>
                 </table>
               </div>
             </div>
@@ -113,6 +127,7 @@
     </div> <!-- .row -->
   </div> <!-- .container-fluid -->
 </main> <!-- main -->
+
 
 <!-- MODAL Create Regra -->
 <div class="modal fade" id="modalEditOrdem" tabindex="-1" role="dialog" aria-labelledby="modalEditOrdemLabel" aria-hidden="true">
@@ -129,8 +144,11 @@
             <form method="POST" action="{% url 'list_ordem_servico' %}">
                 {% csrf_token %}
 
-                <input type="number" name="id_ordem" required id="id_ordem_form" style="display: none;">
-                  
+                <input type="number" name="id_ordem" id="id_ordem_form" style="display: none;">
+
+                <div class="form-row" id="typecreate_ordem"></div>
+                <br>
+                <br>
                 <div class="form-row">
                     {% bootstrap_field form.empresa label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
                     {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
@@ -151,9 +169,9 @@
                 <div class="form-row">
                     <div class="col-12 col-sm-12">
                         <label class="font-weight-bold" for="id_descricao">Descrição:</label>
-                        <textarea name="descricao" cols="40" rows="2" class="form-control" required id="id_descricao" onkeyup="contabilizar(event)"></textarea>
+                        <textarea name="descricao" cols="40" rows="2" class="form-control" id="id_descricao" onkeyup="contabilizar(event)"></textarea>
                         <small class="form-text text-muted">Descrever a Descrição <b id="caracteres_descricao">51 Caracteres</b></small>
-                    </div>                                         
+                    </div>
                 </div>
                 <br>
                 <br>
@@ -184,8 +202,8 @@
                 <br>
                 <br>
 
-                <button class="btn btn-outline v2-form float-right mt-3" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
-                    <strong>Editar Ordem de Serviço</strong>
+                <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                    <strong>Executar</strong>
                 </button>
             </form>
         </div>
@@ -227,7 +245,7 @@
         </div>
         <div class="modal-body" id="view_ordem"></div>
         <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-warning" id="button_arquive_view">Arquivar / Ignorar Ordem de Serviço</button>
+          <button type="button" class="btn btn-warning" id="button_arquive_view"></button>
           <button type="button" id="button_debito_view"></button>
         </div>
     </div>
@@ -246,8 +264,9 @@
         <div class="modal-body">
             <form method="POST" action="{% url 'baixar_planilha_ordens_servico' %}">
               {% csrf_token %}
+              <div id="div_inputs_filter"></div>
               <center>
-                <button class="btn btn-outline-success btn-lg">
+                <button class="btn btn-outline-success btn-lg mt-5">
                   <strong>Baixar Planilha</strong>
                 </button>
               </center>
@@ -308,6 +327,9 @@
     document.getElementById('id_data').value = ordem.data_realizado.split('/').reverse().join('-')
     document.getElementById('id_data_cobranca').value = ordem.data_cobranca.split('/').reverse().join('-')
     document.getElementById('id_servico').value = ordem.cd_servico + ' * ' + ordem.servico
+    document.getElementById('id_descricao').disabled = false
+    document.getElementById('id_descricao').required = true
+    document.getElementById('id_ordem_form').required = true
     document.getElementById('id_descricao').value = ordem.ds_servico
     document.getElementById('id_descricao_servico').value = ordem.observacoes_servico
     document.getElementById('id_quantidade').value = parseInt(ordem.quantidade)
@@ -316,6 +338,7 @@
     document.getElementById('id_solicitacaoLocal').value = ordem.type_solicitacao
     document.getElementById('id_solicitacao').value = ordem.solicitado
     document.getElementById('id_executado').value = ordem.executado
+    document.getElementById('typecreate_ordem').innerHTML = ''
     contabilizar_edit()
     myModal.toggle()
   }
@@ -329,12 +352,70 @@
 
   function open_modal_auditoria(){
     var myModal = new bootstrap.Modal(document.getElementById('modalAuditoria'))
+    let filtros_input = document.getElementById('cardOs').getElementsByTagName('input');
+    let campos = []
+    for (input of filtros_input){
+      if (input.value && input.type !== 'search'){
+        campos.push(input)
+      }
+    }
+    document.getElementById('div_inputs_filter').innerHTML = campos.length > 0 ? `
+      <h3 class="mb-5">Escolha os Filtros:</h3>
+      ${campos.map(input => {
+        return `
+          <div class="form-row mt-3">
+            <div class="col-12 col-sm-12">
+              <label class="font-weight-bold" for="cd_empresa">${input.title}:</label>
+              <div class="input-group mb-3">
+                <input type="${input.type}" class="${input.className}" name="${input.name}" placeholder="${input.title}" aria-label="${input.title}" aria-describedby="button-addon2" value="${input.value}" required>
+                <button class="btn btn-outline-danger" type="button" onclick="return this.parentNode.parentNode.parentNode.remove()" id="button-addon2"><i class="fe fe-trash-2 fe-16"></i>Deletar Filtro</button>
+              </div>
+            </div>
+          </div>
+        `
+      }).join("\n")}
+    ` : ''
+    myModal.toggle()
+  }
+
+  function open_modal_add_os(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'))
+    document.getElementById('modalEditOrdemLabel').textContent = `Adicionar Ordem de Serviço`
+    document.getElementById('id_ordem_form').value = ''
+    document.getElementById('id_empresa').value = ''
+    document.getElementById('id_execucao').value = ''
+    document.getElementById('id_data').value = ''
+    document.getElementById('id_data_cobranca').value = ''
+    document.getElementById('id_servico').value = ''
+    document.getElementById('id_descricao').value = ''
+    document.getElementById('id_descricao').disabled = true
+    document.getElementById('id_descricao').required = false
+    document.getElementById('id_ordem_form').required = false
+    document.getElementById('id_descricao_servico').value = ''
+    document.getElementById('id_quantidade').value = ''
+    document.getElementById('id_valor').value = ''
+    document.getElementById('id_autorizacao').value = ''
+    document.getElementById('id_solicitacaoLocal').value = ''
+    document.getElementById('id_solicitacao').value = ''
+    document.getElementById('id_executado').value = ''
+    document.getElementById('typecreate_ordem').innerHTML = `
+      <div class="col-12 col-sm-12">
+        <label class="font-weight-bold" for="id_typeCreate">Opções de Cadastro: </label>
+        <select name="typeCreate" class="form-control" required id="id_typeCreate">
+          <option valeu=''></option>
+          <option valeu='DEBITAR'>À DEBITAR</option>
+          <option valeu='DEBITADO'>DEBITADO</option>
+          <option valeu='ARQUIVADO'>ARQUIVADO</option>
+        </select>
+      </div>
+    `
     myModal.toggle()
   }
 
   function abrir_modal_view_ordem(ordem){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
     let button_debito = document.getElementById('button_debito_view')
+    let button_arquive = document.getElementById('button_arquive_view')
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
         <li class="list-group-item h5">Empresa: ${ordem.cd_empresa} - ${ordem.nome_empresa}</li>
@@ -353,10 +434,20 @@
         <li class="list-group-item h5">Quem Criou a OS: ${ordem.criador_os}</li>
       </ul>
     `
-    button_debito.textContent = ordem.debitar ? 'Cancelar Débito da Ordem de Serviço' : 'Debitar Ordem de Serviço'
-    button_debito.className = ordem.debitar ? 'btn btn-danger text-white' : 'btn btn-success text-white'
-    button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${ordem.debitar ? "False" : "True" }')`)
-    document.getElementById('button_arquive_view').setAttribute('onclick', `arquivar_os(event, ${ordem.id})`)
+    if (ordem.arquivado){
+      button_debito.style.display = 'none'
+      button_arquive.textContent = "Remover do Arquivado"
+      button_arquive.className = 'btn btn-danger text-white'
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "False")`)
+    }else{
+      button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço"
+      button_arquive.className = 'btn btn-success text-white'
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True")`)
+      button_debito.style.display = 'block'
+      button_debito.textContent = ordem.debitar ? 'Cancelar Débito da Ordem de Serviço' : 'Debitar Ordem de Serviço'
+      button_debito.className = ordem.debitar ? 'btn btn-danger text-white' : 'btn btn-success text-white'
+      button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${ordem.debitar ? "False" : "True" }')`)
+    }
     myModal.toggle()
   }
 
@@ -396,10 +487,10 @@
     })
   }
 
-  function arquivar_os(e, id_ordem){
+  function arquivar_os(e, id_ordem, bool){
     e.preventDefault();
     $.ajax({
-      url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}?arquivar=True`,
+      url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}?arquivar=${bool}`,
       type: 'GET',
       success: function(data){
         if (Object.values(data).includes('sucesso')){
@@ -460,13 +551,51 @@
 <script src="{% static 'js/jquery.validate.min.js' %}"></script>
 <script src="{% static 'js/uppy.min.js' %}"></script>
 <script src="{% static 'js/quill.min.js' %}"></script>
-<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js" type="text/javascript"></script>
+<script src="https://cdn.datatables.net/plug-ins/1.10.19/sorting/datetime-moment.js" type="text/javascript"></script>
 
 <script>
-  var table = $('#dataTable-1').DataTable();
 
-  function search(){
-    table.search(document.getElementById("find_status").value).draw();
+  $.fn.dataTable.ext.errMode = 'throw';
+  $.fn.dataTable.moment('DD/MM/YYYY');
+
+  var table = $('#dataTable-1').DataTable({
+        initComplete: function () {
+            this.api()
+                .columns()
+                .every(function () {
+                    let column = this;
+                    let title = column.footer() ? column.footer().textContent : null;
+                    if (title){
+                        let input = document.createElement('input');
+                        input.placeholder = title;
+                        if (title === 'Valor'){
+                          input.className = "form-control input-money"
+                        }else if (title === 'Empresa'){
+                          input.className = "form-control cd_empresa"
+                        }else if (title === 'Data da Cobrança'){
+                          input.className = "form-control dataMask"
+                        }else if (title === 'Debitar' || title === 'Serviço'){
+                          input.className = "form-control funcion_lower"
+                        }else{
+                          input.className = "form-control"
+                        }
+                        input.name = title.toLowerCase().split(' ').join("_").replace("ç", "c")
+                        input.title = title
+                        column.footer().replaceChildren(input);
+                        input.addEventListener('keyup', () => {
+                            if (column.search() !== this.value) {
+                                column.search(input.value).draw();
+                            }
+                        });
+                    }
+                });
+        }
+    });
+
+  function search(event){
+    document.querySelector("#filterDebitar input").value = event.target.value;
+    table.columns(4).search(event.target.value).draw();
   }
 
   $('.input-money').mask("#.##0,00",
@@ -478,6 +607,10 @@
   {
     reverse: true
   });
+  $('.dataMask').mask("00/00/0000",
+  {
+    reverse: true
+  });
 
   $.fn.dataTableExt.afnFiltering.push(
     function( settings, data, dataIndex ) {
@@ -486,10 +619,10 @@
         var createdAt = data[2] || 2;
         var startDate = moment(min, "DD/MM/YYYY").subtract('1','days');
         var endDate = moment(max, "DD/MM/YYYY").add('1','days');
-        var diffDate = moment(createdAt, "DD/MM/YYYY");
+        var diferencaDate = moment(createdAt, "DD/MM/YYYY");
         if (
           (min == "" || max == "") ||
-          (diffDate.isBetween(startDate, endDate))
+          (diferencaDate.isBetween(startDate, endDate))
         ) {  return true;  }
         return false;
     }
@@ -498,6 +631,10 @@
   $('.date-range-filter').change( function() {
       table.draw();
   } );
+
+  $('.funcion_lower').on('keyup', (event) => {
+    event.target.value = event.target.value.toUpperCase().trim()
+  });
 
 </script>
 
