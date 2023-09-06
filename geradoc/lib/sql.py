@@ -9,7 +9,7 @@ class InadimplenciaSqls:
                 FROM CONTARECEBER CR
                 LEFT JOIN CONTARECEBIDA CD ON CR.CODIGOESCRIT = CD.CODIGOESCRIT AND
                 CR.NUMERODCTOCR = CD.NUMERODCTOCR
-                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567) AND
+                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575) AND
                 DATAEMISSAOCR BETWEEN dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AND
                 dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AND
                 STATUSCR = 3 and
@@ -21,7 +21,7 @@ class InadimplenciaSqls:
                 FROM CONTARECEBER CR
                 LEFT JOIN CONTARECEBIDA CD ON CR.CODIGOESCRIT = CD.CODIGOESCRIT AND
                 CR.NUMERODCTOCR = CD.NUMERODCTOCR
-                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567) AND
+                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575) AND
                 DATAEMISSAOCR BETWEEN dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AND
                 dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AND
                 STATUSCR = 1 AND

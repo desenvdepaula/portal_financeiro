@@ -101,7 +101,9 @@
                           <div class="dropdown-menu dropdown-menu-right">
                             <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Ordem</button>
 
-                            <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
+                            {% if not ordem.ordem_debitada_id %}
+                              <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
+                            {% endif %}
 
                             <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
                           </div>
@@ -482,7 +484,7 @@
         }
       },
       error: function(data){
-        mostrarAlert('error_aviso_view', 'danger', data.statusText)
+        mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
   }
@@ -500,7 +502,7 @@
         }
       },
       error: function(data){
-        mostrarAlert('error_aviso_view', 'danger', data.statusText)
+        mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
   }
@@ -519,7 +521,7 @@
         window.location.href = "{% url 'list_ordem_servico' %}";
       },
       error: function(data){
-        mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+        mostrarAlert('error_aviso_delete', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
   }
@@ -527,9 +529,9 @@
   function mostrarAlert(div_id_class, type_alert, mensagem){
     document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
 
-    /*setTimeout(() => {
+    setTimeout(() => {
       $('.alert').alert('close')
-    }, 5000)*/
+    }, 5000)
   }
 
   function fecharModal(modalClass){

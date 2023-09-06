@@ -20,3 +20,4 @@ class OrdemServico(models.Model):
     criador_os = models.CharField(max_length=255)
     debitar = models.BooleanField(default=False)
     arquivado = models.BooleanField(default=False)
+    ordem_debitada_id = models.IntegerField(blank=True, null=True)

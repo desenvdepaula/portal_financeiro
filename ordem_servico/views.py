@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.contrib import messages
 from django.views import View
 
@@ -49,11 +49,14 @@ class OrdemServicoView(View):
     def delete(request):
         try:
             ordem = OrdemServico.objects.get(id=int(request.POST.get('id_ordem')))
+            controller = Controller()
+            if ordem.ordem_debitada_id:
+                controller.delete_ordem_servico_debitada(ordem)
             cd_empresa = ordem.cd_empresa
             text = f"Serviço: {ordem.servico}, Realizado: {ordem.data_realizado}, Executado: {ordem.executado}, Quantidade: {ordem.quantidade}, Valor: {ordem.valor}"
             ordem.delete()
         except Exception as err:
-            raise Exception(err)
+            return JsonResponse({"error": str(err)}, status=500)
         else:
             request_project_log(cd_empresa, text, "ORDEM DE SERVIÇO / DELETAR ORDEM", request.user.username)
             return JsonResponse({'msg': 'correto'})
@@ -75,23 +78,19 @@ class OrdemServicoView(View):
         
     def request_debitar_ordem_servico(request, id_ordem):
         try:
-            ordem = OrdemServico.objects.get(id=id_ordem)
-            ordem.debitar = request.GET.get('debitar')
-            ordem.save()
+            controller = Controller()
+            controller.debitar_or_delete_ordem_servico(id_ordem, request.GET.get('debitar') == 'True')
         except Exception as err:
-            raise Exception(err)
+            return JsonResponse({"error": str(err)}, status=500)
         else:
             return JsonResponse({"msg": 'sucesso'}, status=200)
             
     def request_arquivar_ordem_servico(request, id_ordem):
         try:
-            ordem = OrdemServico.objects.get(id=id_ordem)
-            if ordem.debitar:
-                ordem.debitar = False
-            ordem.arquivado = request.GET.get('arquivar')
-            ordem.save()
+            controller = Controller()
+            controller.debitar_or_delete_ordem_servico(id_ordem, False, arquivar=request.GET.get('arquivar') == 'True')
         except Exception as err:
-            raise Exception(err)
+            return JsonResponse({"error": str(err)}, status=500)
         else:
             return JsonResponse({"msg": 'sucesso'}, status=200)
 
