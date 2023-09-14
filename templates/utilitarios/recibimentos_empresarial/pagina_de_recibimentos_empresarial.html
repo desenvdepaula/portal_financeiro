@@ -6,6 +6,9 @@
 
 {% block body %}
     <style>
+        fieldset{ border:1px solid #0d6efd; margin-bottom: 10px; margin-top: 10px;}
+        fieldset legend{ color: #0d6efd; font-weight: 350; padding-right: 4px; padding-left: 4px; margin-bottom: 20px;}
+        fieldset p{text-align: justify; font-weight: 500; line-height: 120%;}
         p{
             font-size: 15pt;
             margin-top: 15px;
@@ -26,16 +29,91 @@
                         <center><h4 class="text-purple mb-4">RECEBIMENTOS EMPRESARIAL </h4></center>
                         <form method="POST" action="{% url 'recibimentos_empresarial' %}">
                             {% csrf_token %}
-                            {% bootstrap_form form %}
-                            <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                            
+                            <div class="form-group">
+                                <label for="inicio_periodo">Periodo de Início</label>
+                                <input type="date" name="inicio_periodo" id="inicio_periodo" class="form-control datepicker" placeholder="Periodo de Início" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fim_periodo">Periodo Final</label>
+                                <input type="date" name="fim_periodo" id="fim_periodo" class="form-control datepicker" placeholder="Periodo Final" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_codigo_empresa">Código da Empresa</label>
+                                <select name="codigo_empresa" class="form-control" required id="id_codigo_empresa">
+                                    <option value="" selected=""></option>
+                                    <option value="501" title="{{contas.501}}">501</option>
+                                    <option value="502" title="{{contas.502}}">502</option>
+                                    <option value="505" title="{{contas.505}}">505</option>
+                                    <option value="567" title="{{contas.567}}">567</option>
+                                    <option value="575" title="{{contas.575}}">575</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_operacao">Operação</label>
+                                <select name="operacao" class="form-control" required id="id_operacao">
+                                    <option value="" selected=""></option>
+                                    <option value="juros">JUROS</option>
+                                    <option value="recebimentos">RECEBIMENTOS</option>
+                                </select>
+                            </div>
+
+                            <fieldset class="p-3 rounded mt-5">
+                                
+                                <legend class="w-auto">Escolha as Contas:</legend>
+
+                                <div class="form-row" id="select_contas_escritorio"></div>
+
+                            </fieldset>
+
+                            <button class="btn btn-outline-primary float-left mt-5" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                                 <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
                             </button>
-                            <button class="btn btn-outline-success float-right mt-4"><i class="fas fa-cloud-download-alt"></i> <strong> GERAR OS RECEBIMENTOS </strong></button>
+                            <button class="btn btn-outline-success float-right mt-5"><i class="fas fa-cloud-download-alt"></i> <strong> GERAR OS RECEBIMENTOS </strong></button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        select = document.getElementById("id_codigo_empresa")
+        select.addEventListener('change', event => {
+            let index = event.target.options.selectedIndex
+            if (index){
+                contas = event.target.options[index].title.split("*")
+                subsContas(contas)
+            }
+        })
+
+        function subsContas(contas){
+            document.getElementById('select_contas_escritorio').innerHTML = `
+
+                ${contas.map((conta, index) => {
+                    return `
+                        <div class="col-6 col-sm-6">
+                            <label for="id_contas_${index}">
+                                <input type="checkbox" name="contas" value="${conta.trim()}" id="id_contas_${index}"> ${conta.trim()}
+                            </label>
+                        </div>
+                    `
+                }).join('')}
+
+                <div class="col-6 col-sm-6 mt-4">
+                    <label for="selecionar_todos" style="color: #0d6efd;">
+                        <input type="checkbox" id="selecionar_todos" onclick="checkAllOrNo(event, ${contas.length})"> TODAS AS CONTAS
+                    </label>
+                </div>
+            `
+        }
+
+        function checkAllOrNo(event, quantity_contas){
+            for (var i = 0; i < quantity_contas; i++){
+                const check = document.querySelector(`#id_contas_${i}`);
+                check.checked = event.target.checked;
+            }
+        }
+    </script>
+
 {% endblock %}
-    

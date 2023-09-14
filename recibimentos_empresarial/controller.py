@@ -13,7 +13,7 @@ class Controller:
             init_args = {'driver': '{ODBC Driver 17 for SQL Server}', 'server': '192.168.1.28,391', 'database': 'nGestaao3', 'uid': 'sa', 'pwd': 'QER159357XT$'}
             self.sqlserver = SQLServerConnection(**init_args)
 
-    def gerarRecebimentosJuros(self, inicio_periodo, fim_periodo, codigo_empresa):
+    def gerarRecebimentosJuros(self, inicio_periodo, fim_periodo, codigo_empresa, contas):
         try:
             self.firebird.connect()
             self.sqlserver.connect()
@@ -29,7 +29,7 @@ class Controller:
 
             datadeHoje = datetime.today().strftime('%d/%m/%Y')
             ano = datafim.split(".")[-1]
-            codigos = tuple(dicescritorio[escritorio][1].keys())
+            codigos = tuple([int(conta) for conta in contas])
             filial = dicfilial[escritorio][0]
             entidade = dicfilial[escritorio][1]
 
@@ -77,7 +77,7 @@ class Controller:
                         array.append(txt)
             
         except Exception as error:
-            print(error)
+            raise Exception(error)
         else:
             self.sqlserver.execute_sql("SET IDENTITY_INSERT TBL_FINANCEIRO_CONTA_CORRENTE_LANCAMENTOS_DIARIOS OFF")
             self.sqlserver.commit_changes()
@@ -85,7 +85,7 @@ class Controller:
             self.firebird.disconnect()
             self.sqlserver.disconnect()
 
-    def gerarRecebimentosRecebimentos(self, inicio_periodo, fim_periodo, codigo_empresa):
+    def gerarRecebimentosRecebimentos(self, inicio_periodo, fim_periodo, codigo_empresa, contas):
         try:
             self.firebird.connect()
             self.sqlserver.connect()
@@ -101,7 +101,7 @@ class Controller:
 
             datadeHoje = datetime.today().strftime('%d/%m/%Y')
             ano = datafim.split(".")[-1]
-            codigos = tuple(dicescritorio[escritorio][1].keys())
+            codigos = tuple([int(conta) for conta in contas])
             filial = dicfilial[escritorio][0]
             entidade = dicfilial[escritorio][1]
 
@@ -149,7 +149,7 @@ class Controller:
                         array.append(txt)
             
         except Exception as error:
-            print(error)
+            raise Exception(error)
         else:
             self.sqlserver.execute_sql("SET IDENTITY_INSERT TBL_FINANCEIRO_CONTA_CORRENTE_LANCAMENTOS_DIARIOS OFF")
             self.sqlserver.commit_changes()

@@ -1,4 +1,5 @@
 def get_recebimentos(escritorio,dataini,datafim,codigos):
+    codigos = codigos if len(codigos) > 1 else f"({codigos[0]})"
     sql = """
         SELECT
             C.CODIGOESCRIT,
@@ -59,6 +60,7 @@ def get_lancamentos(filial,dataini,datafim):
     return sql
 
 def get_juros(escritorio,dataini,datafim,codigos):
+    codigos = codigos if len(codigos) > 1 else f"({codigos[0]})"
     sql = """
         SELECT
             CAST(SUBSTRING(C.CODIGOESCRIT FROM 2 FOR 3) AS NUMERIC) CODIGOESCRIT,
