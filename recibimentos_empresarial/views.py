@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.views import View
 
@@ -50,5 +50,5 @@ class RecibimentosView(View):
             messages.error(request, "Ocorreu um erro ao executar")
 
 
-        return render(request, self.template, context)
+        return redirect('recibimentos_empresarial')
 
