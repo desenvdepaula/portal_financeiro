@@ -2,7 +2,7 @@ from datetime import datetime, date
 from io import BytesIO
 import csv
 import pandas as pd
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from ..models import OrdemServico
 from .database import Manager
 from .querys import filter_planilha, get_codigo_escritorio, get_sequencia_variavel_empresa, get_id_ordem_servico, build_insert_os, valid_notas_delete, build_delete_os
@@ -154,6 +154,16 @@ class Controller():
             raise err
         else:
             ordem.save()
+            if cleaned_data.get('id_ordem'):
+                preco = float(ordem.valor)
+                preco_convertido = f"R$ {preco:_.2f}"
+                preco_final = preco_convertido.replace('.',',').replace('_','.')
+                return JsonResponse({
+                    'empresa': f"{ordem.cd_empresa} - {ordem.nome_empresa}",
+                    'servico': ordem.servico,
+                    'cobranca': ordem.data_cobranca.strftime("%d/%m/%Y"),
+                    'valor': preco_final
+                })
         finally:
             self.manager.disconnect()
     

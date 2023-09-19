@@ -37,7 +37,7 @@ def filter_planilha(filtros):
             if status == 'DEBITADO':
                 dados = dados.filter(debitar=True)
             if status == 'DEBITAR':
-                dados = dados.filter(debitar=False)
+                dados = dados.filter(debitar=False, arquivado=False)
             if status == 'ARQUIVADO':
                 dados = dados.filter(arquivado=True)
         

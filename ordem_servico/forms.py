@@ -85,10 +85,10 @@ class OrdemServicoForm(forms.Form):
 
     id_ordem = forms.IntegerField(required=False)
     servico = forms.ChoiceField(label="Serviço: ", choices=SERVICO, help_text="Escolha uma dentre as Opções (Campo é necessário)")
-    empresa = forms.IntegerField(max_value=9999, label="Código da Empresa:")
+    empresa = forms.IntegerField(max_value=9999999, label="Código da Empresa:")
     data = forms.DateField(label="Data do Serviço Realizado: ", help_text="", widget=forms.DateInput(attrs={'type': 'date'}))
     execucao = forms.DateTimeField(input_formats=['%H:%M'], label="Tempo de Execução: ", help_text="Formato: HH:MM.", widget=forms.DateInput(attrs={'type': 'time'}))
-    descricao = forms.CharField(max_length=51, label="Descrição:", help_text="Descrever a Descrição (51 Caracteres)", widget=forms.Textarea(attrs={'rows': 3, 'cols': 40}), required=False)
+    descricao = forms.CharField(max_length=47, label="Descrição:", help_text="Descrever a Descrição (47 Caracteres)", widget=forms.Textarea(attrs={'rows': 3, 'cols': 40}), required=False)
     descricao_servico = forms.CharField(label="Relatos do Serviço Prestado:", help_text="Descrever a Descrição da Ordem de serviço...", widget=forms.Textarea(attrs={'rows': 6, 'cols': 40}))
     quantidade = forms.IntegerField(label="Quantidade:")
     valor = forms.CharField(label="Valor do Serviço:")
@@ -102,6 +102,10 @@ class OrdemServicoForm(forms.Form):
     def clean_valor(self):
         valor = float(self.cleaned_data['valor'].replace('.','').replace(',','.'))
         return valor
+    
+    def clean_descricao(self):
+        descricao = self.cleaned_data['descricao'].upper()
+        return descricao
     
     def clean_autorizacao(self):
         return True if self.cleaned_data['autorizacao'] == 'SIM' else False

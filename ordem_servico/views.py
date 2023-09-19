@@ -33,18 +33,18 @@ class OrdemServicoView(View):
             context['form'].clean_log(request.user.username)
             try:
                 controller = Controller()
-                controller.update_ordem_servico(context['form'].cleaned_data, request.user.username)
+                if request.POST.get('id_ordem'):
+                    return controller.update_ordem_servico(context['form'].cleaned_data, request.user.username)
+                else:
+                    controller.update_ordem_servico(context['form'].cleaned_data, request.user.username)
+                    messages.success(request, "Cadastrado com sucesso")
+                    return redirect('list_ordem_servico') 
             except Exception as ex:
                 messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
-            else:
-                if request.POST.get('id_ordem'):
-                    messages.success(request, "Alterado com sucesso")
-                else:
-                    messages.success(request, "Cadastrado com sucesso")
+                raise Exception(ex)
         else:
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
-            
-        return redirect('list_ordem_servico')
+            return redirect('list_ordem_servico') 
     
     def delete(request):
         try:

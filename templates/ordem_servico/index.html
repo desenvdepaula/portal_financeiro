@@ -78,37 +78,39 @@
                   </thead>
                   <tbody>
                     {% for ordem in ordens %}
-                      <tr>
-                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.cd_empresa}} - {{ordem.nome_empresa}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
-                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}}</td>
+                      {% with counter=forloop.counter0 %}
+                        <tr id="tr_{{counter}}">
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.cd_empresa}} - {{ordem.nome_empresa}}</td>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}}</td>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}}</td>
 
-                        <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}"> 
-                          {% if ordem.debitar %} 
-                            DEBITADO
-                          {% elif ordem.arquivado %} 
-                            ARQUIVADO 
-                          {% else %}
-                            DEBITAR
-                          {% endif %}
-                        </td>
-
-                        <td>
-                          <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span class="text-muted sr-only">Action</span>
-                          </button>
-                          <div class="dropdown-menu dropdown-menu-right">
-                            <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Ordem</button>
-
-                            {% if not ordem.ordem_debitada_id %}
-                              <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
+                            {% if ordem.debitar %} 
+                              DEBITADO
+                            {% elif ordem.arquivado %} 
+                              ARQUIVADO 
+                            {% else %}
+                              DEBITAR
                             {% endif %}
+                          </td>
 
-                            <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
-                          </div>
-                        </td>
-                      </tr>
+                          <td>
+                            <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                              <span class="text-muted sr-only">Action</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                              <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view', 'tr_{{counter}}')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Ordem</button>
+
+                              {% if not ordem.ordem_debitada_id %}
+                                <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit', 'tr_{{counter}}')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
+                              {% endif %}
+
+                              <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}', 'tr_{{counter}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
+                            </div>
+                          </td>
+                        </tr>
+                      {% endwith %}
                     {% endfor %}
                   </tbody>
                   <tfoot>
@@ -143,7 +145,7 @@
         </div>
         <div class="modal-body">
             <div id="error_aviso"></div>
-            <form method="POST" action="{% url 'list_ordem_servico' %}">
+            <form method="POST" action="{% url 'list_ordem_servico' %}" id="form_cadastra_update_os">
                 {% csrf_token %}
 
                 <input type="number" name="id_ordem" id="id_ordem_form" style="display: none;">
@@ -172,7 +174,7 @@
                     <div class="col-12 col-sm-12">
                         <label class="font-weight-bold" for="id_descricao">Descrição:</label>
                         <textarea name="descricao" cols="40" rows="2" class="form-control" id="id_descricao" onkeyup="contabilizar(event)"></textarea>
-                        <small class="form-text text-muted">Descrever a Descrição <b id="caracteres_descricao">51 Caracteres</b></small>
+                        <small class="form-text text-muted">Descrever a Descrição <b id="caracteres_descricao">47 Caracteres</b></small>
                     </div>
                 </div>
                 <br>
@@ -204,7 +206,7 @@
                 <br>
                 <br>
 
-                <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
                     <strong>Executar</strong>
                 </button>
             </form>
@@ -286,17 +288,17 @@
     let lenTextDescricao = textDescicao.length
 
     if (event.keyCode === 8){
-        text[0] = 51 - lenTextDescricao
+        text[0] = 47 - lenTextDescricao
         text = text.join(' ')
         document.getElementById('caracteres_descricao').textContent = text
     }else{
-        if (lenTextDescricao >= 51){
+        if (lenTextDescricao >= 47){
             text[0] = '0'
             text = text.join(' ')
             document.getElementById('caracteres_descricao').textContent = text
-            document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
+            document.getElementById('id_descricao').value = textDescicao.slice(0, 47)
         }else{
-            text[0] = 51 - lenTextDescricao
+            text[0] = 47 - lenTextDescricao
             text = text.join(' ')
             document.getElementById('caracteres_descricao').textContent = text
         }
@@ -308,19 +310,19 @@
     let textDescicao = document.getElementById('id_descricao').value
     let lenTextDescricao = textDescicao.length
 
-    if (lenTextDescricao >= 51){
+    if (lenTextDescricao >= 47){
         text[0] = '0'
         text = text.join(' ')
         document.getElementById('caracteres_descricao').textContent = text
-        document.getElementById('id_descricao').value = textDescicao.slice(0, 51)
+        document.getElementById('id_descricao').value = textDescicao.slice(0, 47)
     }else{
-        text[0] = 51 - lenTextDescricao
+        text[0] = 47 - lenTextDescricao
         text = text.join(' ')
         document.getElementById('caracteres_descricao').textContent = text
     }
   }
 
-  function open_modal_update(ordem){
+  function open_modal_update(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'))
     document.getElementById('modalEditOrdemLabel').textContent = `Editar Esta Ordem da ${ordem.cd_empresa} - ${ordem.nome_empresa}`
     document.getElementById('id_ordem_form').value = parseInt(ordem.id)
@@ -341,14 +343,15 @@
     document.getElementById('id_solicitacao').value = ordem.solicitado
     document.getElementById('id_executado').value = ordem.executado
     document.getElementById('typecreate_ordem').innerHTML = ''
+    document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
     contabilizar_edit()
     myModal.toggle()
   }
 
-  function open_modal_deletar(id_ordem, cd_empresa, razao_social){
+  function open_modal_deletar(id_ordem, cd_empresa, razao_social, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalDeleteOrdem'))
     document.getElementById('modalDeleteOrdemLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa} - ${razao_social}`
-    document.getElementById('button_delete_ordem').setAttribute('onclick', `deletar_ordem(event, ${id_ordem})`)
+    document.getElementById('button_delete_ordem').setAttribute('onclick', `deletar_ordem(event, ${id_ordem}, '${tr_id}')`)
     myModal.toggle()
   }
 
@@ -411,10 +414,11 @@
         </select>
       </div>
     `
+    document.getElementById('id_button_for_edit_os').removeAttribute('onclick')
     myModal.toggle()
   }
 
-  function abrir_modal_view_ordem(ordem){
+  function abrir_modal_view_ordem(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
     let button_debito = document.getElementById('button_debito_view')
     let button_arquive = document.getElementById('button_arquive_view')
@@ -440,29 +444,29 @@
       button_debito.style.display = 'none'
       button_arquive.textContent = "Remover do Arquivado"
       button_arquive.className = 'btn btn-danger text-white'
-      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "False")`)
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "False", '${tr_id}')`)
     }else{
       button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço"
       button_arquive.className = 'btn btn-success text-white'
-      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True")`)
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True", '${tr_id}')`)
       button_debito.style.display = 'block'
       button_debito.textContent = ordem.debitar ? 'Cancelar Débito da Ordem de Serviço' : 'Debitar Ordem de Serviço'
       button_debito.className = ordem.debitar ? 'btn btn-danger text-white' : 'btn btn-success text-white'
-      button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${ordem.debitar ? "False" : "True" }')`)
+      button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${ordem.debitar ? "False" : "True" }', '${tr_id}')`)
     }
     myModal.toggle()
   }
 
-  function buscar_ordem_for_id(e, id_ordem, type){
+  function buscar_ordem_for_id(e, id_ordem, type, tr_id){
     e.preventDefault();
     $.ajax({
       url: `/ordem_servico/buscar_ordem_servico/${id_ordem}`,
       type: 'GET',
       success: function(data){
         if (type === 'view'){
-          abrir_modal_view_ordem(data)
+          abrir_modal_view_ordem(data, tr_id)
         }else{
-          open_modal_update(data)
+          open_modal_update(data, tr_id)
         }
       },
       error: function(data){
@@ -471,14 +475,15 @@
     })
   }
 
-  function debitar_os(e, id_ordem, bool){
+  function debitar_os(e, id_ordem, bool, tr_id){
     e.preventDefault();
     $.ajax({
       url: `/ordem_servico/debitar_ordem_servico/${id_ordem}?debitar=${bool}`,
       type: 'GET',
       success: function(data){
         if (Object.values(data).includes('sucesso')){
-          window.location.href = window.location.href
+          fecharModal('modalViewOrdem')
+          alteraLinhaTable(tr_id, bool == "True" ? 'DEBITADO' : "DEBITAR")
         }else{
           mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
         }
@@ -489,14 +494,15 @@
     })
   }
 
-  function arquivar_os(e, id_ordem, bool){
+  function arquivar_os(e, id_ordem, bool, tr_id){
     e.preventDefault();
     $.ajax({
       url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}?arquivar=${bool}`,
       type: 'GET',
       success: function(data){
         if (Object.values(data).includes('sucesso')){
-          window.location.href = window.location.href
+          fecharModal('modalViewOrdem')
+          alteraLinhaTable(tr_id, bool == "True" ? "ARQUIVADO" : "DEBITAR")
         }else{
           mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
         }
@@ -507,7 +513,7 @@
     })
   }
 
-  function deletar_ordem(e, id_ordem){
+  function deletar_ordem(e, id_ordem, tr_id){
     e.preventDefault();
 
     $.ajax({
@@ -518,10 +524,50 @@
         csrfmiddlewaretoken: '{{ csrf_token }}'
       },
       success: function(data){
-        window.location.href = "{% url 'list_ordem_servico' %}";
+        fecharModal('modalDeleteOrdem')
+        alteraLinhaTable(tr_id, "DELETAR")
       },
       error: function(data){
         mostrarAlert('error_aviso_delete', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
+      },
+    })
+  }
+
+  function editar_ordem(e, id_ordem, tr_id){
+    e.preventDefault();
+    data = {
+      id_ordem: id_ordem,
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+    }
+
+    let elements = document.getElementById("form_cadastra_update_os").elements;
+    for (child of elements){
+      if (child.name && child.name != 'csrfmiddlewaretoken' && child.name != 'id_ordem'){
+
+        if (!child.value){
+          mostrarAlert('error_aviso', 'danger', `Preencha o Campo: ${child.name.toUpperCase()}`);
+          child.style.border = "1px solid red";
+          return false;
+        }
+
+        data[child.name] = child.value
+      }
+    }
+
+    $.ajax({
+      url: "{% url 'list_ordem_servico' %}",
+      type: 'POST',
+      data: data,
+      success: function(data){
+        let linhas = document.getElementById(tr_id).children;
+        linhas[0].innerText = data.empresa
+        linhas[1].innerText = data.servico
+        linhas[2].innerText = data.cobranca
+        linhas[3].innerText = data.valor
+        fecharModal('modalEditOrdem')
+      },
+      error: function(data){
+        mostrarAlert('error_aviso', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
   }
@@ -538,6 +584,34 @@
     var myModalEl = document.getElementById(modalClass)
     var modal = bootstrap.Modal.getOrCreateInstance(myModalEl)
     modal.hide()
+  }
+
+  function alteraLinhaTable(tr_id, type){
+    if (type == "DELETAR"){
+      deletarRowDataTables(tr_id)
+    }else{
+      let linha = document.getElementById(tr_id);
+      for (child of linha.children){
+        if (child.className.includes("h6")){
+          if (type == 'DEBITADO'){
+            child.className = "h6 text-success"
+            if (child.id){
+              child.innerText = "DEBITADO"
+            }
+          }else if (type == 'ARQUIVADO'){
+            child.className = "h6"
+            if (child.id){
+              child.innerText = "ARQUIVADO"
+            }
+          }else{
+            child.className = "h6 text-warning"
+            if (child.id){
+              child.innerText = "DEBITAR"
+            }
+          }
+        }
+      }
+    }
   }
     
 </script>
@@ -600,12 +674,16 @@
     table.columns(4).search(event.target.value).draw();
   }
 
+  function deletarRowDataTables(row_id){
+    $('#dataTable-1').DataTable().row(document.getElementById(row_id)).remove().draw();
+  }
+
   $('.input-money').mask("#.##0,00",
   {
     reverse: true
   });
 
-  $('.cd_empresa').mask("00000",
+  $('.cd_empresa').mask("000000",
   {
     reverse: true
   });

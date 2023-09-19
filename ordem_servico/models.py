@@ -4,7 +4,7 @@ class OrdemServico(models.Model):
     departamento = models.CharField(max_length=255)
     cd_servico = models.CharField(max_length=10)
     servico = models.CharField(max_length=255)
-    ds_servico = models.CharField(max_length=51)
+    ds_servico = models.CharField(max_length=47)
     observacoes_servico = models.TextField(blank=True, null=True)
     cd_empresa = models.CharField(max_length=6)
     nome_empresa = models.CharField(max_length=255)
