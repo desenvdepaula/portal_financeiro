@@ -102,7 +102,7 @@ class Controller():
     def update_ordem_servico(self, cleaned_data, user):
         try:
             self.manager.connect()
-            query = self.manager.execute_sql(f"SELECT NOMEEMPRESA FROM EMPRESA WHERE CODIGOEMPRESA = {cleaned_data.get('empresa')}")
+            query = self.manager.execute_sql(f"SELECT NOME FROM PESSOAFINANCEIRO WHERE CODIGOPESSOAFIN = {cleaned_data.get('empresa')}")
             list_nomes = [nome for nome in query]
             if not list_nomes:
                 raise Exception(f"Esta Empresa: {cleaned_data.get('empresa')} Não possui nome, Provavelmente não existe, escreva novamente !")
