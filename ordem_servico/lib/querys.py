@@ -57,7 +57,7 @@ def get_codigo_escritorio(empresa, cursor):
             PESSOAFINANCEIRO P ON
             S.CODIGOCLIENTE = P.CODIGOPESSOAFIN
         WHERE
-            P.CODIGOEMPRESA = {empresa} AND
+            P.CODIGOPESSOAFIN = {empresa} AND
             S.CODIGOSERVICOESCRIT IN (1,81,115,127,151,155)
     """
     query = cursor.execute(sql).fetchone()
