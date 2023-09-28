@@ -37,6 +37,7 @@ class OrdemServicoForm(forms.Form):
         ('55 * HONORÁRIOS EXTRAS',  'HONORÁRIOS EXTRAS'),
         ('59 * SICAF',  'SICAF'),
         ('60 * SUCESSÃO TRABALHISTA',  'SUCESSÃO TRABALHISTA'),
+        ('63 * DECLARAÇÃO ITR', 'DECLARAÇÃO ITR', 'PESSOA FÍSICA'),
         ('90 * REGIMENTO INTERNO',  'REGIMENTO INTERNO'),
         ('98 * REFIS',  'REFIS'),
         ('99 * HOMOLOGAÇÃO RESCISÃO',  'HOMOLOGAÇÃO RESCISÃO'),
