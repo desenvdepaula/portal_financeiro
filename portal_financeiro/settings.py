@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'honorario_131',
     'ordem_servico',
     'recibimentos_empresarial',
+    'relatorios',
     'bootstrap4',
 ]
 

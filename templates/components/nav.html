@@ -76,6 +76,22 @@
         </ul>
       </li>
       <li class="nav-item dropdown">
+        <a href="#relatorios_app" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
+          <i class="fe fe-file-text fe-16"></i>
+          <span class="ml-3 item-text">Relatórios</span>
+        </a>
+        <ul class="collapse list-unstyled pl-4 w-100" id="relatorios_app">
+          <li class="nav-item">
+            <a class="nav-link pl-3" href="{% url 'request_classificacao_servicos' %}"><span class="ml-1 item-text">Classificações de Serviços</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link pl-3" href="{% url 'request_relatorio_faturamento' %}"><span class="ml-1 item-text">Faturamento por Serviço</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li class="nav-item dropdown">
         <a href="#ordem_servico" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
           <i class="fe fe-file-plus fe-16"></i>
           <span class="ml-3 item-text">Ordem de Serviço</span>

@@ -1,0 +1,123 @@
+{% extends '../../base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+
+<style>
+    .v2{
+      color: #6f42c1;
+      border-color: #6f42c1;
+      max-height: 38px;
+    }
+    .v2:hover{
+      background-color: #6f42c1;
+      color: #fff;
+    }
+    p{
+      font-size: 13pt;
+    }
+</style>
+
+<main role="main" class="main-content">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="row my-4">
+                    <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                        {% bootstrap_messages messages %}
+                        <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                            <div class="card-body">
+                                <form method="POST" action="{% url 'request_relatorio_faturamento' %}"> 
+                                    {% csrf_token %}
+                                    <center><h4 class="text-purple">RELATÓRIO DE FATURAMENTO POR SERVIÇO</h4></center><br>
+
+                                    <div class="form-row mt-4">
+                                      <div class="col-12 col-sm-6">
+                                        <label class="font-weight-bold" for="id_data_inicio">Início da Emissão:</label>
+                                        <input type="date" name="data_inicio" class="form-control" required id="id_data_inicio">
+                                      </div>
+                                      <div class="col-12 col-sm-6">
+                                        <label class="font-weight-bold" for="id_data_fim">Fim da Emissão:</label>
+                                        <input type="date" name="data_fim" class="form-control" required id="id_data_fim">
+                                      </div>
+                                    </div>
+
+                                    <div class="form-row mt-5">
+                                      <div class="col-12">
+                                        <label for="multi-select">Classificações de Serviços (Opcional): </label>
+                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select" name="classificacoes">
+                                          {% for classificacao in classificacoes %}
+                                            <option value="{{classificacao.id}}">{{classificacao.classificacao}}</option>
+                                          {% endfor %}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div class="form-row mt-5">
+                                      <div class="col-12">
+                                        <label for="multi-select2">Escolha os Serviços (Opcional): </label>
+                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select2" name="servicos">
+                                          {% for servico in servicos %}
+                                            <option value="{{servico.0}}">{{servico.0}} - {{servico.1}}</option>
+                                          {% endfor %}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div class="form-row mt-5">
+                                      <div class="col-6">
+                                        <a class="btn btn-outline-info float-left" href="{% url 'request_classificacao_servicos' %}"> 
+                                            <i class="fe fe-database fe-16 mr-2"></i> <strong> Base de Classificações </strong>
+                                        </a>
+                                      </div>
+                                      <div class="col-6">
+                                        <button class="btn btn-outline-success float-right"> 
+                                            <i class="fe fe-file-text fe-16 mr-2"></i> <strong> Gerar Relatório </strong>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- .col-12 -->
+        </div> <!-- .row -->
+    </div> <!-- .container-fluid -->
+
+</main> <!-- main -->
+
+<script>
+
+  $(document).ready( function () {
+    setTimeout(() => {
+      $('.alert').alert('close')
+    }, 5000)
+  });
+
+  function mostrarAlert(div_id_class, type_alert, mensagem){
+    document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
+  }
+
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'js/select2.min.js' %}"></script>
+<script src="{% static 'js/jquery.mask.min.js' %}"></script>
+<script>
+  $('.select2-multi').select2(
+    {
+      multiple: true,
+      theme: 'bootstrap4',
+      width: '100%'
+    }
+  );
+
+</script>
+
+{% endblock %}
