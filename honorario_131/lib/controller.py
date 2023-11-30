@@ -1,6 +1,8 @@
 from datetime import datetime, date
 from io import BytesIO
 import csv
+import requests
+import json
 import pandas as pd
 from django.http import HttpResponse
 from ..models import RegrasHonorario
@@ -13,6 +15,7 @@ class Controller():
         self.manager = Manager(*args, **kwargs).default_connect()
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
+        self.categorias = {'701': 'AUTÔNOMO', '101': 'EMPREGADO', '741': 'AUTÔNOMO', '723': 'SÓCIO', '722': 'SÓCIO', '901': 'ESTAGIÁRIO'}
         self.writer = csv.writer(self.response)
         if active_database_tareffa:
             self.managerTareffa = ManagerTareffa(*args, **kwargs)
@@ -80,11 +83,13 @@ class Controller():
     
     #------------------ HONORARIO 131 ------------------#
 
-    def responseEmpresas(self, alignCenter, writer, compet):
+    def responseEmpresas(self, alignCenter, writer, compet, dataValidation):
         listEscritoriosEmpresas = self.retornaListadeEmpresas()
+        dataContabit = self.retornaEmpresasContabit(dataValidation)
         dicio = {}
         lista = []
         empresasSemEscritorio = []
+        empresasSemCategoria = []
 
         empresas = [regra.cd_empresa for regra in RegrasHonorario.objects.filter(calcular=True)]
         empresas = set(empresas)
@@ -99,6 +104,30 @@ class Controller():
                 lista.append(item)
             else:
                 empresasSemEscritorio.append([item[0], item[2], "Esta Empresa não tem Escritório, por algum motivo que eu não sei =|"])
+                
+        for objEmpresa in dataContabit:
+            if str(objEmpresa) in empresas:
+                id_empresa = dataContabit[objEmpresa].get('idEmpresa')
+                estab = dataContabit[objEmpresa].get('idEstabelecimento')
+                estab = estab if estab < 5 else 1
+                if objEmpresa in dicio.keys():
+                    for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
+                        cd_categoria = categoria.get('cdCategoria')
+                        qtd = categoria.get('qtdTrabalhador')
+                        if cd_categoria in self.categorias.keys():
+                            item = (
+                                id_empresa,
+                                qtd,
+                                estab,
+                                dataValidation,
+                                self.categorias.get(cd_categoria),
+                                dicio[id_empresa],
+                            )
+                            lista.append(item)
+                        else:
+                            empresasSemCategoria.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}"])
+                else:
+                    empresasSemEscritorio.append([id_empresa, estab, "Esta Empresa não tem Escritório, por algum motivo que eu não sei =|"])
 
         df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO","ESCRITORIO"])
         
@@ -121,7 +150,12 @@ class Controller():
         dfEmpresas = pd.DataFrame(empresasSemEscritorio, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
         dfEmpresas.to_excel(writer, sheet_name='Sem Escritório', index = False)
         writer.sheets['Sem Escritório'].set_column('A:B', 30, alignCenter)
-        writer.sheets['Sem Escritório'].set_column('C:C', 60, alignCenter)
+        writer.sheets['Sem Escritório'].set_column('C:C', 80, alignCenter)
+        
+        dfSemCategoria = pd.DataFrame(empresasSemCategoria, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
+        dfSemCategoria.to_excel(writer, sheet_name='Sem Categorias de Funcionário', index = False)
+        writer.sheets['Sem Categorias de Funcionário'].set_column('A:B', 30, alignCenter)
+        writer.sheets['Sem Categorias de Funcionário'].set_column('C:C', 80, alignCenter)
         
         return df
 
@@ -265,7 +299,7 @@ class Controller():
         df['valorCobrado'] = df['valorCobrado'].map('{:.2f}'.format)
         df['valorCobrado'] = df.apply(lambda x : x['valorCobrado'] if float(x['valorCobrado']) >= 0 else 0, axis=1)
 
-        for empresa, cd_financeiro,  valor,  limite,  data,  escritorio,  quantidade, valorCobrado in df.values.tolist():
+        for empresa,cd_financeiro, valor, limite, data, escritorio, quantidade, valorCobrado in df.values.tolist():
             if float(valorCobrado) > 0:
                 diferenca = int(quantidade - limite)
                 if int(cd_financeiro) in dictValidationQteLancado.keys():
@@ -345,7 +379,6 @@ class Controller():
                         diferenca
                     ])
                     self.insertNaBase(int(escritorio), int(cd_financeiro), diferenca, valor, valorCobrado, int(quantidade), data, data_lancamento)
-                    
         dfAuditoria = pd.DataFrame(auditoriaGeralSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','CD-FINANCEIRO','VALOR','LIMITE','DATA', "ESCRITORIO", 'QUANTIDADE', 'VALOR-COBRADO-FINAL', 'DIFERENCA'])
         dfAuditoria.to_excel(writer, sheet_name='Auditoria Soma Filiais', index = False)
         writer.sheets['Auditoria Soma Filiais'].set_column('A:A', 90, alignCenter)
@@ -365,7 +398,21 @@ class Controller():
     def retornaListadeEmpresasValidation(self, data):
         response = self.manager.execute_sql(SqlHonorarios131.getSqlValidador131(data)).fetchall()
         return response
-
+    
+    def retornaEmpresasContabit(self, data):
+        retorno = {}
+        url = f"https://depaula.contabit.com.br/api/dadosfolhapagamento?mesAno={data}"
+        headers = {"Content-Type": "application/json; charset=utf-8", "Authorization": "441832c805624a448e96a9537c3f12af" }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            responseData = response.json()
+            for empresa in responseData['DadosEmpresas']:
+                cd_empresa = empresa['idEmpresa']
+                retorno[cd_empresa] = {**empresa}
+            return retorno
+        else:
+            raise Exception(f"{response.status_code}: Erro na Chamada da API")
+        
     def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial=1):
         self.manager.connection.begin()
         self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial))
@@ -378,9 +425,8 @@ class Controller():
     
     def gerarHonorarios(self, compet, data_lancamento):
         try:
-            
+            self.manager.connect()
             with BytesIO() as b:
-                self.manager.connect()
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
                 workbook = writer.book
@@ -393,7 +439,7 @@ class Controller():
                 for cd_financeiro, _, quantidade in validation:
                     dictValidation[cd_financeiro] = int(quantidade)
                     
-                dataFrameSql = self.responseEmpresas(alignCenter, writer, compet)
+                dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation)
                 self.honorarioEmpresasSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
                 self.honorarioEmpresasNaoSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
                 

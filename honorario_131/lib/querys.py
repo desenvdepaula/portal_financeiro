@@ -78,16 +78,16 @@ class SqlHonorarios131:
     @staticmethod
     def getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data):
         sql = f"""
-                SELECT
-                    MAX(SEQSERVVAR)+ 1
-                FROM
-                    SERVICOVARIAVEL
-                WHERE
-                    CODIGOESCRIT = {cd_escritorio}
-                    AND CODIGOCLIENTE = {cd_financeiro}
-                    AND CODIGOSERVICOESCRIT = 131
-                    AND OBSERVSERVVAR LIKE '%{data}%'
-            """
+            SELECT
+                MAX(SEQSERVVAR)+ 1
+            FROM
+                SERVICOVARIAVEL
+            WHERE
+                CODIGOESCRIT = {cd_escritorio}
+                AND CODIGOCLIENTE = {cd_financeiro}
+                AND CODIGOSERVICOESCRIT = 131
+                AND OBSERVSERVVAR LIKE '%{data}%'
+        """
         return sql
 
     @staticmethod
