@@ -31,6 +31,7 @@ class Controller():
                 alignCenter = workbook.add_format({'align': 'left'})
                 empresasForaDasRegras = []
                 RegrasInvalidas = []
+                RegrasGerais = []
                 
                 empresas = self.managerTareffa.get_empresa_ativas()
                 codigos = [empresa[0] for empresa in empresas]
@@ -55,6 +56,19 @@ class Controller():
                             "Esta Regra se Refere a uma Empresa Não Ativa no Tareffa"
                         ])
                         
+                for enterprise in regrasGeral:
+                    RegrasGerais.append([
+                        enterprise.cd_financeiro,
+                        enterprise.cd_empresa,
+                        enterprise.cd_filial,
+                        enterprise.razao_social,
+                        "CALCULA",
+                        "SOMA FILIAIS" if enterprise.somar_filiais else "NÃO SOMA FILIAIS",
+                        enterprise.limite,
+                        enterprise.valor,
+                        enterprise.observacoes,
+                    ])
+                        
                 dfEmpresasSemRegras = pd.DataFrame(empresasForaDasRegras, columns=['CD_EMPRESA', 'CD_ESTAB', 'NOME', "CARACTERISTICA"])
                 dfEmpresasSemRegras.to_excel(writer, sheet_name='Empresa Sem Regras', index = False)
                 writer.sheets['Empresa Sem Regras'].set_column('A:B', 20, alignCenter)
@@ -67,6 +81,14 @@ class Controller():
                 writer.sheets['Regras Inválidas'].set_column('D:D', 80, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('E:F', 20, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('G:G', 60, alignCenter)
+                
+                dfRegrasGerais = pd.DataFrame(RegrasGerais, columns=['CD_FIANANCEIRO', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA", "SOMA FILIAIS ?", "LIMITE", "VALOR", "OBSERVAÇÕES"])
+                dfRegrasGerais.to_excel(writer, sheet_name='Regras Ativas', index = False)
+                writer.sheets['Regras Ativas'].set_column('A:C', 20, alignCenter)
+                writer.sheets['Regras Ativas'].set_column('D:D', 80, alignCenter)
+                writer.sheets['Regras Ativas'].set_column('E:F', 20, alignCenter)
+                writer.sheets['Regras Ativas'].set_column('G:H', 15, alignCenter)
+                writer.sheets['Regras Ativas'].set_column('I:I', 60, alignCenter)
                 
                 writer.close()
                 
