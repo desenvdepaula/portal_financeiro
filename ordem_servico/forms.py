@@ -1,5 +1,6 @@
 from django import forms
 from core.views import request_project_log
+from operator import itemgetter
 
 class OrdemServicoForm(forms.Form):
         
@@ -17,6 +18,7 @@ class OrdemServicoForm(forms.Form):
 
     SERVICO = (
         ('', ''),
+        ("3 * ALVARÁ POLICIAL", "ALVARÁ POLICIAL"),
         ("8 * REEMBOLSO COPIA", "REEMBOLSO COPIA"),
         ("11 * MANUTENÇÃO IMPLANTAÇÃO", "MANUTENÇÃO IMPLANTAÇÃO"),
         ("12 * HONORÁRIO ALTERAÇÃO DE CONTRATO", "HONORÁRIO ALTERAÇÃO DE CONTRATO"),
@@ -136,7 +138,7 @@ class OrdemServicoForm(forms.Form):
     )
 
     id_ordem = forms.IntegerField(required=False)
-    servico = forms.ChoiceField(label="Serviço: ", choices=SERVICO, help_text="Escolha uma dentre as Opções (Campo é necessário)")
+    servico = forms.ChoiceField(label="Serviço: ", choices=tuple([i for i in sorted(SERVICO, key=itemgetter(1))]), help_text="Escolha uma dentre as Opções (Campo é necessário)")
     empresa = forms.IntegerField(max_value=9999999, label="Código da Empresa:")
     data = forms.DateField(label="Data do Serviço Realizado: ", help_text="", widget=forms.DateInput(attrs={'type': 'date'}))
     execucao = forms.DateTimeField(input_formats=['%H:%M'], label="Tempo de Execução: ", help_text="Formato: HH:MM.", widget=forms.DateInput(attrs={'type': 'time'}))
