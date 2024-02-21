@@ -105,7 +105,7 @@ class Controller():
     
     #------------------ HONORARIO 131 ------------------#
 
-    def responseEmpresas(self, alignCenter, writer, compet, dataValidation):
+    def responseEmpresas(self, alignCenter, writer, compet, dataValidation, datadb):
         listEscritoriosEmpresas = self.retornaListadeEmpresas()
         dataContabit = self.retornaEmpresasContabit(dataValidation)
         dicio = {}
@@ -141,7 +141,7 @@ class Controller():
                                 id_empresa,
                                 qtd,
                                 estab,
-                                dataValidation,
+                                datadb,
                                 self.categorias.get(cd_categoria),
                                 dicio[id_empresa],
                             )
@@ -442,8 +442,7 @@ class Controller():
 
     def returnCompetToValidation(self, compet):
         _, mes, ano = compet.split('.')
-        mes = int(mes)
-        return f"{mes}/{ano}"
+        return f"{int(mes)}/{ano}", f"{mes}/{ano}"
     
     def gerarHonorarios(self, compet, data_lancamento):
         try:
@@ -454,14 +453,14 @@ class Controller():
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 
-                dataValidation = self.returnCompetToValidation(compet)
-                validation = self.retornaListadeEmpresasValidation(dataValidation)
+                datadb, dataValidation = self.returnCompetToValidation(compet)
+                validation = self.retornaListadeEmpresasValidation(datadb)
                 dictValidation = {}
                 
                 for cd_financeiro, _, quantidade in validation:
                     dictValidation[cd_financeiro] = int(quantidade)
                     
-                dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation)
+                dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation, datadb)
                 self.honorarioEmpresasSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
                 self.honorarioEmpresasNaoSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
                 

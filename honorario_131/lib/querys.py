@@ -100,7 +100,7 @@ class SqlHonorarios131:
             FROM
                 SERVICOVARIAVEL
             WHERE
-                OBSERVSERVVAR LIKE '%{data}%'
+                OBSERVSERVVAR LIKE '% {data}%'
                 AND CODIGOSERVICOESCRIT = 131
                 AND CODIGOESCRIT >= 9000
                 AND CODIGOUSUARIO = 0
