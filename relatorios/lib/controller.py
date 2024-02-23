@@ -70,7 +70,8 @@ class Controller():
                 writer.sheets['Faturamento'].set_column('A:C', 20, alignCenter)
                 writer.sheets['Faturamento'].set_column('D:D', 70, alignCenter)
                 writer.sheets['Faturamento'].set_column('E:E', 15, alignCenter)
-                writer.sheets['Faturamento'].set_column('F:F', 20, num)
+                writer.sheets['Faturamento'].set_column('F:F', 30, alignCenter)
+                writer.sheets['Faturamento'].set_column('G:G', 20, num)
                 
                 writer.close()
                 
