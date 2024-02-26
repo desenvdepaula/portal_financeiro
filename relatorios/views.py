@@ -4,19 +4,11 @@ from django.views import View
 from django.contrib import messages
 from django.template import engines
 from django.http import HttpResponse, JsonResponse
-from weasyprint import HTML
-from django.conf import settings
-from django.template.loader import render_to_string
-from Database.models import Connection
-from datetime import date
-import os
 
 from .lib.controller import Controller
 from .lib.sql import RelatorioFaturamentoServicoSqls
 from .models import ClassificacaoFaturamentoServicos, ClassificacaoServicos
 from .forms import RelatorioFaturamentoServicoForm
-
-from core.views import HttpResponseNoContent
 
 class ClassificacoesServicos(View):
     template_form = "./relatorios/classificacoes/form.html"

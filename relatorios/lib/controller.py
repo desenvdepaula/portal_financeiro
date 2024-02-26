@@ -64,14 +64,19 @@ class Controller():
                 num = workbook.add_format({'num_format':'#,##0.00', 'align': 'left'})
                 
                 df = pd.read_sql(sqls.get_data(), self.manager.connection)
+                dfCodigos = sqls.getClassificationDB(df['CÓDIGO SERVIÇO'].values.tolist())
+                if not dfCodigos.empty:
+                    df = df.merge(dfCodigos, how='left', on='CÓDIGO SERVIÇO')
                 df['COMPET'] = df['COMPET'].astype('datetime64')
                 df['COMPET'] = df['COMPET'].dt.strftime('%d/%m/%Y')
                 df.to_excel(writer, sheet_name='Faturamento', index = False)
                 writer.sheets['Faturamento'].set_column('A:C', 20, alignCenter)
                 writer.sheets['Faturamento'].set_column('D:D', 70, alignCenter)
                 writer.sheets['Faturamento'].set_column('E:E', 15, alignCenter)
-                writer.sheets['Faturamento'].set_column('F:F', 30, alignCenter)
-                writer.sheets['Faturamento'].set_column('G:G', 20, num)
+                writer.sheets['Faturamento'].set_column('F:F', 15, alignCenter)
+                writer.sheets['Faturamento'].set_column('G:G', 45, alignCenter)
+                writer.sheets['Faturamento'].set_column('H:H', 15, num)
+                writer.sheets['Faturamento'].set_column('I:I', 25, alignCenter)
                 
                 writer.close()
                 

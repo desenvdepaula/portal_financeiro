@@ -1,3 +1,6 @@
+from ..models import ClassificacaoFaturamentoServicos
+import pandas as pd
+
 class RelatorioFaturamentoServicoSqls:
     
     def __init__(self, inicio, fim, codigos_servicos):
@@ -14,7 +17,8 @@ class RelatorioFaturamentoServicoSqls:
                 P.CODIGOESTAB,
                 P.NOME,
                 CAST('01.'||EXTRACT(MONTH FROM SN.DATAEMISSAONS)||'.'||EXTRACT(YEAR FROM SN.DATAEMISSAONS) AS DATE) COMPET,
-                CAST(SNI.CODIGOSERVICOESCRIT AS VARCHAR(10))||CAST(' - ' AS VARCHAR(5))||CAST(SE.DESCRSERVICOESCRIT AS VARCHAR(3000)) "CÓDIGO SERVIÇO",
+                SNI.CODIGOSERVICOESCRIT "CÓDIGO SERVIÇO",
+                SE.DESCRSERVICOESCRIT "DESCRIÇÃO DO SERVIÇO",
                 SUM(SNI.VALORTOTALSERVNOTAITEM) VALOR
             FROM
                 SERVICONOTA SN
@@ -34,7 +38,7 @@ class RelatorioFaturamentoServicoSqls:
                 AND SN.SERIENS = 'F'
                 AND SN.DATAEMISSAONS BETWEEN '{self.inicio}' AND '{self.fim}'
                 {filter_sql}
-            GROUP BY 1,2,3,4,5,6
+            GROUP BY 1,2,3,4,5,6,7
             ORDER BY
                 2
         """
@@ -48,3 +52,9 @@ class RelatorioFaturamentoServicoSqls:
         else:
             codigos = tuple(self.codigos_servicos)
             return f"AND SNI.CODIGOSERVICOESCRIT IN {codigos}"
+        
+    def getClassificationDB(self, list_codigos):
+        codigos = ClassificacaoFaturamentoServicos.objects.filter(codigo__in=list_codigos)
+        listDF = [[int(codigoFaturamento.codigo), codigoFaturamento.classificacao.classificacao] for codigoFaturamento in codigos]
+        return pd.DataFrame(listDF, columns=['CÓDIGO SERVIÇO', "CLASSIFICAÇÃO"])
+        
