@@ -6,9 +6,10 @@ from django.template import engines
 from django.http import HttpResponse, JsonResponse
 
 from .lib.controller import Controller
-from .lib.sql import RelatorioFaturamentoServicoSqls
 from .models import ClassificacaoFaturamentoServicos, ClassificacaoServicos
 from .forms import RelatorioFaturamentoServicoForm
+import pandas as pd
+from io import BytesIO
 
 class ClassificacoesServicos(View):
     template_form = "./relatorios/classificacoes/form.html"
@@ -85,6 +86,34 @@ class ClassificacoesServicos(View):
         else:
             return JsonResponse({'status': 200}, status=200)
             
+    def dowload_relatorio_servicos_classificacoes(request):
+        try:
+            controller = Controller()
+            servicos = controller.get_dados_servicos()
+            servicos_classificados = [[int(raw.codigo), raw.classificacao.classificacao] for raw in ClassificacaoFaturamentoServicos.objects.all()]
+            dfServicos = pd.DataFrame(servicos, columns=['CODIGO', 'DESCRICAO']).sort_values(by=['CODIGO'])
+            dfClassificacoes = pd.DataFrame(servicos_classificados, columns=['CODIGO', 'CLASSIFICAÇÃO'])
+            df = dfServicos.merge(dfClassificacoes, how='left', on='CODIGO')
+            df.fillna(" ", inplace=True)
+            with BytesIO() as b:
+                writer = pd.ExcelWriter(b, engine='xlsxwriter')
+                pd.set_option('max_colwidth', None)
+                workbook = writer.book
+                alignCenter = workbook.add_format({'align': 'left'})
+                df.to_excel(writer, sheet_name='Comparação', index = False)
+                writer.sheets['Comparação'].set_column('A:A', 15, alignCenter)
+                writer.sheets['Comparação'].set_column('B:C', 60, alignCenter)
+                writer.close()
+                filename = 'Relatório Serviços e Classificações.xlsx'
+                response = HttpResponse(
+                    b.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                return response
+        except Exception as err:
+            messages.error(request, f"Erro ao Baixar O Relatório: {str(err)}")
+            return redirect('request_classificacao_servicos')
     
 class RelatorioFaturamentoServico(View):
     template_form = "./relatorios/relatorio_faturamento/form.html"

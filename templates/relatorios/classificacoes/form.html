@@ -36,6 +36,7 @@
                                 {% endfor %}
                               </select>
                               <a class="btn btn-primary float-right" style="color:#fff;" onclick="openModalCreateServicos(event)">Relacionar Serviço</a>
+                              <a class="btn btn-success float-right mr-3" style="color:#fff;" href="{% url 'dowload_relatorio_servicos_classificacoes' %}"><i class="fe fe-download fe-16 mr-2"></i>Relatório Serviços</a>
                             </div>
                             <div class="card-body">
                               <table class="table" id="table_servicos">
