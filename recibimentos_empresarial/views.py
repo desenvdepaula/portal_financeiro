@@ -24,23 +24,22 @@ class RecibimentosView(View):
     def post(self, request, *args, **kwargs):
         context = { 'form': self.form(request.POST or None) }
         if context['form'].is_valid() and 'contas' in request.POST:
-            context['form'].clean_log(request.user.username)
+            contas = request.POST.getlist('contas')
+            context['form'].clean_log(request.user.username, contas)
             try:
-                contas = request.POST.getlist('contas')
+                relacao_empresas = context['form'].clean_empresas_contas(contas)
                 controller = Controller(True, True)
                 if context['form'].cleaned_data['operacao'] == 'juros':
                     controller.gerarRecebimentosJuros(
                         context['form'].cleaned_data['inicio_periodo'],
                         context['form'].cleaned_data['fim_periodo'],
-                        context['form'].cleaned_data['codigo_empresa'],
-                        contas
+                        relacao_empresas
                     )
                 else:
                     controller.gerarRecebimentosRecebimentos(
                         context['form'].cleaned_data['inicio_periodo'],
                         context['form'].cleaned_data['fim_periodo'],
-                        context['form'].cleaned_data['codigo_empresa'],
-                        contas
+                        relacao_empresas
                     )
             except Exception as ex:
                 messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
@@ -48,7 +47,6 @@ class RecibimentosView(View):
                 messages.success(request, "Processo Finalizado com Sucesso!!")
         else:
             messages.error(request, "Ocorreu um erro ao executar")
-
 
         return redirect('recibimentos_empresarial')
 

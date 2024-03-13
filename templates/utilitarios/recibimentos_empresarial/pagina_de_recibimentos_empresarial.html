@@ -30,18 +30,24 @@
                         <form method="POST" action="{% url 'recibimentos_empresarial' %}">
                             {% csrf_token %}
                             
-                            <div class="form-group">
+                            <div class="form-group mt-4">
                                 <label for="inicio_periodo">Periodo de Início</label>
                                 <input type="date" name="inicio_periodo" id="inicio_periodo" class="form-control datepicker" placeholder="Periodo de Início" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group mt-4">
                                 <label for="fim_periodo">Periodo Final</label>
                                 <input type="date" name="fim_periodo" id="fim_periodo" class="form-control datepicker" placeholder="Periodo Final" required>
                             </div>
-                            <div class="form-group">
+
+                            <center>
+                                <button class="btn btn-outline-info mt-3" onclick="setarDatas(event)" type="button">
+                                    <i class="far fa-calendar mr-2"></i> <strong> DIA DE HOJE ! </strong>
+                                </button>
+                            </center>
+
+                            <div class="form-group mt-3">
                                 <label for="id_codigo_empresa">Código da Empresa</label>
-                                <select name="codigo_empresa" class="form-control" required id="id_codigo_empresa">
-                                    <option value="" selected=""></option>
+                                <select class="form-control select2-multi" multiple="multiple" required id="id_codigo_empresa">
                                     <option value="501" title="{{contas.501}}">501</option>
                                     <option value="502" title="{{contas.502}}">502</option>
                                     <option value="505" title="{{contas.505}}">505</option>
@@ -49,7 +55,7 @@
                                     <option value="575" title="{{contas.575}}">575</option>
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group mt-4">
                                 <label for="id_operacao">Operação</label>
                                 <select name="operacao" class="form-control" required id="id_operacao">
                                     <option value="" selected=""></option>
@@ -78,23 +84,17 @@
     </div>
 
     <script>
-        select = document.getElementById("id_codigo_empresa")
-        select.addEventListener('change', event => {
-            let index = event.target.options.selectedIndex
-            if (index){
-                contas = event.target.options[index].title.split("*")
-                subsContas(contas)
-            }
-        })
 
         function subsContas(contas){
             document.getElementById('select_contas_escritorio').innerHTML = `
 
                 ${contas.map((conta, index) => {
+                    let id_conta = conta[0]
+                    conta = conta.join(" - ")
                     return `
-                        <div class="col-6 col-sm-6">
+                        <div class="col-6 col-sm-6 div_option_${id_conta} mb-2">
                             <label for="id_contas_${index}">
-                                <input type="checkbox" name="contas" value="${conta.trim()}" id="id_contas_${index}"> ${conta.trim()}
+                                <input type="checkbox" name="contas" value="${conta}" id="id_contas_${index}"> ${conta}
                             </label>
                         </div>
                     `
@@ -102,18 +102,56 @@
 
                 <div class="col-6 col-sm-6 mt-4">
                     <label for="selecionar_todos" style="color: #0d6efd;">
-                        <input type="checkbox" id="selecionar_todos" onclick="checkAllOrNo(event, ${contas.length})"> TODAS AS CONTAS
+                        <input type="checkbox" id="selecionar_todos" onclick="checkAllOrNo(event)"> TODAS AS CONTAS
                     </label>
                 </div>
             `
         }
 
-        function checkAllOrNo(event, quantity_contas){
-            for (var i = 0; i < quantity_contas; i++){
-                const check = document.querySelector(`#id_contas_${i}`);
-                check.checked = event.target.checked;
+        function checkAllOrNo(event){
+            for (input of document.querySelectorAll('#select_contas_escritorio input')){
+                input.checked = event.target.checked;
             }
         }
+
+        function setarDatas(event){
+            event.preventDefault();
+            document.getElementById('inicio_periodo').value = moment().format('YYYY-MM-D')
+            document.getElementById('fim_periodo').value = moment().format('YYYY-MM-D')
+        }
     </script>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'js/select2.min.js' %}"></script>
+
+<script>
+    $('.select2-multi').select2(
+        {
+            multiple: true,
+            theme: 'bootstrap4',
+            width: '100%'
+        }
+    );
+
+    $('#id_codigo_empresa').on('select2:select', function (e) { 
+        var contas = []
+        let data = [].slice.call(e.target.options).filter(elem => elem.selected)
+        for (option of data){
+            contas.push(...option.title.split("*").map(el => [option.value, el.trim()]))
+        }
+        subsContas(contas)
+    });
+
+    $('#id_codigo_empresa').on('select2:unselect', function (e) { 
+        var option = e.params.data.id;
+        for (elem of document.querySelectorAll(`.div_option_${option}`)){
+            elem.remove();
+        }
+    });
+
+</script>
 
 {% endblock %}
