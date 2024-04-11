@@ -1,0 +1,493 @@
+{% extends '../base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block body %}
+
+<main role="main" class="main-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+
+      <div class="col-12 mb-3">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">Controle de Serviços</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            {% bootstrap_messages messages %}
+            <div id="alert_geral_sucesso"></div>
+            <div class="card shadow" id="cardOs">
+              <div class="card-header d-flex justify-content-start">
+                <div class="d-lg-flex">
+                  <a class="btn btn-success float-right" style="color:#fff;" onclick="open_modal_create_service()">Adicionar Serviço</a>
+                </div>
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-1">
+                  <thead>
+                    <tr>
+                      <th>Serviço</th>
+                      <th>Tipo de Serviço</th>
+                      <th>Considera no Custo</th>
+                      <th>Classificação</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for servico in servicos %}
+                      <tr>
+                        <td class="h6">{{servico.cd_servico}} - {{servico.name_servico}}</td>
+                        <td class="h6">{{servico.tipo_servico}}</td>
+
+                        {% if servico.considera_custo %}
+                          <td class="h6 text-success text-center"><i class="fe fe-check-circle fe-24"></i></td>
+                        {% else %}
+                          <td class="h6 text-danger text-center"><i class="fe fe-x-circle fe-24"></i></td>
+                        {% endif %}
+                        
+                        <td class="h6">{% if servico.classificacao %} {{servico.classificacao}} {% else %} Sem Classificação {% endif %}</td>
+                        <td>
+                          <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="text-muted sr-only">Action</span>
+                          </button>
+                          <div class="dropdown-menu dropdown-menu-right">
+                            <button class="dropdown-item text-primary" onclick="buscar_service_for_id(event, {{servico.cd_servico}}, 'view')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Serviço</button>
+                            <button class="dropdown-item text-warning" onclick="buscar_service_for_id(event, {{servico.cd_servico}}, 'edit')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Serviço</button>
+                            <button class="dropdown-item text-danger" onclick="open_modal_deletar_service({{servico.cd_servico}}, '{{servico.name_servico}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Serviço</button>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- simple table -->
+        </div>
+      </div> <!-- .col-12 -->
+
+      <div class="col-12">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">Controle de Departamentos</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            <div id="alert_department"></div>
+            <div class="card shadow" id="cardOs">
+              <div class="card-header d-flex justify-content-between">
+                <div class="input-group mt-3">
+                  <input type="text" class="form-control" placeholder="Adicionar Departamento" onkeyup="this.value = this.value.toUpperCase()" id="name_departmant">
+                  <button class="btn btn-outline-success rounded-end" type="button" id="button-addon2" onclick="cadastrar_departamento(event, this.previousElementSibling.value)"><i class="fe fe-plus"></i></button>
+                </div>
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-2">
+                  <thead>
+                    <tr>
+                      <th>Departamento</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for departamento in departamentos %}
+                      <tr>
+                        <td class="h6 w-75">{{departamento.nome_departamento}}</td>
+                        <td class="h5">
+                          <button type="button" class="btn btn-outline-primary" onclick="edit_departamento(event, {{departamento.id}}, '{{departamento.nome_departamento}}')"><i class="fe fe-edit fe-16"></i></button>
+                          <button type="button" class="btn btn-outline-danger" onclick="delete_departamento(event, {{departamento.id}}, '{{departamento.nome_departamento}}')"><i class="fe fe-trash-2 fe-16"></i></button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- simple table -->
+        </div>
+      </div> <!-- .col-12 -->
+
+    </div> <!-- .row -->
+  </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+
+<!-- MODAL Create Regra -->
+<div class="modal fade" id="modalService" role="dialog" aria-labelledby="modalServiceLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalServiceLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="error_aviso"></div>
+            <form method="POST" id="form_services_os" action="{% url 'controle_servicos_OS' %}">
+                {% csrf_token %}
+
+                <input type="number" name="nr_service" id="id_nr_service_form" style="display: none;">
+
+                <div class="form-group">
+                  <label for="servico_select">Código do Questor: </label>
+                  <select class="form-control select2-single" required id="servico_select" name="servico">
+                    {% for codigo in servicos_questor %}
+                      <option value="{{codigo.0}} *** {{codigo.1}}" title="{{codigo.1}}">{{codigo.0}} - {{codigo.1}}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="form-group mt-5">
+                  <label for="departamentos_select">Selecione os Departamentos: </label>
+                  <select class="form-control select2-multiple" required id="departamentos_select" name="departamentos"></select>
+                </div>
+
+                <div class="form-row mt-5">
+                    {% bootstrap_field form.tipo_servico label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.classificacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <div class="form-row mt-5">
+                    {% bootstrap_field form.considera_custo label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                
+                <div class="form-row mt-5">
+                  {% bootstrap_field form.obs label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                </div>
+                <br>
+                <br>
+
+                <button class="btn btn-outline-success float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                    <strong>Executar</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal fade" id="modalDeleteService" tabindex="-1" role="dialog" aria-labelledby="modalDeleteServiceLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalDeleteServiceLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_delete"></div>
+          <center>
+              <button class="btn btn-outline-danger btn-lg" id="button_delete_service">
+                <strong>Deletar Serviço</strong>
+              </button>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalViewService" tabindex="-1" role="dialog" aria-labelledby="modalViewServiceLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalViewServiceLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body" id="view_service"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  document.getElementById('id_considera_custo').addEventListener('click', (event) => {
+    document.getElementById('id_classificacao').disabled=!event.target.checked
+  })
+
+  function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico="", classificacao=null, custo=false, obs=""){
+    document.getElementById('id_nr_service_form').value = !id ? "" : id
+    $('#servico_select').val(null).trigger('change');
+    document.getElementById('servico_select').disabled = !id ? false : true
+    document.getElementById('id_tipo_servico').value = tipo_servico
+    document.getElementById('id_classificacao').value = !classificacao ? "" : classificacao
+    document.getElementById('id_classificacao').disabled = !classificacao ? true : false
+    document.getElementById('id_considera_custo').checked = custo
+    document.getElementById('id_obs').value = obs
+
+    var select = document.getElementById('departamentos_select');
+    select.innerHTML = ''
+    let departs = get_all_deparments()
+    for (var i = 0; i < departs.length; i++) {
+      var value = departs[i]
+      var opt = document.createElement('option');
+      opt.value = value;
+      opt.innerHTML = value;
+      if (id && departamentos.includes(value)){
+        opt.selected = true
+      }
+      select.appendChild(opt);
+    }
+  }
+
+  function open_modal_create_service(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalService'));
+    document.getElementById('modalServiceLabel').textContent = `Cadastrar Serviço no Controle`;
+    clean_or_set_inputs_form();
+    myModal.toggle();
+  }
+
+  function open_modal_update_service(data){
+    let { cd_servico, name_servico, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    var myModal = new bootstrap.Modal(document.getElementById('modalService'));
+    document.getElementById('modalServiceLabel').textContent = `Alterar o Serviço: ${cd_servico} - ${name_servico}`;
+    clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico, classificacao, considera_custo, observacoes);
+    myModal.toggle();
+  }
+
+  function open_modal_deletar_service(cd_servico, name_servico){
+    var myModal = new bootstrap.Modal(document.getElementById('modalDeleteService'));
+    document.getElementById('modalDeleteServiceLabel').textContent = `Deseja Deletar o Serviço: ${cd_servico} - ${name_servico}`;
+    document.getElementById('button_delete_service').setAttribute('onclick', `fetch_deletar_servico(event, ${cd_servico})`);
+    myModal.toggle();
+  }
+
+  function abrir_modal_view_service(data){
+    let { cd_servico, name_servico, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    var myModal = new bootstrap.Modal(document.getElementById('modalViewService'));
+    document.getElementById('modalViewServiceLabel').textContent = `Visualizar dados do Serviço: ${cd_servico} - ${name_servico}`;
+    document.getElementById('view_service').innerHTML = `
+      <p class="h5 mt-3">Tipo do Serviço: ${tipo_servico}</p>
+      <p class="h5 mt-3">Considera Custo ? ${considera_custo ? "SIM" : "NÃO"}</p>
+      <p class="h5 mt-3">Classificação: ${classificacao ? classificacao : "Sem Classificação"}</p>
+      <p class="h5 mt-3">Departamentos: ${departamentos.join(" | ")}</p>
+      <p class="h5 mt-3">Observaçoes: ${observacoes ? observacoes : "Sem Observações"}</p>
+    `;
+    myModal.toggle();
+  }
+
+  function cadastrar_departamento(e, text){
+    e.preventDefault();
+    if (!text){
+      mostrarAlert('alert_department', 'danger', "Digite um Nome para o Departamento");
+      return null;
+    }
+    $.ajax({
+      url: `{% url 'create_department' %}`,
+      type: 'POST',
+      data: {
+        text,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        mostrarAlert('alert_department', 'success', "Cadastrado !!");
+        addNewRowDepart(data.id, data.name);
+        document.getElementById('name_departmant').value = ''
+      },
+      error: function(data){
+        mostrarAlert('alert_department', 'danger', data.statusText);
+      },
+    })
+  }
+
+  function delete_departamento(e, id, name){
+    e.preventDefault();
+    let tag = e.target.tagName;
+    if (!id){
+      let td = tag === "BUTTON" ? e.target.parentElement.parentElement : e.target.parentElement.parentElement.parentElement;
+      td.innerHTML = name;
+      return null;
+    }
+    let td = tag === "BUTTON" ? e.target.parentElement.previousElementSibling : e.target.parentElement.parentElement.previousElementSibling;
+    td.innerHTML = `
+      <div class="input-group">
+        <input type="text" class="form-control" value="${name} - Deseja Deletar ?" disabled>
+        <button class="btn btn-outline-success" type="button" onclick="fetch_delete_department(event, ${id})"><i class="fe fe-check"></i></button>
+        <button class="btn btn-outline-danger rounded-end" type="button" onclick="delete_departamento(event, null, '${name}')"><i class="fe fe-x"></i></button>
+      </div>
+    `
+  }
+
+  function edit_departamento(e, id, name){
+    e.preventDefault();
+    if (!id){
+      let tag = e.target.tagName;
+      let td = tag === "BUTTON" ? e.target.parentElement.parentElement : e.target.parentElement.parentElement.parentElement;
+      td.innerHTML = name;
+      return null;
+    }
+    let td = e.target.parentElement.previousElementSibling || e.target.parentElement.parentElement.previousElementSibling
+    td.innerHTML = `
+      <div class="input-group">
+        <input type="text" class="form-control" value="${name}" onkeyup="this.value = this.value.toUpperCase()">
+        <button class="btn btn-outline-success" type="button" onclick="fetch_update_department(event, ${id}, this.previousElementSibling.value)"><i class="fe fe-check"></i></button>
+        <button class="btn btn-outline-danger rounded-end" type="button" onclick="edit_departamento(event, null, '${name}')"><i class="fe fe-x"></i></button>
+      </div>
+    `
+  }
+
+  function fetch_update_department(e, id, new_name){
+    e.preventDefault();
+    if (!new_name){
+      mostrarAlert('alert_department', 'danger', "Digite um Nome para o Departamento");
+      return null;
+    }
+    let tag = e.target.tagName;
+    let td = tag === "BUTTON" ? e.target.parentElement.parentElement : e.target.parentElement.parentElement.parentElement;
+    $.ajax({
+      url: `{% url 'update_department' %}`,
+      type: 'POST',
+      data: {
+        id,
+        new_name,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        mostrarAlert('alert_department', 'success', "Editado Com Sucesso !!");
+        td.innerHTML = data.name
+        td.nextElementSibling.innerHTML = `
+          <button type="button" class="btn btn-outline-primary" onclick="edit_departamento(event, ${id}, '${data.name}')"><i class="fe fe-edit fe-16"></i></button>
+          <button type="button" class="btn btn-outline-danger" onclick="delete_departamento(event, ${id}, '${data.name}')"><i class="fe fe-trash-2 fe-16"></i></button>
+        `
+      },
+      error: function(data){
+        mostrarAlert('alert_department', 'danger', data.statusText);
+      },
+    })
+  }
+
+  function fetch_delete_department(e, id){
+    e.preventDefault();
+    if (!id){
+      mostrarAlert('alert_department', 'danger', "Sem ID");
+      return null;
+    }
+    let tag = e.target.tagName;
+    let tr = tag === "BUTTON" ? e.target.parentElement.parentElement.parentElement : e.target.parentElement.parentElement.parentElement.parentElement;
+    
+    $.ajax({
+      url: `{% url 'delete_department' %}`,
+      type: 'POST',
+      data: {
+        id,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        mostrarAlert('alert_department', 'success', data.msg);
+        deletarRowDataTablesDepartment(tr);
+      },
+      error: function(data){
+        mostrarAlert('alert_department', 'danger', data.statusText);
+      },
+    })
+  }
+
+  function buscar_service_for_id(e, id_service, type){
+    e.preventDefault();
+    $.ajax({
+      url: `/ordem_servico/buscar_servico/${id_service}`,
+      type: 'GET',
+      success: function(data){
+        if (type === 'view'){
+          abrir_modal_view_service(data)
+        }else{
+          open_modal_update_service(data)
+        }
+      },
+      error: function(data){
+        mostrarAlert('alert_geral_sucesso', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function fetch_deletar_servico(e, id_service){
+    e.preventDefault();
+    $.ajax({
+      url: `{% url 'delete_servico_OS' %}`,
+      type: 'POST',
+      data: {
+        id_service,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function(data){
+        window.location.href = "{% url 'controle_servicos_OS' %}";
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function mostrarAlert(div_id_class, type_alert, mensagem){
+    document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
+
+    setTimeout(() => {
+      $('.alert').alert('close')
+    }, 5000)
+  }
+
+  function fecharModal(modalClass){
+    var myModalEl = document.getElementById(modalClass)
+    var modal = bootstrap.Modal.getOrCreateInstance(myModalEl)
+    modal.hide()
+  }
+    
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'js/select2.min.js' %}"></script>
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/jquery.mask.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="{% static 'js/uppy.min.js' %}"></script>
+<script src="{% static 'js/quill.min.js' %}"></script>
+
+<script>
+
+  $('.select2-single').select2(
+    {
+      theme: 'bootstrap4',
+      width: '100%'
+    }
+  );
+
+  $('.select2-multiple').select2(
+    {
+      multiple: true,
+      theme: 'bootstrap4',
+      width: '100%'
+    }
+  );
+
+  $.fn.dataTable.ext.errMode = 'throw';
+
+  var table2 = $('#dataTable-2').DataTable();
+
+  var table = $('#dataTable-1').DataTable();
+
+  function get_all_deparments(){
+    return table2.column(0).data();
+  }
+
+  function deletarRowDataTablesDepartment(tr){
+    $('#dataTable-2').DataTable().row(tr).remove().draw();
+  }
+
+  function addNewRowDepart(id, name) {
+    table2.row.add([ name, `
+      <td class="h5">
+        <button type="button" class="btn btn-outline-primary" onclick="edit_departamento(event, ${id}, '${name}')"><i class="fe fe-edit fe-16"></i></button>
+        <button type="button" class="btn btn-outline-danger" onclick="delete_departamento(event, ${id}, '${name}')"><i class="fe fe-trash-2 fe-16"></i></button>
+      </td>
+    ` ]).draw(false);
+  }
+
+</script>
+
+{% endblock %}

@@ -1,5 +1,17 @@
 from django.db import models
 
+class DepartamentosControle(models.Model):
+    nome_departamento = models.CharField(max_length=255, unique=True)
+
+class Servico(models.Model):
+    cd_servico = models.CharField(max_length=7, primary_key=True)
+    name_servico = models.CharField(max_length=255)
+    tipo_servico = models.CharField(max_length=255)
+    departamentos = models.ManyToManyField(DepartamentosControle, related_name="departamentos")
+    considera_custo = models.BooleanField(default=False)
+    classificacao = models.CharField(max_length=255, blank=True, null=True)
+    observacoes = models.TextField(blank=True, null=True)
+
 class OrdemServico(models.Model):
     departamento = models.CharField(max_length=255)
     cd_servico = models.CharField(max_length=10)

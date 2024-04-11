@@ -1,6 +1,26 @@
 from django import forms
 from core.views import request_project_log
 from operator import itemgetter
+from .models import DepartamentosControle
+
+class ServicoForm(forms.Form):
+    CLASSIFICACAO = (
+        ('',''),
+        ('HONORÁRIO', 'HONORÁRIO'),
+        ('EXTRA', 'EXTRA'),
+    )
+    
+    nr_service = forms.IntegerField(required=False)
+    tipo_servico = forms.CharField(max_length=255, help_text="Digite o Tipo do Serviço", label="Tipo do Serviço: ")
+    considera_custo = forms.BooleanField(label="Considerar no Custo ?", required=False)
+    classificacao = forms.ChoiceField(label="Classificação:", choices=CLASSIFICACAO, help_text="Escolha uma dentre as Opções (Campo é necessário)", required=False)
+    obs = forms.CharField(label="Observaçoes:", help_text="Observação do Serviço", widget=forms.Textarea(attrs={'rows': 5, 'cols': 40}), required=False)
+    
+    def clean_departamentos(self, list_department):
+        return DepartamentosControle.objects.filter(nome_departamento__in=list_department)
+    
+    def clean_service(self, servico_text):
+        return servico_text.split(" *** ")
 
 class OrdemServicoForm(forms.Form):
         

@@ -15,6 +15,18 @@ class Controller():
         self.response = HttpResponse(content_type='text/csv')
         self.writer = csv.writer(self.response)
 
+    #------------------ SERVIÇOS ------------------#
+    
+    def get_servicos_questor(self):
+        try:
+            self.manager.connect()
+            results = self.manager.execute_sql("SELECT CODIGOSERVICOESCRIT, DESCRSERVICOESCRIT FROM SERVICOESCRIT")
+            return results.fetchall()
+        except Exception as err:
+            raise Exception(err)
+        finally:
+            self.manager.disconnect()
+    
     #------------------ AUDITORIA 131 ------------------#
     
     def gerarPlanilhasOrdens(self, filtros):

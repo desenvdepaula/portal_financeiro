@@ -3,12 +3,118 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.views import View
 
-from .forms import OrdemServicoForm
-
+from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
-from .models import OrdemServico
+from .models import OrdemServico, DepartamentosControle, Servico
 from .lib.database import ManagerTareffa
 from core.views import request_project_log
+    
+class Departamento():
+    
+    def create(request):
+        try:
+            depart = DepartamentosControle.objects.create(nome_departamento=request.POST.get('text'))
+        except Exception as err:
+            return JsonResponse({"statusText": str(err)}, status=400)
+        else:
+            return JsonResponse({"id": depart.id, "name": depart.nome_departamento})
+        
+    def update(request):
+        try:
+            depart = DepartamentosControle.objects.get(id=request.POST.get('id'))
+            new_name = request.POST.get('new_name')
+            depart.nome_departamento = new_name
+            depart.save()
+        except Exception as err:
+            return JsonResponse({"statusText": str(err)}, status=400)
+        else:
+            return JsonResponse({"name": new_name})
+
+    def delete(request):
+        try:
+            DepartamentosControle.objects.get(id=request.POST.get('id')).delete()
+        except Exception as err:
+            return JsonResponse({"statusText": str(err)}, status=400)
+        else:
+            return JsonResponse({"msg": "Deletado com Sucesso !!"})
+                
+class ServicosView(View):
+    
+    template = "ordem_servico/servicos.html"
+    form = ServicoForm
+
+    def get(self, request, *args, **kwargs):
+        context = { 'form': self.form() }
+        controller = Controller()
+        context['servicos_questor'] = controller.get_servicos_questor()
+        context['departamentos'] = DepartamentosControle.objects.all()
+        context['servicos'] = Servico.objects.all()
+        return render(request, self.template, context)
+    
+    def post(self, request, *args, **kwargs):
+        context = { 'form': self.form(request.POST or None) }
+        if context['form'].is_valid():
+            try:
+                departments_request = request.POST.getlist('departamentos')
+                departments = context['form'].clean_departamentos(departments_request)
+                nr_service = context['form'].cleaned_data.get('nr_service')
+                if not nr_service:
+                    cd_servico, name_servico = context['form'].clean_service(request.POST.get('servico'))
+                    servico = Servico.objects.create(
+                        cd_servico = cd_servico,
+                        name_servico = name_servico,
+                        tipo_servico = context['form'].cleaned_data.get('tipo_servico'),
+                        considera_custo = context['form'].cleaned_data.get('considera_custo'),
+                        classificacao = context['form'].cleaned_data.get('classificacao'),
+                        observacoes = context['form'].cleaned_data.get('obs'),
+                    )
+                    for depart in departments:
+                        servico.departamentos.add(depart)
+                else:
+                    service = Servico.objects.get(cd_servico=nr_service)
+                    service.tipo_servico = context['form'].cleaned_data.get('tipo_servico')
+                    service.considera_custo = context['form'].cleaned_data.get('considera_custo')
+                    service.classificacao = context['form'].cleaned_data.get('classificacao')
+                    service.observacoes = context['form'].cleaned_data.get('obs')
+                    
+                    departments_service = [i.nome_departamento for i in service.departamentos.all()]
+                    departments_to_add = departments.exclude(nome_departamento__in=departments_service)
+                    departments_to_remove = service.departamentos.exclude(nome_departamento__in=departments_request)
+                    for department_add in departments_to_add:
+                        service.departamentos.add(department_add)
+                    for department_remove in departments_to_remove:
+                        service.departamentos.remove(department_remove)
+                        
+                    service.save()
+                    
+            except Exception as ex:
+                messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
+            else:
+                messages.success(request, "Executado com Sucesso !!")
+        else:
+            messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
+            
+        return redirect('controle_servicos_OS')
+    
+    def buscar_servico(request, nr_servico):
+        try:
+            service = Servico.objects.get(cd_servico=nr_servico)
+            departamentos = [i.nome_departamento for i in service.departamentos.all()]
+            service = vars(service)
+            del service['_state']
+            service['observacoes'] = "\n".join(service['observacoes'].split("\r\n"))
+            service['departamentos'] = departamentos
+            return JsonResponse(service)
+        except Exception as err:
+            return JsonResponse({"statusText": str(err)}, status=400)
+        
+    def delete_service(request):
+        try:
+            Servico.objects.get(cd_servico=request.POST.get('id_service')).delete()
+        except Exception as err:
+            return JsonResponse({"statusText": str(err)}, status=400)
+        else:
+            return JsonResponse({"msg": "Deletado com Sucesso !!"})
     
 class OrdemServicoView(View):
     
