@@ -124,6 +124,12 @@ class OrdemServicoView(View):
     def get(self, request, *args, **kwargs):
         context = { 'form': self.form() }
         context['ordens'] = OrdemServico.objects.all()
+        context['servicos'] = []
+        
+        for servico in Servico.objects.all().order_by('name_servico'):
+            value = servico.cd_servico + ' * ' + servico.name_servico
+            context['servicos'].append([value, servico.name_servico])
+            
         for ordem in context['ordens']:
             ordem.data_cobranca = ordem.data_cobranca.strftime('%d/%m/%Y')
             preco = float(ordem.valor)

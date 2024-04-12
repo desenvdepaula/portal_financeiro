@@ -166,7 +166,16 @@
                 <br>
                 <br>
                 <div class="form-row">
-                    {% bootstrap_field form.servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                  <div class="col-12 col-sm-12">
+                      <label class="font-weight-bold" for="id_servico">Serviço: </label>
+                      <select name="servico" class="form-control" required id="id_servico">
+                          <option value="" selected></option>
+                          {% for option in servicos %}
+                              <option value="{{option.0}}">{{option.1}}</option>
+                          {% endfor %}
+                      </select>
+                      <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
+                  </div>
                 </div>
                 <br>
                 <br>
