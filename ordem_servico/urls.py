@@ -17,4 +17,6 @@ urlpatterns = [
     path('create_department', Departamento.create, name="create_department"),
     path('update_department', Departamento.update, name="update_department"),
     path('delete_department', Departamento.delete, name="delete_department"),
+    
+    path('dowload_relatorio_servicos_classificacoes', login_required(ServicosView.dowload_relatorio_servicos_classificacoes), name="dowload_relatorio_servicos_classificacoes"),
 ]

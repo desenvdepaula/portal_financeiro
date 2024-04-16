@@ -20,7 +20,7 @@ class Controller():
     def get_servicos_questor(self):
         try:
             self.manager.connect()
-            results = self.manager.execute_sql("SELECT CODIGOSERVICOESCRIT, DESCRSERVICOESCRIT FROM SERVICOESCRIT")
+            results = self.manager.execute_sql("SELECT CODIGOSERVICOESCRIT, DESCRSERVICOESCRIT FROM SERVICOESCRIT ORDER BY 2")
             return results.fetchall()
         except Exception as err:
             raise Exception(err)

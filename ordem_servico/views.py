@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.views import View
+import pandas as pd
+from io import BytesIO
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
 from .models import OrdemServico, DepartamentosControle, Servico
-from .lib.database import ManagerTareffa
+from relatorios.models import ClassificacaoServicos
 from core.views import request_project_log
     
 class Departamento():
@@ -46,9 +48,14 @@ class ServicosView(View):
     def get(self, request, *args, **kwargs):
         context = { 'form': self.form() }
         controller = Controller()
+        context['filters'] = set()
         context['servicos_questor'] = controller.get_servicos_questor()
         context['departamentos'] = DepartamentosControle.objects.all()
         context['servicos'] = Servico.objects.all()
+        context['classificacoes'] = ClassificacaoServicos.objects.all()
+        for classificacao in context['classificacoes']:
+            context['filters'].add(classificacao.classificacao)
+            
         return render(request, self.template, context)
     
     def post(self, request, *args, **kwargs):
@@ -58,12 +65,16 @@ class ServicosView(View):
                 departments_request = request.POST.getlist('departamentos')
                 departments = context['form'].clean_departamentos(departments_request)
                 nr_service = context['form'].cleaned_data.get('nr_service')
+                tipo_servico = context['form'].cleaned_data.get('tipo_servico')
+                if tipo_servico:
+                    tipo_servico = ClassificacaoServicos.objects.get(id=tipo_servico)
+                    
                 if not nr_service:
                     cd_servico, name_servico = context['form'].clean_service(request.POST.get('servico'))
                     servico = Servico.objects.create(
                         cd_servico = cd_servico,
                         name_servico = name_servico,
-                        tipo_servico = context['form'].cleaned_data.get('tipo_servico'),
+                        tipo_servico = tipo_servico,
                         considera_custo = context['form'].cleaned_data.get('considera_custo'),
                         classificacao = context['form'].cleaned_data.get('classificacao'),
                         observacoes = context['form'].cleaned_data.get('obs'),
@@ -72,7 +83,7 @@ class ServicosView(View):
                         servico.departamentos.add(depart)
                 else:
                     service = Servico.objects.get(cd_servico=nr_service)
-                    service.tipo_servico = context['form'].cleaned_data.get('tipo_servico')
+                    service.tipo_servico = tipo_servico
                     service.considera_custo = context['form'].cleaned_data.get('considera_custo')
                     service.classificacao = context['form'].cleaned_data.get('classificacao')
                     service.observacoes = context['form'].cleaned_data.get('obs')
@@ -104,6 +115,11 @@ class ServicosView(View):
             del service['_state']
             service['observacoes'] = "\n".join(service['observacoes'].split("\r\n"))
             service['departamentos'] = departamentos
+            service['tipo_servico'] = ""
+            classificacao = service.get('tipo_servico_id')
+            if classificacao:
+                classificacao = ClassificacaoServicos.objects.get(id=classificacao)
+                service['tipo_servico'] = classificacao.classificacao
             return JsonResponse(service)
         except Exception as err:
             return JsonResponse({"statusText": str(err)}, status=400)
@@ -115,6 +131,35 @@ class ServicosView(View):
             return JsonResponse({"statusText": str(err)}, status=400)
         else:
             return JsonResponse({"msg": "Deletado com Sucesso !!"})
+        
+    def dowload_relatorio_servicos_classificacoes(request):
+        try:
+            controller = Controller()
+            servicos = controller.get_servicos_questor()
+            servicos_classificados = [[int(raw.cd_servico), raw.tipo_servico.classificacao] for raw in Servico.objects.all() if raw.tipo_servico]
+            dfServicos = pd.DataFrame(servicos, columns=['CODIGO', 'DESCRICAO']).sort_values(by=['CODIGO'])
+            dfClassificacoes = pd.DataFrame(servicos_classificados, columns=['CODIGO', 'CLASSIFICAÇÃO'])
+            df = dfServicos.merge(dfClassificacoes, how='left', on='CODIGO')
+            df.fillna(" ", inplace=True)
+            with BytesIO() as b:
+                writer = pd.ExcelWriter(b, engine='xlsxwriter')
+                pd.set_option('max_colwidth', None)
+                workbook = writer.book
+                alignCenter = workbook.add_format({'align': 'left'})
+                df.to_excel(writer, sheet_name='Comparação', index = False)
+                writer.sheets['Comparação'].set_column('A:A', 15, alignCenter)
+                writer.sheets['Comparação'].set_column('B:C', 60, alignCenter)
+                writer.close()
+                filename = 'Relatório Serviços e Classificações.xlsx'
+                response = HttpResponse(
+                    b.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                return response
+        except Exception as err:
+            messages.error(request, f"Erro ao Baixar O Relatório: {str(err)}")
+            return redirect('controle_servicos_OS')
     
 class OrdemServicoView(View):
     

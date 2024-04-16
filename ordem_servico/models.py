@@ -1,4 +1,5 @@
 from django.db import models
+from relatorios.models import ClassificacaoServicos
 
 class DepartamentosControle(models.Model):
     nome_departamento = models.CharField(max_length=255, unique=True)
@@ -6,7 +7,7 @@ class DepartamentosControle(models.Model):
 class Servico(models.Model):
     cd_servico = models.CharField(max_length=7, primary_key=True)
     name_servico = models.CharField(max_length=255)
-    tipo_servico = models.CharField(max_length=255)
+    tipo_servico = models.ForeignKey(ClassificacaoServicos, on_delete=models.SET(""), blank=True, null=True)
     departamentos = models.ManyToManyField(DepartamentosControle, related_name="departamentos")
     considera_custo = models.BooleanField(default=False)
     classificacao = models.CharField(max_length=255, blank=True, null=True)

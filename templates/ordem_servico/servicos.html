@@ -16,10 +16,15 @@
             {% bootstrap_messages messages %}
             <div id="alert_geral_sucesso"></div>
             <div class="card shadow" id="cardOs">
-              <div class="card-header d-flex justify-content-start">
-                <div class="d-lg-flex">
-                  <a class="btn btn-success float-right" style="color:#fff;" onclick="open_modal_create_service()">Adicionar Serviço</a>
-                </div>
+              <div class="card-header d-flex justify-content-between">
+                <a class="btn btn-success float-right" style="color:#fff;" onclick="open_modal_create_service()">Adicionar Serviço</a>
+                <select class="custom-select ml-2" style="max-width: 300px" id="find_status" onchange="search()">
+                  <option value="">CLASSIFICAÇÕES DE SERVIÇOS...</option>
+                  {% for filtro in filters %}
+                    <option value="{{filtro}}">{{filtro}}</option>
+                  {% endfor %}
+                </select>
+                <a class="btn btn-primary float-right mr-3" style="color:#fff;" href="{% url 'dowload_relatorio_servicos_classificacoes' %}"><i class="fe fe-download fe-16 mr-2"></i>Baixar Relatório de Serviços</a>
               </div>
               <div class="card-body">
                 <!-- table -->
@@ -27,7 +32,7 @@
                   <thead>
                     <tr>
                       <th>Serviço</th>
-                      <th>Tipo de Serviço</th>
+                      <th>Classificação de Serviço</th>
                       <th>Considera no Custo</th>
                       <th>Classificação</th>
                       <th>Action</th>
@@ -37,7 +42,7 @@
                     {% for servico in servicos %}
                       <tr>
                         <td class="h6">{{servico.cd_servico}} - {{servico.name_servico}}</td>
-                        <td class="h6">{{servico.tipo_servico}}</td>
+                        <td class="h6 {% if not servico.tipo_servico %} text-info {% endif %}">{% if servico.tipo_servico %} {{servico.tipo_servico.classificacao}} {% else %} NENHUMA CLASSIFICAÇÃO {% endif %}</td>
 
                         {% if servico.considera_custo %}
                           <td class="h6 text-success text-center"><i class="fe fe-check-circle fe-24"></i></td>
@@ -139,13 +144,22 @@
 
                 <div class="form-group mt-5">
                   <label for="departamentos_select">Selecione os Departamentos: </label>
-                  <select class="form-control select2-multiple" required id="departamentos_select" name="departamentos"></select>
+                  <select class="form-control select2-multiple" id="departamentos_select" name="departamentos"></select>
                 </div>
 
                 <div class="form-row mt-5">
-                    {% bootstrap_field form.tipo_servico label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.classificacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                  <div class="col-6 col-sm-6">
+                    <label for="id_tipo_servico">Selecione a Classificação do Serviço: </label>
+                    <select class="form-control select2-single" id="id_tipo_servico" name="tipo_servico">
+                      {% for classificacao in classificacoes %}
+                        <option value="{{classificacao.id}}">{{classificacao.classificacao}}</option>
+                      {% endfor %}
+                    </select>
+                    <small>Escolha uma dentre as Opções</small>
+                  </div>
+                  {% bootstrap_field form.classificacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
                 </div>
+
                 <div class="form-row mt-5">
                     {% bootstrap_field form.considera_custo label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
                 </div>
@@ -207,11 +221,11 @@
     document.getElementById('id_classificacao').disabled=!event.target.checked
   })
 
-  function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico="", classificacao=null, custo=false, obs=""){
+  function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico=null, classificacao=null, custo=false, obs=""){
     document.getElementById('id_nr_service_form').value = !id ? "" : id
     $('#servico_select').val(null).trigger('change');
     document.getElementById('servico_select').disabled = !id ? false : true
-    document.getElementById('id_tipo_servico').value = tipo_servico
+    $('#id_tipo_servico').val(tipo_servico).trigger('change');
     document.getElementById('id_classificacao').value = !classificacao ? "" : classificacao
     document.getElementById('id_classificacao').disabled = !classificacao ? true : false
     document.getElementById('id_considera_custo').checked = custo
@@ -240,10 +254,10 @@
   }
 
   function open_modal_update_service(data){
-    let { cd_servico, name_servico, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
     var myModal = new bootstrap.Modal(document.getElementById('modalService'));
     document.getElementById('modalServiceLabel').textContent = `Alterar o Serviço: ${cd_servico} - ${name_servico}`;
-    clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico, classificacao, considera_custo, observacoes);
+    clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico_id, classificacao, considera_custo, observacoes);
     myModal.toggle();
   }
 
@@ -255,11 +269,11 @@
   }
 
   function abrir_modal_view_service(data){
-    let { cd_servico, name_servico, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
     var myModal = new bootstrap.Modal(document.getElementById('modalViewService'));
     document.getElementById('modalViewServiceLabel').textContent = `Visualizar dados do Serviço: ${cd_servico} - ${name_servico}`;
     document.getElementById('view_service').innerHTML = `
-      <p class="h5 mt-3">Tipo do Serviço: ${tipo_servico}</p>
+      <p class="h5 mt-3">Tipo do Serviço: ${tipo_servico_id ? tipo_servico : "Sem Classificação de Serviço"}</p>
       <p class="h5 mt-3">Considera Custo ? ${considera_custo ? "SIM" : "NÃO"}</p>
       <p class="h5 mt-3">Classificação: ${classificacao ? classificacao : "Sem Classificação"}</p>
       <p class="h5 mt-3">Departamentos: ${departamentos.join(" | ")}</p>
@@ -470,6 +484,10 @@
   var table2 = $('#dataTable-2').DataTable();
 
   var table = $('#dataTable-1').DataTable();
+
+  function search(){
+    table.search(document.getElementById("find_status").value).draw();
+  }
 
   function get_all_deparments(){
     return table2.column(0).data();

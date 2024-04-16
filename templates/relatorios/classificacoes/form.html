@@ -5,15 +5,6 @@
 {% block body %}
 
 <style>
-    .v2{
-      color: #6f42c1;
-      border-color: #6f42c1;
-      max-height: 38px;
-    }
-    .v2:hover{
-      background-color: #6f42c1;
-      color: #fff;
-    }
     p{
       font-size: 13pt;
     }
@@ -21,54 +12,6 @@
 
 <main role="main" class="main-content">
     <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="row">
-                    <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
-                        {% bootstrap_messages messages %}
-                        <div id="alert_geral_class" class="mb-4"></div>
-                          <div class="card shadow-lg p-3 mb-5 bg-body rounded">
-                            <div class="card-header">
-                              <select class="custom-select ml-2" style="max-width: 200px" id="find_status" onchange="search()">
-                                <option value="">CLASSIFICAÇÕES...</option>
-                                {% for filtro in filters %}
-                                  <option value="{{filtro}}">{{filtro}}</option>
-                                {% endfor %}
-                              </select>
-                              <a class="btn btn-primary float-right" style="color:#fff;" onclick="openModalCreateServicos(event)">Relacionar Serviço</a>
-                              <a class="btn btn-success float-right mr-3" style="color:#fff;" href="{% url 'dowload_relatorio_servicos_classificacoes' %}"><i class="fe fe-download fe-16 mr-2"></i>Relatório Serviços</a>
-                            </div>
-                            <div class="card-body">
-                              <table class="table" id="table_servicos">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th scope="col">Códigos</th>
-                                        <th scope="col">Descrição</th>
-                                        <th scope="col">Classificação</th>
-                                        <th scope="col">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for servico in servicos_classificados %}
-                                        <tr>
-                                            <td class="h5">{{servico.codigo}}</td>
-                                            <td class="h5">{{servico.descricao}}</td>
-                                            <td class="h5">{{servico.classificacao.classificacao}}</td>
-                                            <td class="h5">
-                                              <button type="button" class="btn btn-outline-primary" onclick="openModalEditServicos(event, {{servico.classificacao.id}}, {{servico.codigo}})"><i class="fe fe-edit fe-16"></i></button>
-                                              <button type="button" class="btn btn-outline-danger" onclick="openModalDeleteServicos(event, '{{servico.descricao}}', {{servico.codigo}})"><i class="fe fe-trash-2 fe-16"></i></button>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                              </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div> <!-- .col-12 -->
-        </div> <!-- .row -->
-
         <div class="row justify-content-center">
             <div class="col-12">
                 <div class="row">
@@ -94,8 +37,8 @@
                                               <p class="h5" name="{{classificacao.id}}">{{classificacao.classificacao}}</p>
                                             </td>
                                             <td class="h5">
-                                              <button type="button" class="btn btn-outline-primary" onclick="openModalEditClassificacao(event, '{{classificacao.classificacao}}', {{classificacao.id}})"><i class="fe fe-edit fe-16 p-3"></i></button>
-                                              <button type="button" class="btn btn-outline-danger" onclick="openModalDeleteClassificacao(event, '{{classificacao.classificacao}}', {{classificacao.id}})"><i class="fe fe-trash-2 fe-16 p-3"></i></button>
+                                              <button type="button" class="btn btn-outline-primary" onclick="openModalEditClassificacao(event, '{{classificacao.classificacao}}', {{classificacao.id}})"><i class="fe fe-edit fe-16"></i></button>
+                                              <button type="button" class="btn btn-outline-danger" onclick="openModalDeleteClassificacao(event, '{{classificacao.classificacao}}', {{classificacao.id}})"><i class="fe fe-trash-2 fe-16"></i></button>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -109,41 +52,6 @@
         </div> <!-- .row -->
 
     </div> <!-- .container-fluid -->
-
-    <div class="modal fade" id="myModalServicos" aria-labelledby="myModalServicosLabel" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                  </button>
-              </div>
-              <div class="modal-body">
-                  <div id="alert_form_class" class="mb-4"></div>
-
-                  <div class="form-row mb-4">
-                    <div class="col-6">
-                      <label for="input_servicos">Escolha o Serviço:</label>
-                      <select class="form-control select2-multi" id="input_servicos" required>
-                        {% for servico in servicos %}
-                          <option value="{{servico.0}}">{{servico.0}} * {{servico.1}}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                    <div class="col-6">
-                      <label for="select_classificacao">Escolha a Classificação:</label>
-                      <select class="form-control select2-multi" id="select_classificacao" required>
-                        <option value=""></option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <center><button type="button" class="btn btn-outline-success mb-5" id="button_modal_servicos">Cadastrar Classificação</button></center>
-
-              </div>
-          </div>
-      </div>
-    </div>
 
     <div class="modal fade" id="myModalClassificacao" tabindex="-1" aria-labelledby="myModalClassificacaoLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -193,44 +101,6 @@
     }, 5000)
   });
 
-
-
-
-  function openModalCreateServicos(event){
-    event.preventDefault();
-    let myModal = new bootstrap.Modal(document.getElementById('myModalServicos'))
-    generateSelectClassificacoes()
-    document.getElementById('input_servicos').disabled = false
-    document.getElementById('button_modal_servicos').setAttribute('onclick', 'createService()')
-    document.getElementById('button_modal_servicos').textContent = 'Cadastrar Serviço'
-    document.getElementById('button_modal_servicos').className = "btn btn-outline-success mt-5"
-    myModal.toggle()
-  }
-
-  function openModalEditServicos(event, id_classificacao, id_servico){
-    event.preventDefault();
-    generateSelectClassificacoes()
-    let index = getIndexofTable(event);
-    let myModal = new bootstrap.Modal(document.getElementById('myModalServicos'))
-    document.getElementById('input_servicos').value = id_servico
-    document.getElementById('select_classificacao').value = id_classificacao
-    document.getElementById('input_servicos').disabled = true
-
-    document.getElementById('button_modal_servicos').setAttribute('onclick', `editService(${id_servico}, ${index})`)
-    document.getElementById('button_modal_servicos').textContent = 'Alterar Classificação deste Serviço'
-    document.getElementById('button_modal_servicos').className = "btn btn-outline-info mt-5"
-    myModal.toggle()
-  }
-
-  function openModalDeleteServicos(event, descricao, id_servico){
-    event.preventDefault();
-    let index = getIndexofTable(event);
-    let myModal = new bootstrap.Modal(document.getElementById('myModalDeleteGeral'))
-    document.getElementById('button_modal_classificacao_delete').setAttribute('onclick', `deleteService(${id_servico}, ${index})`)
-    document.getElementById('button_modal_classificacao_delete').textContent = `Tem Certeza que deseja Deletar este Serviço ? (${id_servico} - ${descricao})`
-    myModal.toggle()
-  }
-
   function openModalCreateClassificacao(event){
     event.preventDefault();
     let myModal = new bootstrap.Modal(document.getElementById('myModalClassificacao'))
@@ -260,130 +130,6 @@
     document.getElementById('button_modal_classificacao_delete').textContent = `Tem Certeza que deseja Deletar a Classificação ${classificacao}`
     myModal.toggle()
   }
-
-
-
-
-
-  function createService(){
-    let input_servicos = document.getElementById('input_servicos').selectedOptions[0].textContent
-    let select_classificacao = document.getElementById('select_classificacao').value
-    if (!input_servicos || !select_classificacao){
-      mostrarAlert("alert_form_class", "danger", "Preencha Corretamente o Formulário!")
-      return false
-    }
-
-    $.ajax({
-      url: "{% url 'request_create_relacionamento_servicos' %}",
-      type: 'POST',
-      data: {
-        input_servicos,
-        select_classificacao,
-        csrfmiddlewaretoken: '{{ csrf_token }}'
-      },
-      success: function(data){
-        if (Object.keys(data).includes('status')){
-          if(data.status === 200){
-            fecharModal('myModalServicos')
-            mostrarAlert('alert_geral_class', 'success', "Sucesso")
-            table_servicos.row.add([
-              `<p class="h5">${data.obj.codigo}</p>`,
-              `<p class="h5">${data.obj.descricao}</p>`,
-              `<p class="h5">${data.obj.classificacao}</p>`,
-              `
-                <button type="button" class="btn btn-outline-primary" onclick="openModalEditServicos(event, ${data.obj.classificacao_id}, ${data.obj.codigo})"><i class="fe fe-edit fe-16"></i></button>
-                <button type="button" class="btn btn-outline-danger" onclick="openModalDeleteServicos(event, '${data.obj.descricao}', ${data.obj.codigo})"><i class="fe fe-trash-2 fe-16"></i></button>
-              `
-            ]).draw();
-          }
-        }else{
-          mostrarAlert('alert_form_class', 'danger', "Erro no Servidor")
-        }
-      },
-      error: function(data){
-        if (Object.keys(data).includes('responseJSON')){
-          mostrarAlert('alert_form_class', 'danger', data.responseJSON.msg)
-        }else{
-          mostrarAlert('alert_form_class', 'danger', "Erro no Servidor")
-        }
-      },
-    })
-  }
-
-  function editService(id_servico, index){
-    let select_classificacao = document.getElementById('select_classificacao').value
-    if (!select_classificacao){
-      mostrarAlert("alert_form_class", "danger", "Preencha Corretamente o Formulário!")
-      return false
-    }
-
-    $.ajax({
-      url: "{% url 'request_edit_relacionamento_servicos' %}",
-      type: 'POST',
-      data: {
-        id_servico,
-        select_classificacao,
-        csrfmiddlewaretoken: '{{ csrf_token }}'
-      },
-      success: function(data){
-        if (Object.keys(data).includes('status')){
-          if(data.status === 200){
-            fecharModal('myModalServicos')
-            mostrarAlert('alert_geral_class', 'success', "Alterado Com Sucesso")
-            table_servicos.row(`:eq(${index})`).data([
-              `<p class="h5">${data.obj.codigo}</p>`,
-              `<p class="h5">${data.obj.descricao}</p>`,
-              `<p class="h5">${data.obj.classificacao}</p>`,
-              `
-                <button type="button" class="btn btn-outline-primary" onclick="openModalEditServicos(event, ${data.obj.classificacao_id}, ${data.obj.codigo})"><i class="fe fe-edit fe-16"></i></button>
-                <button type="button" class="btn btn-outline-danger" onclick="openModalDeleteServicos(event, '${data.obj.descricao}', ${data.obj.codigo})"><i class="fe fe-trash-2 fe-16"></i></button>
-              `
-            ]).draw();
-          }else{
-            mostrarAlert('alert_form_class', 'danger', "Erro no Servidor")
-          }
-        }
-      },
-      error: function(data){
-        if (Object.keys(data).includes('responseJSON')){
-          mostrarAlert('alert_form_class', 'danger', data.responseJSON.msg)
-        }else{
-          mostrarAlert('alert_form_class', 'danger', "Erro no Servidor")
-        }
-      },
-    })
-  }
-
-  function deleteService(id_servico, index){
-    $.ajax({
-      url: "{% url 'request_delete_relacionamento_servicos' %}",
-      type: 'POST',
-      data: {
-        id_servico,
-        csrfmiddlewaretoken: '{{ csrf_token }}'
-      },
-      success: function(data){
-        if (Object.keys(data).includes('status')){
-          if(data.status === 200){
-            fecharModal('myModalDeleteGeral')
-            mostrarAlert('alert_geral_class', 'success', "Deletado com Sucesso")
-            table_servicos.row(`:eq(${index})`).remove().draw();
-          }else{
-            mostrarAlert('alert_form_class_delete', 'danger', "Erro no Servidor")
-          }
-        }
-      },
-      error: function(data){
-        if (Object.keys(data).includes('responseJSON')){
-          mostrarAlert('alert_form_class_delete', 'danger', data.responseJSON.msg)
-        }else{
-          mostrarAlert('alert_form_class_delete', 'danger', "Erro no Servidor")
-        }
-      },
-    })
-  }
-
-
   
   function createClassificacao(){
     let classificacao_value = document.getElementById('input_classificacao').value
@@ -500,10 +246,6 @@
     })
   }
 
-
-
-
-
   function mostrarAlert(div_id_class, type_alert, mensagem){
     document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
   }
@@ -532,34 +274,11 @@
 
 {% block scripts %}
 
-<script src="{% static 'js/select2.min.js' %}"></script>
 <script src="{% static 'js/jquery.mask.min.js' %}"></script>
 <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
 <script>
-  $('.select2-multi').select2(
-    {
-      theme: 'bootstrap4'
-    }
-  );
-
-  var table_servicos = $('#table_servicos').DataTable();
   var table_classificacoes = $('#table_classificacoes').DataTable();
-
-  function search(){
-    table_servicos.search(document.getElementById("find_status").value).draw();
-  }
-
-  function generateSelectClassificacoes(){
-    let select = document.getElementById("select_classificacao")
-    select.innerHTML = "";
-    for (p of table_classificacoes.column(0).nodes().toArray()){
-      p = p.children[0]
-      let newOption = new Option(p.textContent,p.attributes.name.value);
-      select.add(newOption,undefined);
-    }
-  }
-
 </script>
 
 {% endblock %}

@@ -2,7 +2,7 @@ from django import forms
 from core.views import request_project_log
 from datetime import date, datetime
 from calendar import monthrange
-from .models import ClassificacaoFaturamentoServicos
+from ordem_servico.models import Servico
 
 class RelatorioFaturamentoServicoForm:
     
@@ -27,8 +27,8 @@ class RelatorioFaturamentoServicoForm:
     def valid_classificacoes(self):
         try:
             classificacoes = [int(element) for element in self.classificacoes]
-            datas = ClassificacaoFaturamentoServicos.objects.filter(classificacao__in=classificacoes)
-            codigos = [int(servico.codigo) for servico in datas ]
+            datas = Servico.objects.filter(tipo_servico__in=classificacoes)
+            codigos = [int(servico.cd_servico) for servico in datas ]
         except Exception as err:
             raise Exception(err)
         else:

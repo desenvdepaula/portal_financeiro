@@ -1,5 +1,5 @@
-from ..models import ClassificacaoFaturamentoServicos
 import pandas as pd
+from ordem_servico.models import Servico
 
 class RelatorioFaturamentoServicoSqls:
     
@@ -54,7 +54,7 @@ class RelatorioFaturamentoServicoSqls:
             return f"AND SNI.CODIGOSERVICOESCRIT IN {codigos}"
         
     def getClassificationDB(self, list_codigos):
-        codigos = ClassificacaoFaturamentoServicos.objects.filter(codigo__in=list_codigos)
-        listDF = [[int(codigoFaturamento.codigo), codigoFaturamento.classificacao.classificacao] for codigoFaturamento in codigos]
+        codigos = Servico.objects.filter(cd_servico__in=list_codigos)
+        listDF = [[int(codigoFaturamento.cd_servico), codigoFaturamento.tipo_servico.classificacao] for codigoFaturamento in codigos if codigoFaturamento.tipo_servico]
         return pd.DataFrame(listDF, columns=['CÓDIGO SERVIÇO', "CLASSIFICAÇÃO"])
         

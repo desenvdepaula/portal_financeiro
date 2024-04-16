@@ -11,7 +11,7 @@ class ServicoForm(forms.Form):
     )
     
     nr_service = forms.IntegerField(required=False)
-    tipo_servico = forms.CharField(max_length=255, help_text="Digite o Tipo do Serviço", label="Tipo do Serviço: ")
+    tipo_servico = forms.IntegerField(required=False)
     considera_custo = forms.BooleanField(label="Considerar no Custo ?", required=False)
     classificacao = forms.ChoiceField(label="Classificação:", choices=CLASSIFICACAO, help_text="Escolha uma dentre as Opções (Campo é necessário)", required=False)
     obs = forms.CharField(label="Observaçoes:", help_text="Observação do Serviço", widget=forms.Textarea(attrs={'rows': 5, 'cols': 40}), required=False)
