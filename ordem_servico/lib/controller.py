@@ -184,7 +184,11 @@ class Controller():
             self.manager.connect()
             ordem = OrdemServico.objects.get(id=id_ordem)
             if debitar:
-                codigo_escritorio = get_codigo_escritorio(ordem.cd_empresa, self.manager.cursor)
+                if int(ordem.cd_empresa) > 99999:
+                    codigo_escritorio = 9505
+                else:
+                    codigo_escritorio = get_codigo_escritorio(ordem.cd_empresa, self.manager.cursor)
+                    
                 if not codigo_escritorio:
                     raise Exception("Código do Escritório desta Empresa Não Encontrado")
                 sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
