@@ -4,6 +4,7 @@ from .views import OrdemServicoView, ServicosView, Departamento
 
 urlpatterns = [
     path('list_ordem_servico', login_required(OrdemServicoView.as_view()), name="list_ordem_servico"),
+    path('debitar_em_lote', login_required(OrdemServicoView.debitar_em_lote), name="debitar_em_lote"),
     path('delete_ordem_servico', OrdemServicoView.delete, name="delete_ordem_servico"),
     path('buscar_ordem_servico/<int:id_ordem>/', OrdemServicoView.buscar_ordem_servico),
     path('debitar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_debitar_ordem_servico),

@@ -32,35 +32,38 @@
             {% bootstrap_messages messages %}
             <div id="alert_geral_sucesso"></div>
             <div class="card shadow" id="cardOs">
-              <div class="card-header d-flex justify-content-between">
-                <div class="d-lg-flex">
-                  <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search(event)" >
-                    <option value="">Status...</option>
-                    <option value="DEBITAR">DEBITAR</option>
-                    <option value="DEBITADO">DEBITADO</option>
-                    <option value="ARQUIVADO">ARQUIVADO</option>
-                  </select>
-                </div>
-                <div class="d-lg-flex">
-                  <input 
-                      type="date" 
-                      id="min-date"
-                      name="min_date"
-                      title="Início do Período"
-                      class="date-range-filter form-control"
-                      placeholder="Período Inicial:">
-                  &nbsp;&nbsp;
-                  <input 
-                      type="date" 
-                      id="max-date" 
-                      name="max_date" 
-                      title="Fim do Período" 
-                      class="date-range-filter form-control"
-                      placeholder="Período Final:">
-                </div>
-                <div>
-                  <a class="btn btn-orange" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
-                  <a class="btn btn-success float-right ml-3" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
+              <div class="card-header">
+                <div class="d-flex justify-content-between">
+                  <div class="d-lg-flex">
+                    <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search(event)" >
+                      <option value="">Status...</option>
+                      <option value="DEBITAR">DEBITAR</option>
+                      <option value="DEBITADO">DEBITADO</option>
+                      <option value="ARQUIVADO">ARQUIVADO</option>
+                    </select>
+                  </div>
+                  <div class="d-lg-flex">
+                    <input 
+                        type="date" 
+                        id="min-date"
+                        name="min_date"
+                        title="Início do Período"
+                        class="date-range-filter form-control"
+                        placeholder="Período Inicial:">
+                    &nbsp;&nbsp;
+                    <input 
+                        type="date" 
+                        id="max-date" 
+                        name="max_date" 
+                        title="Fim do Período" 
+                        class="date-range-filter form-control"
+                        placeholder="Período Final:">
+                  </div>
+                  <div>
+                    <a class="btn btn-warning" style="color:#fff;" onclick="list_checks_table(event)">Debitar em Lote</a>
+                    <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
+                    <a class="btn btn-orange ml-1" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
+                  </div>
                 </div>
               </div>
               <div class="card-body">
@@ -74,6 +77,7 @@
                       <th>Valor</th>
                       <th>Status</th>
                       <th>Action</th>
+                      <th>Debitar</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -108,6 +112,11 @@
 
                               <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}', 'tr_{{counter}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
                             </div>
+                          </td>
+                          <td class="h6 d-flex justify-content-center">
+                            {% if not ordem.debitar and not ordem.arquivado%}
+                              <input class="form-check-input" type="checkbox" value="" ordemid="{{ordem.id}}" id="flexCheckDefault">
+                            {% endif %}
                           </td>
                         </tr>
                       {% endwith %}
@@ -284,6 +293,28 @@
                 </button>
               </center>
             </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalDebitoLote" tabindex="-1" role="dialog" aria-labelledby="modalDebitoLoteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDebitoLoteLabel">Debitar Ordens em Lote</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_lotes"></div>
+          <div id="bodyDebitoLote"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-success btn-lg" onclick="debitar_ordens_lote(event)">
+            <strong>Debitar</strong>
+          </button>
         </div>
     </div>
   </div>
@@ -645,38 +676,84 @@
   $.fn.dataTable.moment('DD/MM/YYYY');
 
   var table = $('#dataTable-1').DataTable({
-        initComplete: function () {
-            this.api()
-                .columns()
-                .every(function () {
-                    let column = this;
-                    let title = column.footer() ? column.footer().textContent : null;
-                    if (title){
-                        let input = document.createElement('input');
-                        input.placeholder = title;
-                        if (title === 'Valor'){
-                          input.className = "form-control input-money"
-                        }else if (title === 'Empresa'){
-                          input.className = "form-control cd_empresa"
-                        }else if (title === 'Data da Cobrança'){
-                          input.className = "form-control dataMask"
-                        }else if (title === 'Debitar' || title === 'Serviço'){
-                          input.className = "form-control funcion_lower"
-                        }else{
-                          input.className = "form-control"
-                        }
-                        input.name = title.toLowerCase().split(' ').join("_").replace("ç", "c")
-                        input.title = title
-                        column.footer().replaceChildren(input);
-                        input.addEventListener('keyup', () => {
-                            if (column.search() !== this.value) {
-                                column.search(input.value).draw();
-                            }
-                        });
-                    }
-                });
+    initComplete: function () {
+      this.api()
+          .columns()
+          .every(function () {
+              let column = this;
+              let title = column.footer() ? column.footer().textContent : null;
+              if (title){
+                  let input = document.createElement('input');
+                  input.placeholder = title;
+                  if (title === 'Valor'){
+                    input.className = "form-control input-money"
+                  }else if (title === 'Empresa'){
+                    input.className = "form-control cd_empresa"
+                  }else if (title === 'Data da Cobrança'){
+                    input.className = "form-control dataMask"
+                  }else if (title === 'Debitar' || title === 'Serviço'){
+                    input.className = "form-control funcion_lower"
+                  }else{
+                    input.className = "form-control"
+                  }
+                  input.name = title.toLowerCase().split(' ').join("_").replace("ç", "c")
+                  input.title = title
+                  column.footer().replaceChildren(input);
+                  input.addEventListener('keyup', () => {
+                      if (column.search() !== this.value) {
+                          column.search(input.value).draw();
+                      }
+                  });
+              }
+          });
+    }
+  });
+
+  table.on('click', 'tbody tr td input', function (e) {
+    e.currentTarget.parentNode.parentNode.classList.toggle('selected');
+  });
+
+  function list_checks_table(event){
+    let orders = table.rows('.selected').data()
+    if (orders.length == 0){
+      return null;
+    }
+    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'))
+    document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`
+    myModal.toggle()
+  }
+
+  function debitar_ordens_lote(e){
+    e.preventDefault();
+    data = {
+      orders: [],
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+    }
+
+    table.rows('.selected').data().map(tr => {
+      let result = tr[6].match('[0-9]+')[0] || null
+      if(result){
+        data.orders.push(result)
+      }
+    })
+
+    $.ajax({
+      url: "{% url 'debitar_em_lote' %}",
+      type: 'POST',
+      data: data,
+      success: function(data){
+        if (Object.keys(data).includes("error")){
+          mostrarAlert('error_aviso_lotes', 'danger', "Erro, Contate o Programador, ele saberá o que fazer, talvez kkk 😎");
+          setTimeout(() => window.location.href = "{% url 'list_ordem_servico' %}", 5000);
+        }else{
+          window.location.href = "{% url 'list_ordem_servico' %}";
         }
-    });
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_lotes', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
+      },
+    })
+  }
 
   function search(event){
     document.querySelector("#filterDebitar input").value = event.target.value;

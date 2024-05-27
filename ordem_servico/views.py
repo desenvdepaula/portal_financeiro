@@ -203,6 +203,23 @@ class OrdemServicoView(View):
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
             return redirect('list_ordem_servico') 
     
+    def debitar_em_lote(request):
+        try:
+            list_ordens = request.POST.getlist('orders[]')
+            controller = Controller()
+            errors = controller.debitar_em_lote_ordem_servico(list_ordens)
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        else:
+            if errors:
+                text = " | ".join(errors)
+                return JsonResponse({"error":text}, status=200)
+            else:
+                text = f"Lote de Ordens: {list_ordens}"
+                
+            request_project_log(0, text, "ORDEM DE SERVIÇO / DEBITAR ORDEM EM LOTE", request.user.username)
+            return JsonResponse({'msg': 'correto'})
+        
     def delete(request):
         try:
             ordem = OrdemServico.objects.get(id=int(request.POST.get('id_ordem')))

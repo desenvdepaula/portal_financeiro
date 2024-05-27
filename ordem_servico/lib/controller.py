@@ -220,3 +220,39 @@ class Controller():
             ordem.save()
         finally:
             self.manager.disconnect()
+            
+    def debitar_em_lote_ordem_servico(self, orders_list):
+        try:
+            self.manager.connect()
+            ordens = OrdemServico.objects.filter(id__in=orders_list)
+            errors = []
+            
+            for ordem in ordens:
+                if int(ordem.cd_empresa) > 99999:
+                    codigo_escritorio = 9505
+                else:
+                    codigo_escritorio = get_codigo_escritorio(ordem.cd_empresa, self.manager.cursor)
+                    
+                if not codigo_escritorio:
+                    errors.append(f"Código do Escritório da Empresa {ordem.cd_empresa} Não Encontrado")
+                    continue
+                
+                sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
+                id_ordem_servico = get_id_ordem_servico(self.manager.cursor)
+                insert = build_insert_os(id_ordem_servico, ordem, codigo_escritorio, sequencia_variavel_empresa)
+                returning_id_ordem = self.manager.cursor.execute(insert).fetchone()
+                self.manager.connection.commit()
+                if returning_id_ordem:
+                    ordem.ordem_debitada_id = returning_id_ordem[0] or None
+                    ordem.debitar = True
+                    ordem.save()
+                else:
+                    errors.append(f"Lançamento não foi realizado da Empresa {ordem.cd_empresa}, Codigo do Insert não retornado")
+                    continue
+                
+        except Exception as err:
+            raise Exception(err)
+        else:
+            return errors
+        finally:
+            self.manager.disconnect()
