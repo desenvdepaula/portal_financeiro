@@ -124,7 +124,7 @@ def valid_notas_delete(id_ordem_banco, cursor):
 def build_insert_os(id_ordem_banco, ordem, codigo_escritorio, sequencia_variavel_empresa):
     valor_total = ordem.quantidade * ordem.valor
     sql = f"""
-        INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({codigo_escritorio}, {ordem.cd_empresa}, {ordem.cd_servico}, '{ordem.data_cobranca}', {sequencia_variavel_empresa}, NULL, NULL, NULL, {ordem.quantidade}, {ordem.valor}, {valor_total}, '{ordem.ds_servico.replace("'","")}', NULL, NULL, 0, CAST('NOW' AS TIMESTAMP), 3, NULL, NULL, {id_ordem_banco}, NULL) returning SEQUENCIACAIXA;
+        INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({codigo_escritorio}, {ordem.cd_empresa}, {ordem.cd_servico}, '{ordem.data_cobranca}', {sequencia_variavel_empresa}, NULL, NULL, NULL, {ordem.quantidade}, {ordem.valor}, {valor_total}, '{ordem.ds_servico.replace("'","").replace("–","-")}', NULL, NULL, 0, CAST('NOW' AS TIMESTAMP), 3, NULL, NULL, {id_ordem_banco}, NULL) returning SEQUENCIACAIXA;
     """
     return sql
 
