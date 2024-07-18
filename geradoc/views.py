@@ -10,6 +10,8 @@ from django.template.loader import render_to_string
 from Database.models import Connection
 from datetime import date
 import os
+import pandas as pd
+from io import BytesIO
 
 from .lib.controller import Controller
 from .lib.sql import InadimplenciaSqls
@@ -131,6 +133,44 @@ class InadimplentesView(View):
             return redirect('inadimplentes')
         except Exception as err:
             raise Exception(err)
+        finally:
+            connection.disconnect()
+            
+    def export_relatorio_inadimplentes_abertos_detalhados(request):
+        connection = Connection().default_connect()
+        connection.connect()
+        try:
+            with BytesIO() as b:
+                data = request.POST.get('data')
+                sqls = InadimplenciaSqls()
+                writer = pd.ExcelWriter(b, engine='xlsxwriter')
+                pd.set_option('max_colwidth', None)
+                workbook = writer.book
+                alignCenter = workbook.add_format({'align': 'left'})
+                num = workbook.add_format({'num_format':'#,##0.00', 'align': 'left'})
+                        
+                dados = connection.execute_sql(sqls.get_detalhamento(data))
+                dados_for_df = [ i for i in dados ]
+                total = sum([d[0] for d in dados_for_df])
+                dados_for_df.append((total, '', '', '', '','TOTAL DAS NOTAS'))
+                df = pd.DataFrame(dados_for_df, columns=['VALORCR', 'CODIGOESCRIT', "CODIGOCLIENTE",'NUMERONS', "STATUS", "DATA"])
+                df.to_excel(writer, sheet_name='Detalhamento de Notas', index = False)
+                writer.sheets['Detalhamento de Notas'].set_column('A:A', 20, num)
+                writer.sheets['Detalhamento de Notas'].set_column('B:E', 25, alignCenter)
+                writer.sheets['Detalhamento de Notas'].set_column('F:F', 20, alignCenter)
+                
+                writer.close()
+                
+                filename = f'Detalhamentos_{data}.xlsx'
+                response = HttpResponse(
+                    b.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                return response
+        except Exception as err:
+            messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(err))
+            return redirect('inadimplentes')
         finally:
             connection.disconnect()
     

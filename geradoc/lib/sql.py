@@ -36,3 +36,28 @@ class InadimplenciaSqls:
                 CANCELADANS = 0
         """
         return sql
+    
+    def get_detalhamento(self, data):
+        sql = f"""
+            SELECT
+                VALORCR,
+                CR.CODIGOESCRIT,
+                CR.CODIGOCLIENTE,
+                CR.NUMERONS,
+                'ABERTO',
+                DATEADD(-2 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM CAST('{data}' AS DATE))+ 1 AS DATA
+            FROM
+                CONTARECEBER CR
+            LEFT JOIN
+                CONTARECEBIDA CD ON
+                CR.CODIGOESCRIT = CD.CODIGOESCRIT
+                AND CR.NUMERODCTOCR = CD.NUMERODCTOCR
+            WHERE
+                CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575)
+                AND DATAEMISSAOCR BETWEEN DATEADD(-2 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM CAST('{data}' AS DATE))+ 1 AND
+                DATEADD(-1 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM DATEADD(-1 MONTH TO CAST('{data}' AS DATE)))
+                AND STATUSCR = 1
+                AND DATAVCTOCR <= CAST('{data}' AS DATE)- EXTRACT(DAY FROM CAST('{data}' AS DATE))
+                AND (CR.NUMERODCTOCR NOT LIKE 'X%' OR CD.NUMERODCTOCR NOT LIKE 'X%')
+        """
+        return sql
