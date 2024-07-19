@@ -556,3 +556,65 @@ class Controller():
                 }
 
         return dicio
+    
+
+    #------------------ RELATORIO HONORARIO 131 ------------------#
+    
+    def gerar_relatorio_full_131(self):
+        try:
+            self.manager.connect()
+            with BytesIO() as b:
+                writer = pd.ExcelWriter(b, engine='xlsxwriter')
+                pd.set_option('max_colwidth', None)
+                workbook = writer.book
+                alignCenter = workbook.add_format({'align': 'left'})
+                hoje = date.today()
+                month = hoje.month - 1
+                compet = f"{'0' if month < 10 else ''}{month}/{hoje.year}"
+                dados_questor = []
+                dados_contabit = []
+                
+                result = self.manager.execute_sql(SqlHonorarios131.getSqlSelectHonorarios131FullFuncionarios()).fetchall()
+
+                for empresa_questor in result:
+                    nome_empresa = self.retornaNomeEmpresa(empresa_questor[0])[0][0]
+                    dados_questor.append([empresa_questor[0], empresa_questor[3], nome_empresa, empresa_questor[1], empresa_questor[2], empresa_questor[4].strip(), empresa_questor[5], empresa_questor[6].strip()])
+                
+                empresas_contabit = self.retornaEmpresasContabit(compet)
+                
+                for empresa_contabit in empresas_contabit:
+                    empresa = empresas_contabit[empresa_contabit]
+                    dados_empresa = [empresa['idEmpresa'], empresa['idEstabelecimento'], empresa['nmEmpresa'], empresa['nrCNPJCPF']]
+                    if len(empresa['QtdTrabalhadoresCalculo']) > 0:
+                        for empre in empresa['QtdTrabalhadoresCalculo']:
+                            dados_contabit.append(dados_empresa+[self.categorias[empre['cdCategoria']], empre['qtdTrabalhador']])
+                    else:
+                        dados_contabit.append(dados_empresa+['Sem Empregado', 'Sem Empregado'])
+                
+                df_questor = pd.DataFrame(dados_questor, columns=["Codigo Empresa", "Estabelecimento", "Nome Da Empresa", "Quantidade", "Centro de Custo", "TIPO", "COMPET", "TIPOCONTRATO"])
+                df_questor.to_excel(writer, sheet_name='Funcionário Questor', index = False)
+                writer.sheets['Funcionário Questor'].set_column('A:B', 15, alignCenter)
+                writer.sheets['Funcionário Questor'].set_column('C:C', 70, alignCenter)
+                writer.sheets['Funcionário Questor'].set_column('D:D', 12, alignCenter)
+                writer.sheets['Funcionário Questor'].set_column('E:H', 25, alignCenter)
+                
+                df_contabit = pd.DataFrame(dados_contabit, columns=["Codigo Empresa", "Estabelecimento", "Nome Da Empresa", "CNPJ", "Categoria", "Quantidade"])
+                df_contabit.to_excel(writer, sheet_name='Funcionário Contabit', index = False)
+                writer.sheets['Funcionário Contabit'].set_column('A:B', 15, alignCenter)
+                writer.sheets['Funcionário Contabit'].set_column('C:C', 70, alignCenter)
+                writer.sheets['Funcionário Contabit'].set_column('D:F', 22, alignCenter)
+                
+                writer.close()
+                
+                filename = 'Relatório de Funcionários.xlsx'
+                response = HttpResponse(
+                    b.getvalue(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                return response
+                
+        except Exception as err:
+            raise Exception(err)
+        finally:
+            self.manager.disconnect()

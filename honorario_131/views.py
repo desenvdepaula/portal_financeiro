@@ -211,7 +211,8 @@ class RelatorioHonorarioView(View):
         empresas = request.POST.getlist('cod_emp')
         if context['form'].is_valid():
             if len(empresas) == 0 or empresas == None:
-                context['validation_errors'].append("Ao menos o código de uma empresa deve ser informado.")
+                controller = Controller()
+                return controller.gerar_relatorio_full_131()
             else:
                 try:
                     controller = Controller(True)

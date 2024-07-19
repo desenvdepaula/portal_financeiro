@@ -187,3 +187,62 @@ class SqlHonorarios131:
             ORDER BY 1,4,2
         '''.format(empresas)
         return sql
+    
+    @staticmethod
+    def getSqlSelectHonorarios131FullFuncionarios():
+        sql = '''
+            SELECT H.CODIGOEMPRESA EMPRESA, 
+                COUNT(H.CODIGOFUNCCONTR) NUMERO, 
+                UPPER(DESCRORGAN) CENTRO_CUSTO, 
+                FL.CODIGOESTAB FILIAL, 
+                'FOLHA' TIPO,
+                EXTRACT(MONTH FROM COMPET)||'/'||EXTRACT(YEAR FROM COMPET) COMPET,
+                CASE FC.CODIGOTIPOCONTR
+                WHEN 2 THEN 'DIRETOR/PRÓ-LABORE'
+                WHEN 5 THEN 'ESTAGIARIO'
+                WHEN 7 THEN 'APRENDIZ'
+                ELSE 'FOLHA'
+                END TIPOCONTRATO
+            FROM HISTCALCULOMENSAL H
+            JOIN CALCULOEVENTO CE ON H.CODIGOEMPRESA = CE.CODIGOEMPRESA AND
+                                    H.CODIGOFUNCCONTR = CE.CODIGOFUNCCONTR AND
+                                    H.CODIGOPERCALCULO = CE.CODIGOPERCALCULO
+            JOIN FUNCCONTRATO FC ON H.CODIGOEMPRESA = FC.CODIGOEMPRESA AND
+                                    H.CODIGOFUNCCONTR = FC.CODIGOFUNCCONTR
+            JOIN FUNCLOCAL FL ON H.CODIGOEMPRESA = FL.CODIGOEMPRESA AND
+                                H.CODIGOFUNCCONTR = FL.CODIGOFUNCCONTR AND
+                                H.DATALOCAL = FL.DATATRANSF
+            JOIN ORGANOGRAMA O ON FL.CODIGOEMPRESA = O.CODIGOEMPRESA AND
+                                FL.CODIGOESTAB = O.CODIGOESTAB AND
+                                FL.CLASSIFORGAN = O.CLASSIFORGAN
+            JOIN PERIODOCALCULO P ON P.CODIGOEMPRESA = H.CODIGOEMPRESA AND
+                                    H.CODIGOPERCALCULO = P.CODIGOPERCALCULO 
+            WHERE P.COMPET = '01.'||
+                            EXTRACT(MONTH FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) ||'.'||
+                            EXTRACT(YEAR FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) AND 
+                ((CODIGOTIPOCONTR <> 5 AND CODIGOEVENTO = 5021) OR 
+                (CODIGOTIPOCONTR = 5 AND CODIGOEVENTO = 5022)) AND
+                P.CODIGOTIPOCALC = 1
+            GROUP BY 1,3,4,6,7
+            UNION
+            SELECT T.CODIGOEMPRESA, 
+                COUNT(CODIGOTERC), 
+                UPPER(DESCRORGAN) , 
+                T.CODIGOESTAB, 
+                CASE GPSORIGEM
+                WHEN 5 THEN 'MEI'
+                ELSE 'AUTONOMO'
+                END,
+                EXTRACT(MONTH FROM COMPET)||'/'||EXTRACT(YEAR FROM COMPET),
+                'TERCEIRO' TIPOCONTRATO
+            FROM TERCEIROPGTO T
+            JOIN ORGANOGRAMA O ON T.CODIGOEMPRESA = O.CODIGOEMPRESA AND
+                                T.CODIGOESTAB = O.CODIGOESTAB AND
+                                T.CLASSIFORGAN = O.CLASSIFORGAN
+            WHERE COMPET = '01.'||
+                            EXTRACT(MONTH FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) ||'.'||
+                            EXTRACT(YEAR FROM (DATEADD(-1 MONTH TO CAST('NOW' AS DATE)))) AND T.GPSORIGEM IN (1,3,9,5)
+            GROUP BY 1,3,4,5,6,7
+            ORDER BY 1,4,2
+        '''
+        return sql
