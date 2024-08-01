@@ -19,6 +19,7 @@ class Controller:
             self.sqlserver.connect()
 
             self.sqlserver.execute_sql("SET IDENTITY_INSERT TBL_FINANCEIRO_CONTA_CORRENTE_LANCAMENTOS_DIARIOS ON")
+            self.sqlserver.commit_changes()
 
             dataini = inicio_periodo.strftime('%d.%m.%Y')
             datafim = fim_periodo.strftime('%d.%m.%Y')
@@ -75,6 +76,7 @@ class Controller:
                                 NULL,NULL,NULL,NULL,NULL,NULL);"""
 
                             self.sqlserver.execute_sql(insert)
+                            self.sqlserver.commit_changes()
                             txt = f"C|{cnpj}|{corrente}|{historico}|{data}|{data}|{i[5]}||{contabil}||{numero}|{obs}\r\n"
                             array.append(txt)
             
@@ -93,6 +95,7 @@ class Controller:
             self.sqlserver.connect()
 
             self.sqlserver.execute_sql("SET IDENTITY_INSERT TBL_FINANCEIRO_CONTA_CORRENTE_LANCAMENTOS_DIARIOS ON")
+            self.sqlserver.commit_changes()
 
             dataini = inicio_periodo.strftime('%d.%m.%Y')
             datafim = fim_periodo.strftime('%d.%m.%Y')
@@ -149,6 +152,7 @@ class Controller:
                             NULL,NULL,NULL,NULL,NULL,NULL);"""
 
                             self.sqlserver.execute_sql(insert)
+                            self.sqlserver.commit_changes()
                             txt = f"C|{cnpj}|{corrente}|{historico}|{data}|{data}|{i[5]}||{contabil}||{numero}|{obs}\r\n"
                             array.append(txt)
             
