@@ -67,7 +67,7 @@ def get_juros(escritorio,dataini,datafim,codigos):
             C.DATARCTOCR,
             C.CODIGOCAIXACONTA, 
             C.NUMERODCTOCR,
-            REPLACE(R.CODIGOCLIENTE||' - '||P.NOME, '-',' ') CLIENTE,
+            (R.CODIGOCLIENTE||' - '||P.NOME) CLIENTE,
             SUM(C.MULTARCTOCR+C.JURORCTOCR) VALOR
         FROM
             CONTARECEBIDA C
