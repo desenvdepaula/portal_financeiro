@@ -6,7 +6,7 @@ def get_recebimentos(escritorio,dataini,datafim,codigos):
             C.DATARCTOCR,
             C.CODIGOCAIXACONTA, 
             C.NUMERODCTOCR,
-	        REPLACE(R.CODIGOCLIENTE||' - '||P.NOME, '-',' ') CLIENTE,
+	        (R.CODIGOCLIENTE||' - '||P.NOME) CLIENTE,
             SUM(C.VALORRCTOCR) VALOR
         FROM
             CONTARECEBIDA C
@@ -28,7 +28,7 @@ def get_recebimentos(escritorio,dataini,datafim,codigos):
             S.DATAEMISSAONS,
             S.CODIGOCAIXACONTA,
 	        S.SERIENS ||S.NUMERONS NUMERODCTOCR,
-	        REPLACE(S.CODIGOCLIENTE||' - '||P.NOME, '-',' ') CLIENTE,
+	        (S.CODIGOCLIENTE||' - '||P.NOME) CLIENTE,
             SUM(S.VALORBRUTO) VALOR
         FROM
             SERVICONOTA S
