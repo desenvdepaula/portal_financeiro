@@ -2,7 +2,7 @@ from django import forms
 from core.views import request_project_log
 from datetime import date, datetime
 from calendar import monthrange
-from ordem_servico.models import Servico
+from ordem_servico.models import Servico, DepartamentosControle
 
 class RelatorioFaturamentoServicoForm:
     
@@ -11,7 +11,19 @@ class RelatorioFaturamentoServicoForm:
         self.data_fim = datetime.strptime(kwargs.get('data_fim'), '%Y-%m-%d').date()
         self.classificacoes = kwargs.getlist('classificacoes')
         self.servicos = kwargs.getlist('servicos')
+        self.departamentos = kwargs.getlist('departamentos')
     
+    def valid_departamentos(self):
+        try:
+            results = set()
+            for depart in DepartamentosControle.objects.filter(id__in=self.departamentos):
+                for service in depart.departamentos.all():
+                    results.add(int(service.cd_servico))
+        except Exception as err:
+            raise Exception(err)
+        else:
+            return list(results)
+
     def valid_datas(self):
         try:
             if self.data_inicio > self.data_fim:

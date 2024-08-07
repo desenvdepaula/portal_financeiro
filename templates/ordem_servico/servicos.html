@@ -34,7 +34,7 @@
                       <th>Serviço</th>
                       <th>Classificação de Serviço</th>
                       <th>Considera no Custo</th>
-                      <th>Classificação</th>
+                      <th>Status do Serviço</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -50,7 +50,7 @@
                           <td class="h6 text-danger text-center"><i class="fe fe-x-circle fe-24"></i></td>
                         {% endif %}
                         
-                        <td class="h6">{% if servico.classificacao %} {{servico.classificacao}} {% else %} Sem Classificação {% endif %}</td>
+                        <td class="h6 text-{% if servico.ativo %}success{% else %}danger{% endif %}">{% if servico.ativo %} ATIVO {% else %} DESATIVADO {% endif %}</td>
                         <td>
                           <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="text-muted sr-only">Action</span>
@@ -161,7 +161,8 @@
                 </div>
 
                 <div class="form-row mt-5">
-                    {% bootstrap_field form.considera_custo label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                    {% bootstrap_field form.considera_custo label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.regra_ativa label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
                 </div>
                 
                 <div class="form-row mt-5">
@@ -219,9 +220,10 @@
 
   document.getElementById('id_considera_custo').addEventListener('click', (event) => {
     document.getElementById('id_classificacao').disabled=!event.target.checked
+    document.getElementById('id_classificacao').required=event.target.checked
   })
 
-  function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico=null, classificacao=null, custo=false, obs=""){
+  function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico=null, classificacao=null, custo=false, ativo=true, obs=""){
     document.getElementById('id_nr_service_form').value = !id ? "" : id
     $('#servico_select').val(null).trigger('change');
     document.getElementById('servico_select').disabled = !id ? false : true
@@ -229,6 +231,7 @@
     document.getElementById('id_classificacao').value = !classificacao ? "" : classificacao
     document.getElementById('id_classificacao').disabled = !classificacao ? true : false
     document.getElementById('id_considera_custo').checked = custo
+    document.getElementById('id_regra_ativa').checked = ativo
     document.getElementById('id_obs').value = obs
 
     var select = document.getElementById('departamentos_select');
@@ -254,10 +257,10 @@
   }
 
   function open_modal_update_service(data){
-    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos } = data
     var myModal = new bootstrap.Modal(document.getElementById('modalService'));
     document.getElementById('modalServiceLabel').textContent = `Alterar o Serviço: ${cd_servico} - ${name_servico}`;
-    clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico_id, classificacao, considera_custo, observacoes);
+    clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico_id, classificacao, considera_custo, ativo, observacoes);
     myModal.toggle();
   }
 
@@ -269,10 +272,11 @@
   }
 
   function abrir_modal_view_service(data){
-    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, classificacao, observacoes, departamentos } = data
+    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos } = data
     var myModal = new bootstrap.Modal(document.getElementById('modalViewService'));
     document.getElementById('modalViewServiceLabel').textContent = `Visualizar dados do Serviço: ${cd_servico} - ${name_servico}`;
     document.getElementById('view_service').innerHTML = `
+      <p class="h5 mt-3">REGRA ${ativo ? "ATIVA" : "INATIVA"}</p>
       <p class="h5 mt-3">Tipo do Serviço: ${tipo_servico_id ? tipo_servico : "Sem Classificação de Serviço"}</p>
       <p class="h5 mt-3">Considera Custo ? ${considera_custo ? "SIM" : "NÃO"}</p>
       <p class="h5 mt-3">Classificação: ${classificacao ? classificacao : "Sem Classificação"}</p>

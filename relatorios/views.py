@@ -7,6 +7,7 @@ from django.http import JsonResponse
 
 from .lib.controller import Controller
 from .models import ClassificacaoServicos
+from ordem_servico.models import DepartamentosControle, Servico
 from .forms import RelatorioFaturamentoServicoForm
 
 class ClassificacoesServicos(View):
@@ -49,10 +50,10 @@ class RelatorioFaturamentoServico(View):
     template_form = "./relatorios/relatorio_faturamento/form.html"
     
     def get(self, request):
-        controller = Controller()
         context={}
-        context['servicos'] = controller.get_dados_servicos()
+        context['servicos'] = Servico.objects.filter(ativo=True)
         context['classificacoes'] = ClassificacaoServicos.objects.all()
+        context['departamentos'] = DepartamentosControle.objects.all()
         return render(request, self.template_form, context)
     
     def post(self, request):
@@ -63,7 +64,8 @@ class RelatorioFaturamentoServico(View):
             inicio, fim = valid_dados.valid_datas()
             classificacoes = valid_dados.valid_classificacoes()
             servicos = valid_dados.valid_servicos()
-            for i in classificacoes+servicos:
+            departamentos = valid_dados.valid_departamentos()
+            for i in classificacoes+servicos+departamentos:
                 codigos_servicos.add(i)
                 
             return controller.build_planilha_faturamento_servico(inicio, fim, codigos_servicos)

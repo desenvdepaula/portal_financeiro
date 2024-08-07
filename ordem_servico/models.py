@@ -10,6 +10,7 @@ class Servico(models.Model):
     tipo_servico = models.ForeignKey(ClassificacaoServicos, on_delete=models.SET(""), blank=True, null=True)
     departamentos = models.ManyToManyField(DepartamentosControle, related_name="departamentos")
     considera_custo = models.BooleanField(default=False)
+    ativo = models.BooleanField(default=True)
     classificacao = models.CharField(max_length=255, blank=True, null=True)
     observacoes = models.TextField(blank=True, null=True)
 

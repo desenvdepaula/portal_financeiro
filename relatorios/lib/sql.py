@@ -55,6 +55,13 @@ class RelatorioFaturamentoServicoSqls:
         
     def getClassificationDB(self, list_codigos):
         codigos = Servico.objects.filter(cd_servico__in=list_codigos)
-        listDF = [[int(codigoFaturamento.cd_servico), codigoFaturamento.tipo_servico.classificacao] for codigoFaturamento in codigos if codigoFaturamento.tipo_servico]
-        return pd.DataFrame(listDF, columns=['CÓDIGO SERVIÇO', "CLASSIFICAÇÃO"])
+        listDF = []
+        for codigoFaturamento in codigos:
+            departamentos_service = " | ".join([depart.nome_departamento for depart in codigoFaturamento.departamentos.all()])
+            listDF.append([
+                int(codigoFaturamento.cd_servico),
+                codigoFaturamento.tipo_servico.classificacao if codigoFaturamento.tipo_servico else '',
+                departamentos_service
+            ])
+        return pd.DataFrame(listDF, columns=['CÓDIGO SERVIÇO', "CLASSIFICAÇÃO", "DEPARTAMENTOS"])
         

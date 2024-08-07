@@ -49,9 +49,9 @@ class ServicosView(View):
         context = { 'form': self.form() }
         controller = Controller()
         context['filters'] = set()
-        context['servicos_questor'] = controller.get_servicos_questor()
-        context['departamentos'] = DepartamentosControle.objects.all()
         context['servicos'] = Servico.objects.all()
+        context['servicos_questor'] = controller.get_servicos_questor(context['servicos'])
+        context['departamentos'] = DepartamentosControle.objects.all()
         context['classificacoes'] = ClassificacaoServicos.objects.all()
         for classificacao in context['classificacoes']:
             context['filters'].add(classificacao.classificacao)
@@ -76,6 +76,7 @@ class ServicosView(View):
                         name_servico = name_servico,
                         tipo_servico = tipo_servico,
                         considera_custo = context['form'].cleaned_data.get('considera_custo'),
+                        ativo = context['form'].cleaned_data.get('regra_ativa'),
                         classificacao = context['form'].cleaned_data.get('classificacao'),
                         observacoes = context['form'].cleaned_data.get('obs'),
                     )
@@ -85,6 +86,7 @@ class ServicosView(View):
                     service = Servico.objects.get(cd_servico=nr_service)
                     service.tipo_servico = tipo_servico
                     service.considera_custo = context['form'].cleaned_data.get('considera_custo')
+                    service.ativo = context['form'].cleaned_data.get('regra_ativa')
                     service.classificacao = context['form'].cleaned_data.get('classificacao')
                     service.observacoes = context['form'].cleaned_data.get('obs')
                     
@@ -136,9 +138,22 @@ class ServicosView(View):
         try:
             controller = Controller()
             servicos = controller.get_servicos_questor()
-            servicos_classificados = [[int(raw.cd_servico), raw.tipo_servico.classificacao] for raw in Servico.objects.all() if raw.tipo_servico]
             dfServicos = pd.DataFrame(servicos, columns=['CODIGO', 'DESCRICAO']).sort_values(by=['CODIGO'])
-            dfClassificacoes = pd.DataFrame(servicos_classificados, columns=['CODIGO', 'CLASSIFICAÇÃO'])
+            
+            servicos_classificados = []
+            for raw in Servico.objects.all():
+                departamentos_service = " | ".join([depart.nome_departamento for depart in raw.departamentos.all()])
+                servicos_classificados.append([
+                    int(raw.cd_servico),
+                    raw.tipo_servico.classificacao if raw.tipo_servico else '',
+                    departamentos_service,
+                    "ATIVO" if raw.ativo else "INATIVO",
+                    "SIM" if raw.considera_custo else "NÃO",
+                    raw.classificacao
+                ])
+            
+            dfClassificacoes = pd.DataFrame(servicos_classificados, columns=['CODIGO', 'CLASSIFICAÇÃO DO SERVIÇO', 'DEPARTAMENTOS', 'STATUS', 'CONSIDERA NO CUSTO', 'CLASSIFICAÇÃO NO CUSTO'])
+            
             df = dfServicos.merge(dfClassificacoes, how='left', on='CODIGO')
             df.fillna(" ", inplace=True)
             with BytesIO() as b:
@@ -149,6 +164,8 @@ class ServicosView(View):
                 df.to_excel(writer, sheet_name='Comparação', index = False)
                 writer.sheets['Comparação'].set_column('A:A', 15, alignCenter)
                 writer.sheets['Comparação'].set_column('B:C', 60, alignCenter)
+                writer.sheets['Comparação'].set_column('D:D', 50, alignCenter)
+                writer.sheets['Comparação'].set_column('E:G', 30, alignCenter)
                 writer.close()
                 filename = 'Relatório Serviços e Classificações.xlsx'
                 response = HttpResponse(

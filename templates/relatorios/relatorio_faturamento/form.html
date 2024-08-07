@@ -45,8 +45,19 @@
 
                                     <div class="form-row mt-5">
                                       <div class="col-12">
-                                        <label for="multi-select">Classificações de Serviços (Opcional): </label>
-                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select" name="classificacoes">
+                                        <label for="multi-select-depart">Selecione os Departamentos: </label>
+                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select-depart" name="departamentos">
+                                          {% for departamento in departamentos %}
+                                            <option value="{{departamento.id}}">{{departamento.nome_departamento}}</option>
+                                          {% endfor %}
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div class="form-row mt-5">
+                                      <div class="col-12">
+                                        <label for="multi-select-class">Classificações de Serviços (Opcional): </label>
+                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select-class" name="classificacoes">
                                           {% for classificacao in classificacoes %}
                                             <option value="{{classificacao.id}}">{{classificacao.classificacao}}</option>
                                           {% endfor %}
@@ -56,10 +67,10 @@
 
                                     <div class="form-row mt-5">
                                       <div class="col-12">
-                                        <label for="multi-select2">Escolha os Serviços (Opcional): </label>
-                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select2" name="servicos">
+                                        <label for="multi-select-services">Escolha os Serviços (Opcional): </label>
+                                        <select class="form-control select2-multi" multiple="multiple" id="multi-select-services" name="servicos">
                                           {% for servico in servicos %}
-                                            <option value="{{servico.0}}">{{servico.0}} - {{servico.1}}</option>
+                                            <option value="{{servico.cd_servico}}">{{servico.cd_servico}} - {{servico.name_servico}}</option>
                                           {% endfor %}
                                         </select>
                                       </div>

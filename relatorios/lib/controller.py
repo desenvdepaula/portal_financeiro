@@ -39,18 +39,6 @@ class Controller():
         self.manager.disconnect()
         socios = [ Socio.instance_from_database_args(socio) for socio in socios ]
         return socios
-    
-    def get_dados_servicos(self):
-        try:
-            response = []
-            self.manager.connect()
-            response = self.manager.execute_sql("SELECT CODIGOSERVICOESCRIT, DESCRSERVICOESCRIT FROM SERVICOESCRIT ORDER BY 2").fetchall()
-        except Exception as err:
-            raise Exception(err)
-        else:
-            return response
-        finally:
-            self.manager.disconnect()
 
     def build_planilha_faturamento_servico(self, inicio, fim, codigos_servicos):
         try:
@@ -76,7 +64,8 @@ class Controller():
                 writer.sheets['Faturamento'].set_column('F:F', 15, alignCenter)
                 writer.sheets['Faturamento'].set_column('G:G', 45, alignCenter)
                 writer.sheets['Faturamento'].set_column('H:H', 15, num)
-                writer.sheets['Faturamento'].set_column('I:I', 25, alignCenter)
+                writer.sheets['Faturamento'].set_column('I:I', 40, alignCenter)
+                writer.sheets['Faturamento'].set_column('J:J', 35, alignCenter)
                 
                 writer.close()
                 

@@ -5,7 +5,7 @@ import pandas as pd
 from django.http import HttpResponse, JsonResponse
 from ..models import OrdemServico
 from .database import Manager
-from .querys import filter_planilha, get_codigo_escritorio, get_sequencia_variavel_empresa, get_id_ordem_servico, build_insert_os, valid_notas_delete, build_delete_os
+from .querys import filter_planilha, get_codigo_escritorio, get_sequencia_variavel_empresa, get_id_ordem_servico, build_insert_os, valid_notas_delete, build_delete_os, sql_get_services_questor
 
 class Controller():
 
@@ -17,10 +17,12 @@ class Controller():
 
     #------------------ SERVIÇOS ------------------#
     
-    def get_servicos_questor(self):
+    def get_servicos_questor(self, codigos=None):
+        self.manager.connect()
         try:
-            self.manager.connect()
-            results = self.manager.execute_sql("SELECT CODIGOSERVICOESCRIT, DESCRSERVICOESCRIT FROM SERVICOESCRIT ORDER BY 2")
+            if codigos:
+                codigos = tuple([i.cd_servico for i in codigos])
+            results = self.manager.execute_sql(sql_get_services_questor(codigos))
             return results.fetchall()
         except Exception as err:
             raise Exception(err)

@@ -1,5 +1,18 @@
 from ..models import OrdemServico
 
+def sql_get_services_questor(codigos):
+    sql = f"""
+        SELECT
+            CODIGOSERVICOESCRIT,
+            DESCRSERVICOESCRIT
+        FROM
+            SERVICOESCRIT
+        {f"WHERE CODIGOSERVICOESCRIT NOT IN {codigos}" if codigos else ""}
+        ORDER BY
+            2
+    """
+    return sql
+
 def filter_planilha(filtros):
     try:
         dados = OrdemServico.objects.all()
