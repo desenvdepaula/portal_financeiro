@@ -25,7 +25,7 @@ class EmissaoNFForm(forms.Form):
         empresas = []
         with open(arquive, 'r', encoding='utf-8') as infile:
             for line in infile:
-                empresas = line.split(",")
+                empresas = line.replace("\n", "").split(",")
         self.cleaned_data['empresas'] = tuple(empresas)
         self.fields.get('arquivo').label = "None"
         return arquivoName
