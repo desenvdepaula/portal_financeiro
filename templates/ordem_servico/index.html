@@ -313,7 +313,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline-success btn-lg" onclick="debitar_ordens_lote(event)">
-            <strong>Debitar</strong>
+            Debitar
           </button>
         </div>
     </div>
@@ -713,6 +713,17 @@
     e.currentTarget.parentNode.parentNode.classList.toggle('selected');
   });
 
+  function button_spinner(button, active, html=''){
+    button.innerHTML = active ? `
+      <center>
+        <div class="spinner-border justify-center" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      </center>
+    ` : `${html}`;
+    button.disabled = active;
+  }
+
   function list_checks_table(event){
     let orders = table.rows('.selected').data()
     if (orders.length == 0){
@@ -737,6 +748,8 @@
       }
     })
 
+    button_spinner(e.target, true)
+
     $.ajax({
       url: "{% url 'debitar_em_lote' %}",
       type: 'POST',
@@ -751,6 +764,7 @@
       },
       error: function(data){
         mostrarAlert('error_aviso_lotes', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
+        button_spinner(e.target, false, 'Debitar Novamente')
       },
     })
   }
