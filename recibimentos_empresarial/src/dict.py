@@ -5,12 +5,12 @@ def get_dicionario():
                 {
                     14:{
                         'NF':{
-                            'corrente':31,
-                            'historico':1002,
+                            'corrente':74,
+                            'historico':294,
                             'contabil':142
                         },
                         'A':{
-                            'corrente':31,
+                            'corrente':74,
                             'historico':439,
                             'contabil':5334
                         }
@@ -26,7 +26,19 @@ def get_dicionario():
                             'historico':439,
                             'contabil':5334
                         }
-                    }
+                    },
+                    78:{
+                        'NF':{
+                            'corrente':74,
+                            'historico':294,
+                            'contabil':142
+                        },
+                        'A':{
+                            'corrente':74,
+                            'historico':439,
+                            'contabil':5334
+                        }
+                    },
                 }
             ],
             502:[
@@ -34,12 +46,12 @@ def get_dicionario():
                 {
                     14:{
                         'NF':{
-                            'corrente':7,
-                            'historico':1002,
+                            'corrente':76,
+                            'historico':294,
                             'contabil':142
                         },
                         'A':{
-                            'corrente':7,
+                            'corrente':76,
                             'historico':439,
                             'contabil':5334
                         }
@@ -55,6 +67,18 @@ def get_dicionario():
                             'historico':439,
                             'contabil':5334
                         }
+                    },
+                    76:{
+                        'NF':{
+                            'corrente':76,
+                            'historico':294,
+                            'contabil':142
+                        },
+                        'A':{
+                            'corrente':76,
+                            'historico':439,
+                            'contabil':5334
+                        }
                     }
                 }
             ],
@@ -63,12 +87,12 @@ def get_dicionario():
                 {
                     14:{
                         'NF':{
-                            'corrente':30,
-                            'historico':1002,
+                            'corrente':76,
+                            'historico':294,
                             'contabil':142
                         },
                         'A':{
-                            'corrente':30,
+                            'corrente':76,
                             'historico':439,
                             'contabil':5334
                         }
@@ -117,6 +141,18 @@ def get_dicionario():
                             'historico':5334,
                             'contabil':5334
                         }
+                    },
+                    80:{
+                        'NF':{
+                            'corrente':76,
+                            'historico':294,
+                            'contabil':142
+                        },
+                        'A':{
+                            'corrente':76,
+                            'historico':439,
+                            'contabil':5334
+                        }
                     }
                 }
             ],    
@@ -125,12 +161,12 @@ def get_dicionario():
                 {
                     14:{
                         'NF':{
-                            'corrente':10,
-                            'historico':1002,
+                            'corrente':78,
+                            'historico':294,
                             'contabil':142
                         },
                         'A':{
-                            'corrente':10,
+                            'corrente':78,
                             'historico':439,
                             'contabil':5334
                         }
@@ -146,6 +182,18 @@ def get_dicionario():
                             'historico':439,
                             'contabil':5334
                         }
+                    },
+                    77:{
+                        'NF':{
+                            'corrente':78,
+                            'historico':294,
+                            'contabil':142
+                        },
+                        'A':{
+                            'corrente':78,
+                            'historico':439,
+                            'contabil':5334
+                        }
                     }
                 }
             ],
@@ -154,12 +202,12 @@ def get_dicionario():
                 {
                     14:{
                         'NF':{
-                            'corrente':65,
-                            'historico':1002,
+                            'corrente':80,
+                            'historico':294,
                             'contabil':142
                         },
                         'A':{
-                            'corrente':65,
+                            'corrente':80,
                             'historico':439,
                             'contabil':5334
                         }
@@ -172,6 +220,18 @@ def get_dicionario():
                         },
                         'A':{
                             'corrente':65,
+                            'historico':439,
+                            'contabil':5334
+                        }
+                    },
+                    79:{
+                        'NF':{
+                            'corrente':80,
+                            'historico':294,
+                            'contabil':142
+                        },
+                        'A':{
+                            'corrente':80,
                             'historico':439,
                             'contabil':5334
                         }
