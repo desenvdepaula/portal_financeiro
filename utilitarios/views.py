@@ -109,16 +109,6 @@ class EmissaoNFManual(View):
                 )
             except Exception as ex:
                 messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
-            finally:
-                self.excluirArquivos()
         else:
             messages.error(request, "Ocorreu um erro ao executar por lagum motivo ai!!")
         return render(request, self.template_form, context)
-
-    def excluirArquivos(self):
-        try:
-            for file in os.listdir(settings.BASE_DIR / 'temp/files/emissao_nf_manual/'):
-                if not ".py" in file:
-                    os.remove(settings.BASE_DIR / f'temp/files/emissao_nf_manual/{file}')
-        except OSError as e:
-            print(f"Error:{ e }")

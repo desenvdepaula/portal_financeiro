@@ -7,6 +7,7 @@ from django.http import HttpResponse
 import zipfile
 import os
 from PyPDF2 import PdfWriter, PdfReader, PdfMerger
+from io import BytesIO
 from Database.models import Connection
 from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno
 
@@ -40,7 +41,7 @@ class Controller():
             connection.connect()
             sqls = SQLSNFRetorno()
             
-            dictEmpresas = { 9501:[501,51,0], 9502:[502,15,0], 9505:[505,55,200], 9567:[567,67,200], 9575:[575,75,200] }
+            dictEmpresas = { 9501:[501,78,0], 9502:[502,76,0], 9505:[505,80,200], 9567:[567,77,200], 9575:[575,79,200] }
             self.writer.writerow(['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])
             listaInserts = []
 
@@ -94,8 +95,9 @@ class Controller():
 
     # ---------- EMISSAO NF MANUAL ---------- #
     def gerar_emissao_NF_Manual(self, empresas, acoes, data):
+        bytIO = BytesIO()
+        connection = Connection().default_connect()
         try:
-            connection = Connection().default_connect()
             connection.connect()
             dfHeader = ['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM']
             dictEmpresas = { 9501:[501,0], 9502:[502,0], 9505:[505,200], 9567:[567,200], 9575: [575,200] }
@@ -116,16 +118,14 @@ class Controller():
                     row[10] = row[10] + ",00"
                 newDFlist.append(row)
                 
-            newDF = pd.DataFrame(newDFlist,columns=dfHeader)        
-            newDF.to_csv(settings.BASE_DIR / f'temp/files/emissao_nf_manual/arquivoManual.txt', sep='|', index=False, line_terminator='\r\n', encoding="utf8")
+            newDF = pd.DataFrame(newDFlist,columns=dfHeader)
+            newDF.to_csv(bytIO, sep='|', index=False, line_terminator='\r\n', encoding="utf8")
 
         except Exception as ex:
-            print("Ocorreu um erro ao executar esta operação: {0}".format(ex))
+            raise Exception(ex)
         else:
-            file = open( settings.BASE_DIR / f'temp/files/emissao_nf_manual/arquivoManual.txt', 'rb')
-            response = HttpResponse(file, content_type='application/txt')
-            response['Content-Disposition'] = 'attachment; filename="%s"' % 'ArquivoValidacaoEmissaoNFManual.txt'
-            file.close()
+            response = HttpResponse(bytIO.getvalue(), content_type='application/txt')
+            response['Content-Disposition'] = 'attachment; filename="%s"' % "arquivoManual.txt"
             return response
         finally:
             connection.disconnect()
