@@ -41,14 +41,15 @@ class Controller():
             connection.connect()
             sqls = SQLSNFRetorno()
             
-            dictEmpresas = { 9501:[501,78,0], 9502:[502,76,0], 9505:[505,80,200], 9567:[567,77,200], 9575:[575,79,200] }
+            dictEmpresas = { 9501:[[501,78,0], [501,51,0]], 9502:[[502,76,0], [502,15,0]], 9505:[[505,80,200], [505,55,200]], 9567:[[567,77,200], [567,67,200]], 9575:[[575,79,200], [575,75,200]] }
             self.writer.writerow(['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM'])
             listaInserts = []
 
             for i in dictEmpresas:
-                queries = connection.execute_sql(sqls.get_inserts(i,dictEmpresas[i][0],dictEmpresas[i][2],dictEmpresas[i][1],data, empresas))
-                for i in queries:
-                    listaInserts.append(list(i))
+                for insert, servico, codigo in dictEmpresas[i]:
+                    queries = connection.execute_sql(sqls.get_inserts(i,insert,codigo,servico,data, empresas))
+                    for i in queries:
+                        listaInserts.append(list(i))
 
             for i in listaInserts:
                 i[3] = i[3].strftime('%d.%m.%Y')
