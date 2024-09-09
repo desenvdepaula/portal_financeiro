@@ -48,9 +48,9 @@ class Controller():
             for i in dictEmpresas:
                 for insert, servico, codigo in dictEmpresas[i]:
                     queries = connection.execute_sql(sqls.get_inserts(i,insert,codigo,servico,data, empresas))
-                    for i in queries:
-                        listaInserts.append(list(i))
-
+                    for result in queries:
+                        listaInserts.append(list(result))
+            
             for i in listaInserts:
                 i[3] = i[3].strftime('%d.%m.%Y')
                 i[15] = "CAST('NOW' AS TIMESTAMP)"
@@ -77,7 +77,7 @@ class Controller():
                 else:
                     self.writer.writerow(i)
         except Exception as ex:
-            print("Ocorreu um erro ao executar esta operação: {0}".format(ex))
+            raise Exception(ex)
         else:
             self.response['Content-Disposition'] = f"filename=RegistrosNaoImportados_NaoLancados.csv"
             return self.response
