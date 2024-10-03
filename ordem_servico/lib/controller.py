@@ -135,7 +135,7 @@ class Controller():
                 ordem.data_realizado = cleaned_data.get('data')
                 ordem.data_cobranca = cleaned_data.get('data_cobranca')
                 ordem.quantidade = cleaned_data.get('quantidade')
-                ordem.hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M')
+                ordem.hora_trabalho = self.validar_tempo_execucao(cleaned_data.get('execucao'))
                 ordem.valor = cleaned_data.get('valor')
                 ordem.autorizado_pelo_cliente = cleaned_data.get('autorizacao')
                 ordem.type_solicitacao = cleaned_data.get('solicitacaoLocal')
@@ -152,7 +152,7 @@ class Controller():
                     data_realizado = cleaned_data.get('data'),
                     data_cobranca = cleaned_data.get('data_cobranca'),
                     quantidade = cleaned_data.get('quantidade'),
-                    hora_trabalho = cleaned_data.get('execucao').strftime('%H:%M'),
+                    hora_trabalho = self.validar_tempo_execucao(cleaned_data.get('execucao')),
                     valor = cleaned_data.get('valor'),
                     autorizado_pelo_cliente = cleaned_data.get('autorizacao'),
                     type_solicitacao = cleaned_data.get('solicitacaoLocal'),
@@ -180,6 +180,13 @@ class Controller():
                 })
         finally:
             self.manager.disconnect()
+            
+    def validar_tempo_execucao(self, execucao):
+        if not ':' in execucao:
+            return execucao.zfill(2)+':00'
+        else:
+            hora, minuto = execucao.split(":")
+            return hora.zfill(2)+':'+minuto.zfill(2)
     
     def debitar_or_delete_ordem_servico(self, id_ordem, debitar, arquivar=False):
         try:
