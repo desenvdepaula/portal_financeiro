@@ -54,7 +54,7 @@ class SQLSNFManual:
                 L.codigoescrit = {escritorio}
                 AND M.codigoescrit = {escritorio}
                 AND L.DATARCTOCR = '{data}'
-                AND L.CODIGOCAIXACONTA = 14
+                AND L.CODIGOCAIXACONTA IN (14, 77)
                 AND M.CODIGOCLIENTE {'IN' if booll else '='} {empresas if booll else empresas[0]}
             ORDER BY
                 1,
