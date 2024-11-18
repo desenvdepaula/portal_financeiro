@@ -85,9 +85,9 @@
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
                           <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.cd_empresa}} - {{ordem.nome_empresa}}</td>
-                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}}</td>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}} - (desc.: {{ordem.ds_servico}})</td>
                           <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
-                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}}</td>
+                          <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
 
                           <td class="h6 {% if ordem.debitar %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
                             {% if ordem.debitar %} 
@@ -601,9 +601,9 @@
       success: function(data){
         let linhas = document.getElementById(tr_id).children;
         linhas[0].innerText = data.empresa
-        linhas[1].innerText = data.servico
+        linhas[1].innerText = `${data.servico} - (desc.: ${data.ds_servico})`
         linhas[2].innerText = data.cobranca
-        linhas[3].innerText = data.valor
+        linhas[3].innerText = `${data.valor} (qtd.: ${data.quantidade})`
         fecharModal('modalEditOrdem')
       },
       error: function(data){

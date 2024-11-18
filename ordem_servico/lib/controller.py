@@ -175,8 +175,10 @@ class Controller():
                 return JsonResponse({
                     'empresa': f"{ordem.cd_empresa} - {ordem.nome_empresa}",
                     'servico': ordem.servico,
+                    'ds_servico': ordem.ds_servico,
                     'cobranca': ordem.data_cobranca.strftime("%d/%m/%Y"),
-                    'valor': preco_final
+                    'valor': preco_final,
+                    'quantidade': ordem.quantidade,
                 })
         finally:
             self.manager.disconnect()
