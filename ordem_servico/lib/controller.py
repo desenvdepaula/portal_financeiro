@@ -22,8 +22,7 @@ class Controller():
         try:
             if codigos:
                 codigos = tuple([i.cd_servico for i in codigos])
-            results = self.manager.execute_sql(sql_get_services_questor(codigos))
-            return results.fetchall()
+            return self.manager.run_query_for_select(sql_get_services_questor(codigos))
         except Exception as err:
             raise Exception(err)
         finally:

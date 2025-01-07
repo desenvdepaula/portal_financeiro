@@ -58,7 +58,7 @@ class Connection():
         self.disconnect()
         return context
     
-class TareffaConnection():
+class PostgreSQLConnection():
 
     def __init__(self, *args, **kwargs):
         self.host = kwargs.get('host')
@@ -84,7 +84,15 @@ class TareffaConnection():
         )
         return self.connection
     
-    def default_connect(self):    
+    def default_connect(self):
+        self.user = 'postgres'
+        self.password = 'D1011p523'
+        self.host = '192.168.1.14'
+        self.database = 'depaula'
+        self.port = '5432'
+        return self
+    
+    def default_connect_tareffa(self):    
         self.host = 'ec2-52-5-29-151.compute-1.amazonaws.com'
         self.database = 'd5cjhu9om6udeu'
         self.user = 'user_depaula'
@@ -100,6 +108,13 @@ class TareffaConnection():
     
     def commit_changes(self):
         self.connection.commit()
+        
+    def run_query_for_select(self, sql, one_fetch=False):
+        self.cursor.execute(sql)
+        if one_fetch:
+            return self.cursor.fetchone()
+        else:
+            return self.cursor.fetchall()
 
     def run_query(self, params):
         self.connect()
