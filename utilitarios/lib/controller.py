@@ -36,6 +36,14 @@ class Controller(PostgreSQLConnection):
             connection.disconnect()
             
     # ---------- EMISSAO NF RETORNO ---------- #
+    def format_None_to_Null(self, lista):
+        new_lista = []
+        for row in lista:
+            if row is None:
+                row = "NULL"
+            new_lista.append(row)
+        return new_lista
+            
     def gerar_emissao_NF(self, empresas, data):
         self.connect()
         try:
@@ -52,6 +60,7 @@ class Controller(PostgreSQLConnection):
                         listaInserts.append(list(result))
             
             for i in listaInserts:
+                i = self.format_None_to_Null(i)
                 i[3] = i[3].strftime('%d.%m.%Y')
                 i[15] = "now()"
                 valid = self.sql_verificar(i[0], i[1], i[2], i[3], sqls)
