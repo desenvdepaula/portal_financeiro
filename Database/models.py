@@ -106,6 +106,10 @@ class PostgreSQLConnection():
     def execute_sql(self, sql):
         return self.cursor.execute(sql)
     
+    def execute_and_commit(self,sql):
+        self.cursor.execute(sql)
+        self.connection.commit()
+    
     def commit_changes(self):
         self.connection.commit()
         

@@ -37,9 +37,8 @@ class Controller(PostgreSQLConnection):
             
     # ---------- EMISSAO NF RETORNO ---------- #
     def gerar_emissao_NF(self, empresas, data):
+        self.connect()
         try:
-            connection = Connection().default_connect()
-            connection.connect()
             sqls = SQLSNFRetorno()
             
             dictEmpresas = { 9501:[[501,78,0], [501,51,0]], 9502:[[502,76,0], [502,15,0]], 9505:[[505,80,200], [505,55,200]], 9567:[[567,77,200], [567,67,200]], 9575:[[575,79,200], [575,75,200]] }
@@ -48,33 +47,30 @@ class Controller(PostgreSQLConnection):
 
             for i in dictEmpresas:
                 for insert, servico, codigo in dictEmpresas[i]:
-                    queries = connection.execute_sql(sqls.get_inserts(i,insert,codigo,servico,data, empresas))
+                    queries = self.run_query_for_select(sqls.get_inserts(i,insert,codigo,servico,data, empresas))
                     for result in queries:
                         listaInserts.append(list(result))
             
             for i in listaInserts:
                 i[3] = i[3].strftime('%d.%m.%Y')
-                i[15] = "CAST('NOW' AS TIMESTAMP)"
-                valid = self.sql_verificar(i[0], i[1], i[2], i[3], sqls, connection)
-                cod = self.sql_codigos(i[2], sqls, connection)
+                i[15] = "now()"
+                valid = self.sql_verificar(i[0], i[1], i[2], i[3], sqls)
+                cod = self.sql_codigos(i[2], sqls)
                 if cod:
                     if valid:
                         if i[11] not in [r[4] for r in valid]:
                             seq = max(r[5] for r in valid if r[0] == i[0] and r[1] == i[1] and r[2] == i[2])+1                
-                            servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {seq}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
-                            connection.execute_sql(servicovarivel)
-                            connection.commit_changes()
+                            servicovarivel = f"insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {seq}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                            self.execute_and_commit(servicovarivel)
                         else:
                             if i[4] not in [r[5] for r in valid]:
-                                servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
-                                connection.execute_sql(servicovarivel)
-                                connection.commit_changes()
+                                servicovarivel = f"insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                                self.execute_and_commit(servicovarivel)
                             else:
                                 self.writer.writerow(i)
                     else:
-                        servicovarivel = f"INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
-                        connection.execute_sql(servicovarivel)
-                        connection.commit_changes()
+                        servicovarivel = f"insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({i[0]}, {i[1]}, {i[2]}, '{i[3]}', {i[4]}, {i[5]}, {i[6]}, {i[7]}, {i[8]}, {i[9]}, {i[10]}, '{i[11]}', {i[12]}, {i[13]}, {i[14]}, {i[15]}, {i[16]}, {i[17]}, {i[18]}, {i[19]}, {i[20]})"
+                        self.execute_and_commit(servicovarivel)
                 else:
                     self.writer.writerow(i)
         except Exception as ex:
@@ -83,15 +79,15 @@ class Controller(PostgreSQLConnection):
             self.response['Content-Disposition'] = f"filename=RegistrosNaoImportados_NaoLancados.csv"
             return self.response
         finally:
-            connection.disconnect()
+            self.disconnect()
             
-    def sql_verificar(self, escritorio,cliente,servico,data, sqls, connection):
-        query = connection.execute_sql(sqls.verificar(escritorio,cliente,servico,data)).fetchall()
+    def sql_verificar(self, escritorio,cliente,servico,data, sqls):
+        query = self.run_query_for_select(sqls.verificar(escritorio,cliente,servico,data))
         lista = [list(i) for i in query]
         return lista
 
-    def sql_codigos(self, codigo, sqls, connection):
-        query = connection.execute_sql(sqls.codigos(codigo)).fetchall()
+    def sql_codigos(self, codigo, sqls):
+        query = self.run_query_for_select(sqls.codigos(codigo))
         lista = [list(i) for i in query]
         return lista
 
