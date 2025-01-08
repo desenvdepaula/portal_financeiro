@@ -8,12 +8,13 @@ import zipfile
 import os
 from PyPDF2 import PdfWriter, PdfReader, PdfMerger
 from io import BytesIO
-from Database.models import Connection
-from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno
+from Database.models import Connection, PostgreSQLConnection
+from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno, BoletosSQL
 
-class Controller():
+class Controller(PostgreSQLConnection):
 
     def __init__(self, *args, **kwargs):
+        self.default_connect()
         self.inicio_periodo = date(2020, 1, 31)
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
@@ -133,9 +134,8 @@ class Controller():
     
     # ---------- BOLETOS ---------- #
     def getPdfs(self, path, data, nameArquivo):
+        self.connect()
         try:
-            connection = Connection().default_connect()
-            connection.connect()
             zip_file = zipfile.ZipFile( settings.BASE_DIR / 'temp/files/separador_boletos/Boletos.zip', 'w')
             
             pathFolder = settings.BASE_DIR / 'temp/files/separador_boletos/'
@@ -144,15 +144,16 @@ class Controller():
             for i in range(len(inputpdf.pages)):
                 page = inputpdf.pages[i]
                 codigo_empresa = page.extract_text().split('Ag./')[0].split("\n")[-1].strip()
-
+                dados_sql = BoletosSQL.sqlCodigoEmpresa(int(codigo_empresa))
+                
                 if nameArquivo == 'encerramento unico':
                     if len(codigo_empresa) > 4:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2]
                         fileName = f"{cd_empresa}{' - ' if cd_estab > 1 else ''}{cd_estab if cd_estab > 1 else ''} - honorario unico encerramento {data}"
                     elif int(codigo_empresa) >= 5000 and int(codigo_empresa) <= 5999:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2] if dados[2] > 1 else ''
                         fileName = f"{cd_empresa}{'-' if cd_estab else ''}{cd_estab} - honorario unico encerramento {data}"
@@ -161,12 +162,12 @@ class Controller():
 
                 elif nameArquivo == 'encerramento':
                     if len(codigo_empresa) > 4:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2] if dados[2] > 1 else ''
                         fileName = f"{cd_empresa}-{cd_estab} - honorario encerramento parcelado {data}"
                     elif int(codigo_empresa) >= 5000 and int(codigo_empresa) <= 5999:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2] if dados[2] > 1 else ''
                         fileName = f"{cd_empresa}{'-' if cd_estab else ''}{cd_estab} - honorario encerramento parcelado {data}"
@@ -175,12 +176,12 @@ class Controller():
                         
                 else:
                     if len(codigo_empresa) > 4:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2]
                         fileName = f"{cd_empresa}-{cd_estab} - honorario contabil {data}"
                     elif int(codigo_empresa) >= 5000 and int(codigo_empresa) <= 5999:
-                        dados = self.sqlCodigoEmpresa(int(codigo_empresa), connection)
+                        dados = self.run_query_for_select(dados_sql)[0]
                         cd_empresa = dados[1]
                         cd_estab = dados[2] if dados[2] > 1 else ''
                         fileName = f"{cd_empresa}{'-' if cd_estab else ''}{cd_estab} - servico mensal {data}"
@@ -210,20 +211,15 @@ class Controller():
             zip_file.close()
             
         except Exception as error:
-            print(error)
+            raise Exception(error)
         else:
             zip_file = open( settings.BASE_DIR / 'temp/files/separador_boletos/Boletos.zip', 'rb')
             response = HttpResponse(zip_file, content_type='application/zip')
             response['Content-Disposition'] = 'attachment; filename="%s"' % 'Boletos.zip'
             return response
         finally:
-            connection.disconnect()
+            self.disconnect()
             self.limparArquivos(pathFolder)
-            
-    def sqlCodigoEmpresa(self, cd_empresa, connection):
-        sql = f""" SELECT CODIGOPESSOAFIN,CODIGOEMPRESA,CODIGOESTAB FROM PESSOAFINANCEIRO WHERE CODIGOPESSOAFIN = {cd_empresa} """
-        empresa = connection.execute_sql(sql).fetchall()
-        return empresa[0]
             
     def limparArquivos(self, dirpath):
         diretorio = os.listdir(dirpath)

@@ -1,3 +1,9 @@
+class BoletosSQL:
+    
+    @staticmethod
+    def sqlCodigoEmpresa(cd_empresa):
+        return f""" SELECT CODIGOPESSOAFIN,CODIGOEMPRESA,CODIGOESTAB FROM PESSOAFINANCEIRO WHERE CODIGOPESSOAFIN = {cd_empresa} """
+    
 class SQLSNFManual:
     
     @staticmethod
