@@ -2,13 +2,13 @@ from ..models import OrdemServico
 
 def sql_get_services_questor(codigos):
     sql = f"""
-        SELECT
-            CODIGOSERVICOESCRIT,
-            DESCRSERVICOESCRIT
-        FROM
-            SERVICOESCRIT
-        {f"WHERE CODIGOSERVICOESCRIT NOT IN {codigos}" if codigos else ""}
-        ORDER BY
+        select
+            codigoservicoescrit,
+            descrservicoescrit
+        from
+            servicoescrit
+        {f"where codigoservicoescrit not in {codigos}" if codigos else ""}
+        order by
             2
     """
     return sql
@@ -61,66 +61,70 @@ def filter_planilha(filtros):
 
 def get_codigo_escritorio(empresa, cursor):
     sql = f"""
-        SELECT
-            DISTINCT
-            S.CODIGOESCRIT
-        FROM
-            SERVICOFIXO S
-        JOIN
-            PESSOAFINANCEIRO P ON
-            S.CODIGOCLIENTE = P.CODIGOPESSOAFIN
-        WHERE
-            P.CODIGOPESSOAFIN = {empresa} AND
-            S.CODIGOSERVICOESCRIT IN (1,81,115,127,151,155)
+        select
+            distinct
+            s.codigoescrit
+        from
+            servicofixo s
+        join
+            pessoafinanceiro p on
+            s.codigocliente = p.codigopessoafin
+        where
+            p.codigopessoafin = {empresa} and
+            s.codigoservicoescrit in (1,81,115,127,151,155)
     """
-    query = cursor.execute(sql).fetchone()
+    cursor.execute(sql)
+    query = cursor.fetchone()
     return query[0] if query else None
 
 def get_sequencia_variavel_empresa(empresa, data_cobranca, cursor):
     sql = f"""
-        SELECT
-            CASE
-                WHEN MAX(SEQSERVVAR) IS NULL THEN 1
-                ELSE MAX(SEQSERVVAR+1)
-            END SEQVAR
-        FROM
-            SERVICOVARIAVEL
-        WHERE
-            CODIGOCLIENTE = {empresa}
-            AND DATASERVVAR = '{data_cobranca}'
+        select
+            case
+                when max(seqservvar) is null then 1
+                else max(seqservvar+1)
+            end seqvar
+        from
+            servicovariavel
+        where
+            codigocliente = {empresa}
+            and dataservvar = '{data_cobranca}'
     """
-    query = cursor.execute(sql).fetchone()
+    cursor.execute(sql)
+    query = cursor.fetchone()
     return query[0] if query else None
 
 def get_id_ordem_servico(cursor):
     sql = """
-        SELECT
-            CASE
-                WHEN MAX(SEQUENCIACAIXA) IS NULL THEN 1
-                ELSE MAX(SEQUENCIACAIXA+1)
-            END SEQVAR
-        FROM
-            SERVICOVARIAVEL
+        select
+            case
+                when max(sequenciacaixa) is null then 1
+                else max(sequenciacaixa+1)
+            end seqvar
+        from
+            servicovariavel
     """
-    query = cursor.execute(sql).fetchone()
+    cursor.execute(sql)
+    query = cursor.fetchone()
     return query[0] if query else None
 
 def valid_notas_delete(id_ordem_banco, cursor):
     sql = f"""
-        SELECT
-            SERIENS,
-            NUMERONS,
-            CASE
-                WHEN SERIENS IS NULL AND NUMERONS IS NULL THEN 'SEM NOTA FISCAL'
-                ELSE 'POSSUI NOTA'
-            END
-        FROM
-            SERVICOVARIAVEL
-        WHERE
-            SEQUENCIACAIXA = {id_ordem_banco}
+        select
+            seriens,
+            numerons,
+            case
+                when seriens is null and numerons is null then 'SEM NOTA FISCAL'
+                else 'POSSUI NOTA'
+            end
+        from
+            servicovariavel
+        where
+            sequenciacaixa = {id_ordem_banco}
     """
     response = {'valid': True, 'msg': ''}
-    query = cursor.execute(sql).fetchall()
+    cursor.execute(sql)
+    query = cursor.fetchall()
     if query:
         query = query[0]
         if query[2] == 'SEM NOTA FISCAL':
@@ -137,12 +141,12 @@ def valid_notas_delete(id_ordem_banco, cursor):
 def build_insert_os(id_ordem_banco, ordem, codigo_escritorio, sequencia_variavel_empresa):
     valor_total = ordem.quantidade * ordem.valor
     sql = f"""
-        INSERT INTO SERVICOVARIAVEL (CODIGOESCRIT, CODIGOCLIENTE, CODIGOSERVICOESCRIT, DATASERVVAR, SEQSERVVAR, SERIENS, NUMERONS, SEQSERVNOTAITEM, QTDADESERVVAR, VALORUNITSERVVAR, VALORTOTALSERVVAR, OBSERVSERVVAR, SITANTECIPACAO, SEQLCTO, CODIGOUSUARIO, DATAHORALCTO, ORIGEMDADO, CHAVEPGTOANTECIP, VALORANTERIORUNITSERVVAR, SEQUENCIACAIXA, CHAVEORIGEM) VALUES({codigo_escritorio}, {ordem.cd_empresa}, {ordem.cd_servico}, '{ordem.data_cobranca}', {sequencia_variavel_empresa}, NULL, NULL, NULL, {ordem.quantidade}, {ordem.valor}, {valor_total}, '{ordem.ds_servico.replace("'","").replace("–","-")}', NULL, NULL, 0, CAST('NOW' AS TIMESTAMP), 3, NULL, NULL, {id_ordem_banco}, NULL) returning SEQUENCIACAIXA;
+        insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({codigo_escritorio}, {ordem.cd_empresa}, {ordem.cd_servico}, '{ordem.data_cobranca}', {sequencia_variavel_empresa}, null, null, null, {ordem.quantidade}, {ordem.valor}, {valor_total}, '{ordem.ds_servico.replace("'","").replace("–","-")}', null, null, 492, now(), 3, null, null, {id_ordem_banco}, null) returning sequenciacaixa;
     """
     return sql
 
 def build_delete_os(id_ordem_banco):
     sql = f"""
-        DELETE FROM SERVICOVARIAVEL WHERE SEQUENCIACAIXA = {id_ordem_banco}
+        delete from servicovariavel where sequenciacaixa = {id_ordem_banco}
     """
     return sql

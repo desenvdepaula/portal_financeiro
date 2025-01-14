@@ -1,6 +1,6 @@
-from Database.models import Connection, PostgreSQLConnection
+from Database.models import PostgreSQLConnection
 
-class Manager(Connection):
+class Manager(PostgreSQLConnection):
     def __init__(self, *args, **kwargs):
         self.codigo_empresa = kwargs.get('codigo_empresa')
 
@@ -19,8 +19,8 @@ class ManagerTareffa(PostgreSQLConnection):
         self.default_connect_tareffa()
 
     def get_empresa(self):
+        self.connect()
         try:
-            self.connect()
             sql = f"""
                 select
                     cast(
@@ -50,8 +50,8 @@ class ManagerTareffa(PostgreSQLConnection):
             self.disconnect()
             
     def get_empresa_ativas(self):
+        self.connect()
         try:
-            self.connect()
             sql = """
                 select distinct
                     cast(case	

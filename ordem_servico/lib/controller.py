@@ -100,8 +100,8 @@ class Controller():
             raise Exception(err)
 
     def delete_ordem_servico_debitada(self, ordem):
+        self.manager.connect()
         try:
-            self.manager.connect()
             valid = valid_notas_delete(ordem.ordem_debitada_id, self.manager.cursor)
             if not valid['valid']:
                 raise Exception(valid['msg'])
@@ -113,9 +113,9 @@ class Controller():
             self.manager.disconnect()
             
     def update_ordem_servico(self, cleaned_data, user):
+        self.manager.connect()
         try:
-            self.manager.connect()
-            query = self.manager.execute_sql(f"SELECT NOME FROM PESSOAFINANCEIRO WHERE CODIGOPESSOAFIN = {cleaned_data.get('empresa')}")
+            query = self.manager.run_query_for_select(f"select nome from pessoafinanceiro where codigopessoafin = {cleaned_data.get('empresa')}")
             list_nomes = [nome for nome in query]
             if not list_nomes:
                 raise Exception(f"Esta Empresa: {cleaned_data.get('empresa')} Não possui nome, Provavelmente não existe, escreva novamente !")
@@ -190,8 +190,8 @@ class Controller():
             return hora.zfill(2)+':'+minuto.zfill(2)
     
     def debitar_or_delete_ordem_servico(self, id_ordem, debitar, arquivar=False):
+        self.manager.connect()
         try:
-            self.manager.connect()
             ordem = OrdemServico.objects.get(id=id_ordem)
             if debitar:
                 if int(ordem.cd_empresa) > 99999:
@@ -204,7 +204,8 @@ class Controller():
                 sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
                 id_ordem_servico = get_id_ordem_servico(self.manager.cursor)
                 insert = build_insert_os(id_ordem_servico, ordem, codigo_escritorio, sequencia_variavel_empresa)
-                returning_id_ordem = self.manager.cursor.execute(insert).fetchone()
+                self.manager.cursor.execute(insert)
+                returning_id_ordem = self.manager.cursor.fetchone()
                 self.manager.connection.commit()
                 if returning_id_ordem:
                     ordem.ordem_debitada_id = returning_id_ordem[0] or None
@@ -232,8 +233,8 @@ class Controller():
             self.manager.disconnect()
             
     def debitar_em_lote_ordem_servico(self, orders_list):
+        self.manager.connect()
         try:
-            self.manager.connect()
             ordens = OrdemServico.objects.filter(id__in=orders_list)
             errors = []
             
@@ -250,7 +251,8 @@ class Controller():
                 sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
                 id_ordem_servico = get_id_ordem_servico(self.manager.cursor)
                 insert = build_insert_os(id_ordem_servico, ordem, codigo_escritorio, sequencia_variavel_empresa)
-                returning_id_ordem = self.manager.cursor.execute(insert).fetchone()
+                self.manager.cursor.execute(insert)
+                returning_id_ordem = self.manager.cursor.fetchone()
                 self.manager.connection.commit()
                 if returning_id_ordem:
                     ordem.ordem_debitada_id = returning_id_ordem[0] or None

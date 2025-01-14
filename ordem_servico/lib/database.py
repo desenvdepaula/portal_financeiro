@@ -19,8 +19,8 @@ class ManagerTareffa(PostgreSQLConnection):
         self.default_connect_tareffa()
 
     def get_empresa(self):
+        self.connect()
         try:
-            self.connect()
             sql = f"""
                 select
                     cast(
@@ -50,8 +50,8 @@ class ManagerTareffa(PostgreSQLConnection):
             self.disconnect()
             
     def get_empresa_ativas(self):
+        self.connect()
         try:
-            self.connect()
             sql = """
                 select distinct
                     cast(case	

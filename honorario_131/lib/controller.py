@@ -115,7 +115,7 @@ class Controller():
 
         empresas = [regra.cd_empresa for regra in RegrasHonorario.objects.filter(calcular=True)]
         empresas = set(empresas)
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131(tuple(empresas), compet)).fetchall()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorarios131(tuple(empresas), compet))
         
         for cd_empresa, escritorio in listEscritoriosEmpresas:
             dicio[cd_empresa] = escritorio
@@ -409,16 +409,16 @@ class Controller():
         writer.sheets['Auditoria Soma Filiais'].set_column('J:J', 17, alignCenter)
 
     def retornaListadeEmpresas(self):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Find()).fetchall()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorarios131Find())
         return response
     
     def retornaSequencialInsert(self, cd_escritorio, cd_financeiro, data):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data)).fetchone()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data), True)
         response = response[0]
         return response
 
     def retornaListadeEmpresasValidation(self, data):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlValidador131(data)).fetchall()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlValidador131(data))
         return response
     
     def retornaEmpresasContabit(self, data):
@@ -445,8 +445,8 @@ class Controller():
         return f"{int(mes)}/{ano}", f"{mes}/{ano}"
     
     def gerarHonorarios(self, compet, data_lancamento):
+        self.manager.connect()
         try:
-            self.manager.connect()
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
@@ -484,8 +484,8 @@ class Controller():
 
 
     def gerarRelatorioHonorarios(self, empresa):
+        self.manager.connect()
         try:
-            self.manager.connect()
             listEmpresas = self.retornaListadeEmpresasParaRelatorio(f"({empresa})")
             nome = self.retornaNomeEmpresa(int(empresa))
 
@@ -513,11 +513,11 @@ class Controller():
             self.manager.disconnect()
 
     def retornaNomeEmpresa(self, empresa):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlNomeEmpresa(empresa)).fetchall()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlNomeEmpresa(empresa))
         return response
 
     def retornaListadeEmpresasParaRelatorio(self, empresas):
-        response = self.manager.execute_sql(SqlHonorarios131.getSqlSelectHonorarios131(empresas)).fetchall()
+        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlSelectHonorarios131(empresas))
         listEmpresas = [list(item) for item in response]
         dicio = {}
 
@@ -561,8 +561,8 @@ class Controller():
     #------------------ RELATORIO HONORARIO 131 ------------------#
     
     def gerar_relatorio_full_131(self):
+        self.manager.connect()
         try:
-            self.manager.connect()
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
@@ -574,7 +574,7 @@ class Controller():
                 dados_questor = []
                 dados_contabit = []
                 
-                result = self.manager.execute_sql(SqlHonorarios131.getSqlSelectHonorarios131FullFuncionarios()).fetchall()
+                result = self.manager.run_query_for_select(SqlHonorarios131.getSqlSelectHonorarios131FullFuncionarios())
 
                 for empresa_questor in result:
                     nome_empresa = self.retornaNomeEmpresa(empresa_questor[0])[0][0]
