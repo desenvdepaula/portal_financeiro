@@ -2,7 +2,7 @@ class SqlHonorarios131:
 
     @staticmethod
     def getSqlHonorarios131(empresa, compet):
-        sql = '''
+        sql = f'''
             select 
                 h.codigoempresa empresa,
                 count(h.codigofunccontr) numero,
@@ -69,7 +69,7 @@ class SqlHonorarios131:
                 1,3,4,5
             order by
                 1,4,2;
-        '''.format(empresa, compet)
+        '''
         return sql
 
     @staticmethod
@@ -134,7 +134,7 @@ class SqlHonorarios131:
 
     @staticmethod
     def getSqlSelectHonorarios131(empresas):
-        sql = '''
+        sql = f'''
             select
                 h.codigoempresa empresa, 
                 count(h.codigofunccontr) numero, 
@@ -207,7 +207,7 @@ class SqlHonorarios131:
                 1,3,4,5,6,7
             order by
                 1,4,2;
-        '''.format(empresas)
+        '''
         return sql
     
     @staticmethod
