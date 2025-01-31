@@ -73,42 +73,42 @@ class SQLSNFManual:
 class SQLSNotasAntecipadas:
     
     @staticmethod
-    def sqlNotasAntecipadas(servico, origem, destino, notas, codigo_usuario):
+    def sqlNotasAntecipadas(servico, origem, destino, notas):
         sql = f"""
-            INSERT INTO SERVICOVARIAVEL
-            SELECT
-                {destino} CODIGOESCRIT,
-                N.CODIGOCLIENTE,
-                I.CODIGOSERVICOESCRIT+{servico} CODIGOSERVICOESCRIT,
-                N.DATAEMISSAONS DATAEMISSAONS,
-                I.SEQSERVNOTAITEM,
-                NULL SERIE,
-                NULL NUMERO,
-                NULL SEQ,
-                I.QTDADESERVNOTAITEM,
-                I.VALORUNITSERVNOTAITEM,
-                I.QTDADESERVNOTAITEM*I.VALORUNITSERVNOTAITEM VALORTOTAL,
-                I.OBSSERVNOTAITEM,
-                NULL SITANTECIPACAO,
-                NULL SEQLCTO,
-                {codigo_usuario} CODIGOUSUARIO,
-                CAST('NOW' AS TIMESTAMP) DATAHORALCTO,
-                3 ORIGEMDADO,
-                NULL ANTECIPACAO,
-                NULL VALORANT,
-                NULL SEQCAIXA,
-                NULL CHAVEORIGEM
-            FROM
-                SERVICONOTA N
-            JOIN
-                SERVICONOTAITEM I ON
-                N.CODIGOESCRIT = I.CODIGOESCRIT AND
-                N.SERIENS = I.SERIENS AND
-                N.NUMERONS = I.NUMERONS 
-            WHERE
-                N.CODIGOESCRIT = {origem}
-                AND N.SERIENS = 'F'
-                AND N.NUMERONS IN {notas}
+            insert into servicovariavel
+            select
+                {destino} codigoescrit,
+                n.codigocliente,
+                i.codigoservicoescrit+{servico} codigoservicoescrit,
+                n.dataemissaons dataemissaons,
+                i.seqservnotaitem,
+                null::varchar(4) serie,
+                null::int numero,
+                null::int seq,
+                i.qtdadeservnotaitem,
+                i.valorunitservnotaitem,
+                (i.qtdadeservnotaitem*i.valorunitservnotaitem) valortotal,
+                i.obsservnotaitem,
+                null::int sitantecipacao,
+                null::int seqlcto,
+                492 codigousuario,
+                now() datahoralcto,
+                3 origemdado,
+                null::varchar(16) antecipacao,
+                null::int valorant,
+                null::int seqcaixa,
+                null::varchar(20) chaveorigem
+            from
+                serviconota n
+            join
+                serviconotaitem i on
+                n.codigoescrit = i.codigoescrit 
+                and n.seriens = i.seriens 
+                and n.numerons = i.numerons 
+            where
+                n.codigoescrit =  {origem}
+                and n.seriens = 'F'    
+                and n.numerons in {notas}
         """
         return sql
 

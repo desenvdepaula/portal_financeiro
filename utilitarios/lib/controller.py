@@ -20,20 +20,17 @@ class Controller(PostgreSQLConnection):
         self.response = HttpResponse(content_type='text/csv')
         self.writer = csv.writer(self.response)
         
-    def lancar_nota_antecipada(self, origem, destino, list_nota, codigos_do_usuario):
+    def lancar_nota_antecipada(self, origem, destino, list_nota):
+        self.connect()
         try:
-            connection = Connection().default_connect()
-            connection.connect()
             servico = 200 if destino in [505,567,575] else 0
             notas = tuple(list_nota) if len(list_nota) > 1 else f"({tuple(list_nota)[0]})"
-            cd_usuario = codigos_do_usuario if codigos_do_usuario else 0
-            svariavel = SQLSNotasAntecipadas.sqlNotasAntecipadas(servico, origem, destino, notas, cd_usuario)
-            connection.execute_sql(svariavel)
-            connection.commit_changes()
+            svariavel = SQLSNotasAntecipadas.sqlNotasAntecipadas(servico, origem, destino, notas)
+            self.execute_and_commit(svariavel)
         except Exception as error:
-            print(error)
+            raise Exception(error)
         finally:
-            connection.disconnect()
+            self.disconnect()
             
     # ---------- EMISSAO NF RETORNO ---------- #
     def format_None_to_Null(self, lista):

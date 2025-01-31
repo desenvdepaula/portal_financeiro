@@ -22,8 +22,7 @@ def request_notas_antecipadas(request):
                 controller.lancar_nota_antecipada(
                     context['form'].cleaned_data['escritorio_origem'],
                     context['form'].cleaned_data['escritorio_destino'],
-                    notas,
-                    request.user.cd_questor
+                    notas
                 )
             except Exception as ex:
                 messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
