@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from weasyprint import HTML
 from django.conf import settings
 from django.template.loader import render_to_string
-from Database.models import Connection
+from Database.models import PostgreSQLConnection
 from datetime import date
 import os
 import pandas as pd
@@ -103,9 +103,9 @@ class InadimplentesView(View):
         return render(request, self.template_form, context)
 
     def post(self, request):
+        connection = PostgreSQLConnection().default_connect()
         try:
             data = date.today()
-            connection = Connection().default_connect()
             params = [{
                 'name': 'inadimplentes',
                 'query': InadimplenciaSqls().get_inadimplentes(),
@@ -137,7 +137,7 @@ class InadimplentesView(View):
             connection.disconnect()
             
     def export_relatorio_inadimplentes_abertos_detalhados(request):
-        connection = Connection().default_connect()
+        connection = PostgreSQLConnection().default_connect()
         connection.connect()
         try:
             with BytesIO() as b:
@@ -149,7 +149,10 @@ class InadimplentesView(View):
                 alignCenter = workbook.add_format({'align': 'left'})
                 num = workbook.add_format({'num_format':'#,##0.00', 'align': 'left'})
                         
-                dados = connection.execute_sql(sqls.get_detalhamento(data))
+                dados = connection.run_query_for_select(sqls.get_detalhamento(data))
+                if not dados:
+                    raise Exception("Nenhum dado encontrado na Data Passada !!")
+                print(dados)
                 dados_for_df = [ i for i in dados ]
                 total = sum([d[0] for d in dados_for_df])
                 dados_for_df.append((total, '', '', '', '','TOTAL DAS NOTAS'))
@@ -169,7 +172,7 @@ class InadimplentesView(View):
                 response['Content-Disposition'] = 'attachment; filename=%s' % filename
                 return response
         except Exception as err:
-            messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(err))
+            messages.error(request, "Ocorreu um erro: {0}".format(err))
             return redirect('inadimplentes')
         finally:
             connection.disconnect()

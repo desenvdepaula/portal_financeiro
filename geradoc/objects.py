@@ -28,14 +28,14 @@ class InadimplenciaObj:
         }
         for idx, row in enumerate(db_data):
             if idx == 0:
-                kwargs['recebido_apos_prazo'] = row['SUM'] or Decimal(0.0)
-                kwargs['data'] = row['DATA'] 
+                kwargs['recebido_apos_prazo'] = row['TOTAL'] or Decimal(0.0)
+                kwargs['data'] = row['PERIODO']
             elif idx == 1:
-                kwargs['aberto'] = row['SUM'] or Decimal(0.0)
-                kwargs['data1'] = row['DATA'] 
+                kwargs['aberto'] = row['TOTAL'] or Decimal(0.0)
+                kwargs['data1'] = row['PERIODO']
             elif idx == 2:
-                kwargs['faturado'] = row['SUM'] or Decimal(0.0)
-                kwargs['data2'] = row['DATA'] 
+                kwargs['faturado'] = row['TOTAL'] or Decimal(0.0)
+                kwargs['data2'] = row['PERIODO']
         return InadimplenciaObj(**kwargs)
 
     def total_inadimplencia(self):

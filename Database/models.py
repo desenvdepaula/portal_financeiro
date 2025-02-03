@@ -119,11 +119,27 @@ class PostgreSQLConnection():
             return self.cursor.fetchone()
         else:
             return self.cursor.fetchall()
+        
+    def fetchmap(self, sql, one_fetch=False, upperCase=False):
+        self.cursor.execute(sql)
+        if upperCase:
+            columns = [desc[0].upper() for desc in self.cursor.description]
+        else:
+            columns = [desc[0] for desc in self.cursor.description]
+        
+        if one_fetch:
+            result = self.cursor.fetchone()
+            value = result if result else []
+            real_dict = [dict(zip(columns, row)) for row in [value]][0]
+        else:
+            real_dict = [dict(zip(columns, row)) for row in self.cursor.fetchall()]
+        
+        return real_dict
 
     def run_query(self, params):
         self.connect()
         context = {
-            param['name']: self.execute_sql(param['query']).fetchonemap() if param['many'] == False else self.execute_sql(param['query']).fetchallmap()
+            param['name']: self.fetchmap(param['query'], True, upperCase=True) if param['many'] == False else self.fetchmap(param['query'], upperCase=True)
             for param in params
         }
         self.disconnect()

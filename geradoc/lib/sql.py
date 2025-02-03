@@ -3,61 +3,98 @@ class InadimplenciaSqls:
 
     def get_inadimplentes(self):
         sql = """
-            SELECT SUM(VALORCR), 
-	            'RECEB. APOS PRAZO' TIPO,
-	            CAST('NOW' AS DATE)- extract(day from cast('now' as date)) AS DATA
-                FROM CONTARECEBER CR
-                LEFT JOIN CONTARECEBIDA CD ON CR.CODIGOESCRIT = CD.CODIGOESCRIT AND
-                CR.NUMERODCTOCR = CD.NUMERODCTOCR
-                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575) AND
-                DATAEMISSAOCR BETWEEN dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AND
-                dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AND
-                STATUSCR = 3 and
-                DATARCTOCR > CAST('NOW' AS DATE)- extract(day from cast('now' as date)) AND
-                DATAVCTOCR <= CAST('NOW' AS DATE)- extract(day from cast('now' as date)) AND
-                (CR.NUMERODCTOCR NOT LIKE 'X%' OR CD.NUMERODCTOCR NOT LIKE 'X%')
-                UNION
-                SELECT SUM(VALORCR), 'ABERTO', dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AS DATA
-                FROM CONTARECEBER CR
-                LEFT JOIN CONTARECEBIDA CD ON CR.CODIGOESCRIT = CD.CODIGOESCRIT AND
-                CR.NUMERODCTOCR = CD.NUMERODCTOCR
-                WHERE CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575) AND
-                DATAEMISSAOCR BETWEEN dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AND
-                dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AND
-                STATUSCR = 1 AND
-                DATAVCTOCR <= CAST('NOW' AS DATE)- extract(day from cast('now' as date)) AND
-                (CR.NUMERODCTOCR NOT LIKE 'X%' OR CD.NUMERODCTOCR NOT LIKE 'X%')
-                UNION
-                SELECT SUM(VALORLIQUIDO), 'FATURADO', dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AS DATA
-                FROM SERVICONOTA S
-                WHERE S.SERIENS = 'F' AND
-                DATAEMISSAONS BETWEEN dateadd(-2 month to CAST('NOW' AS DATE)) - extract(day from cast('now' as date))+1 AND
-                dateadd(-1 month to CAST('NOW' AS DATE)) - extract(day from dateadd(-1 month to cast('now' as date))) AND
-                CANCELADANS = 0
+            with faturado as (
+                select
+                    sum(s.valorliquido) total,
+                    'FATURADO' situacao,
+                    (date(current_date - interval'1 month') - extract(day from date(current_date - interval'1 month'))::int) periodo
+                from 
+                    serviconota s
+                where 
+                    s.seriens = 'F'
+                    and s.canceladans = '0'
+                    and s.dataemissaons between (date(current_date - interval'2 months') - extract(day from current_date)::int+1) and (date(current_date - interval'1 month') - extract(day from date(current_date - interval'1 month'))::int)
+            ),
+            aberto as (
+                select 
+                    sum(cr.valorcr) total,
+                    'ABERTO' situacao,
+                    (date(current_date - interval'2 months') - extract(day from current_date)::int+1) periodo
+                from 
+                    contareceber cr 
+                left join
+                    contarecebida cd on
+                    cr.codigoescrit = cd.codigoescrit
+                    and cr.numerodctocr = cd.numerodctocr
+                where 
+                    cr.codigoescrit in (9501, 9502, 9505, 9567, 9575)
+                    and cr.dataemissaocr between (date(current_date - interval'2 months') - extract(day from current_date)::int+1) and (date(current_date - interval'1 month') - extract(day from date(current_date - interval'1 month'))::int)
+                    and statuscr = 1
+                    and cr.datavctocr <= (current_date - extract(day from current_date)::int)
+                    and (cr.numerodctocr not like 'X%' or cd.numerodctocr not like 'X%')
+            ),
+            rec_atrasado as (
+                select 
+                    sum(cr.valorcr) total,
+                    'RECEB. APOS PRAZO' situacao,
+                    (current_date - extract(day from current_date)::int) periodo
+                from 
+                    contareceber cr 
+                left join
+                    contarecebida cd on
+                    cr.codigoescrit = cd.codigoescrit
+                    and cr.numerodctocr = cd.numerodctocr
+                where 
+                    cr.codigoescrit in (9501, 9502, 9505, 9567, 9575)
+                    and cr.dataemissaocr between (date(current_date - interval'2 months') - extract(day from current_date)::int+1) and (date(current_date - interval'1 month') - extract(day from date(current_date - interval'1 month'))::int)
+                    and statuscr = 3
+                    and cd.datarctocr > (current_date - extract(day from current_date)::int)
+                    and cr.datavctocr <= (current_date - extract(day from current_date)::int)
+                    and (cr.numerodctocr not like 'X%' or cd.numerodctocr not like 'X%')
+            )
+            select 
+                total,
+                situacao,
+                periodo
+            from 
+                rec_atrasado
+            union 
+            select 
+                total,
+                situacao,
+                periodo
+            from 
+                aberto
+            union 	
+            select 
+                total,
+                situacao,
+                periodo
+            from 
+                faturado
         """
         return sql
     
     def get_detalhamento(self, data):
         sql = f"""
-            SELECT
-                VALORCR,
-                CR.CODIGOESCRIT,
-                CR.CODIGOCLIENTE,
-                CR.NUMERONS,
-                'ABERTO',
-                DATEADD(-2 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM CAST('{data}' AS DATE))+ 1 AS DATA
-            FROM
-                CONTARECEBER CR
-            LEFT JOIN
-                CONTARECEBIDA CD ON
-                CR.CODIGOESCRIT = CD.CODIGOESCRIT
-                AND CR.NUMERODCTOCR = CD.NUMERODCTOCR
-            WHERE
-                CR.CODIGOESCRIT IN (9501,9502,9505,9567,9575)
-                AND DATAEMISSAOCR BETWEEN DATEADD(-2 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM CAST('{data}' AS DATE))+ 1 AND
-                DATEADD(-1 MONTH TO CAST('{data}' AS DATE)) - EXTRACT(DAY FROM DATEADD(-1 MONTH TO CAST('{data}' AS DATE)))
-                AND STATUSCR = 1
-                AND DATAVCTOCR <= CAST('{data}' AS DATE)- EXTRACT(DAY FROM CAST('{data}' AS DATE))
-                AND (CR.NUMERODCTOCR NOT LIKE 'X%' OR CD.NUMERODCTOCR NOT LIKE 'X%')
+            select
+                cr.valorcr,
+                cr.codigoescrit,
+                cr.codigocliente,
+                cr.numerons,
+                'ABERTO' situacao,
+                (date(date('{data}') - interval'2 months') - extract(day from date('{data}'))::int+1) periodo
+            from 
+                contareceber cr 
+            left join
+                contarecebida cd on
+                cr.codigoescrit = cd.codigoescrit
+                and cr.numerodctocr = cd.numerodctocr
+            where 
+                cr.codigoescrit in (9501, 9502, 9505, 9567, 9575)
+                and cr.dataemissaocr between (date(date('{data}') - interval'2 months') - extract(day from date('{data}'))::int+1) and (date(date('{data}') - interval'1 month') - extract(day from date(date('{data}') - interval'1 month'))::int)
+                and statuscr = 1
+                and cr.datavctocr <= (date('{data}') - extract(day from date('{data}'))::int)
+                and (cr.numerodctocr not like 'X%' or cd.numerodctocr not like 'X%')
         """
         return sql
