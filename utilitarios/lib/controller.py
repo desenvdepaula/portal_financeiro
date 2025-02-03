@@ -100,18 +100,17 @@ class Controller(PostgreSQLConnection):
     # ---------- EMISSAO NF MANUAL ---------- #
     def gerar_emissao_NF_Manual(self, empresas, acoes, data):
         bytIO = BytesIO()
-        connection = Connection().default_connect()
+        self.connect()
         try:
-            connection.connect()
             dfHeader = ['CODIGOESCRIT','CODIGOCLIENTE','CODIGOSERVICOESCRIT','DATASERVVAR','SEQSERVVAR','SERIENS','NUMERONS','SEQSERVNOTAITEM','QTDADESERVVAR','VALORUNITSERVVAR','VALORTOTALSERVVAR','OBSERVSERVVAR','SITANTECIPACAO','SEQLCTO','CODIGOUSUARIO','DATAHORALCTO','ORIGEMDADO','CHAVEPGTOANTECIP','VALORANTERIORUNITSERVVAR','SEQUENCIACAIXA','CHAVEORIGEM']
             dictEmpresas = { 9501:[501,0], 9502:[502,0], 9505:[505,200], 9567:[567,200], 9575: [575,200] }
             listaInserts = []
 
-            queries = connection.execute_sql(SQLSNFManual.get_inserts_manual(int(acoes), dictEmpresas[int(acoes)][0], dictEmpresas[int(acoes)][1], data, empresas))
+            queries = self.run_query_for_select(SQLSNFManual.get_inserts_manual(int(acoes), dictEmpresas[int(acoes)][0], dictEmpresas[int(acoes)][1], data, empresas))
             for i in queries:
                 listaInserts.append(list(i))
 
-            df = pd.DataFrame(listaInserts,columns=dfHeader)        
+            df = pd.DataFrame(listaInserts,columns=dfHeader)
             df['DATASERVVAR'] = pd.to_datetime(df['DATASERVVAR']).dt.strftime('%d/%m/%Y')
             df['DATAHORALCTO'] = pd.to_datetime(df['DATAHORALCTO']).dt.strftime('%d/%m/%Y')
             df['VALORTOTALSERVVAR'] = df['VALORTOTALSERVVAR'].astype(str).str.replace('.',',')
@@ -132,7 +131,7 @@ class Controller(PostgreSQLConnection):
             response['Content-Disposition'] = 'attachment; filename="%s"' % "arquivoManual.txt"
             return response
         finally:
-            connection.disconnect()
+            self.disconnect()
     
     # ---------- BOLETOS ---------- #
     def getPdfs(self, path, data, nameArquivo):

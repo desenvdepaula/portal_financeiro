@@ -28,7 +28,7 @@ class RecibimentosView(View):
             context['form'].clean_log(request.user.username, contas)
             try:
                 relacao_empresas = context['form'].clean_empresas_contas(contas)
-                controller = Controller(True, True)
+                controller = Controller()
                 if context['form'].cleaned_data['operacao'] == 'juros':
                     controller.gerarRecebimentosJuros(
                         context['form'].cleaned_data['inicio_periodo'],
