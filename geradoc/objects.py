@@ -26,16 +26,19 @@ class InadimplenciaObj:
             'data1' : '', 
             'data2' : '', 
         }
-        for idx, row in enumerate(db_data):
-            if idx == 0:
-                kwargs['recebido_apos_prazo'] = row['TOTAL'] or Decimal(0.0)
-                kwargs['data'] = row['PERIODO']
-            elif idx == 1:
+        for row in db_data:
+            if row['SITUACAO'] == 'ABERTO':
                 kwargs['aberto'] = row['TOTAL'] or Decimal(0.0)
                 kwargs['data1'] = row['PERIODO']
-            elif idx == 2:
+            elif row['SITUACAO'] == 'RECEB. APOS PRAZO':
+                kwargs['recebido_apos_prazo'] = row['TOTAL'] or Decimal(0.0)
+                kwargs['data'] = row['PERIODO']
+            elif row['SITUACAO'] == 'FATURADO':
                 kwargs['faturado'] = row['TOTAL'] or Decimal(0.0)
                 kwargs['data2'] = row['PERIODO']
+            else:
+                raise Exception("ERRO NO TEXTO QUE VEM DA QUERYYYY !")
+                
         return InadimplenciaObj(**kwargs)
 
     def total_inadimplencia(self):
