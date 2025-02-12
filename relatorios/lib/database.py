@@ -1,6 +1,6 @@
-from Database.models import Connection
+from Database.models import PostgreSQLConnection
 
-class Manager(Connection):
+class Manager(PostgreSQLConnection):
 
     def get_empresa(self, empresa, estabelecimento = 1):
         sql = """

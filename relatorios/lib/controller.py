@@ -41,8 +41,8 @@ class Controller():
         return socios
 
     def build_planilha_faturamento_servico(self, inicio, fim, codigos_servicos):
+        self.manager.connect()
         try:
-            self.manager.connect()
             sqls = RelatorioFaturamentoServicoSqls(inicio, fim, codigos_servicos)
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
@@ -53,6 +53,7 @@ class Controller():
                 
                 df = pd.read_sql(sqls.get_data(), self.manager.connection)
                 dfCodigos = sqls.getClassificationDB(df['CÓDIGO SERVIÇO'].values.tolist())
+                df.columns = df.columns.str.upper()
                 if not dfCodigos.empty:
                     df = df.merge(dfCodigos, how='left', on='CÓDIGO SERVIÇO')
                 df['COMPET'] = df['COMPET'].astype('datetime64')
