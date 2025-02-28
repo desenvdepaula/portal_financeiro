@@ -13,19 +13,17 @@ import os
 import pandas as pd
 from io import BytesIO
 
+from core.views import PDFFileView
 from .lib.controller import Controller
 from .lib.sql import InadimplenciaSqls
 from .objects import InadimplenciaObj
 from .models import Inadimplencia
 from .forms import ContratoHonorarioForm
 
-class ContratoHonorarioView(View):
+class ContratoHonorarioView(PDFFileView):
     template = "./geradoc/contrato_honorario/request_contrato_honorario.html"
     template_contrato = "./geradoc/contrato_honorario/contrato.html"
     template_contrato_condominio = "./geradoc/contrato_honorario/contrato_cond.html"
-    template_planilha = "./geradoc/contrato_honorario/planilha.html"
-    template_termo_aditivo = "./geradoc/contrato_honorario/termo_aditivo.html"
-
     form_class = ContratoHonorarioForm
 
     def get(self, request):
@@ -41,40 +39,12 @@ class ContratoHonorarioView(View):
                 context = controller.get_dados_honorario(**form.cleaned_data)
                 context.update(form.cleaned_data)
                 context['data_inicio_contrato'] = context['data_inicio_contrato'].strftime('%d/%m/%Y')
+                contrato_pdf = self.get_pdf_file(request, self.template_contrato, context) if form.cleaned_data['opcoes'] == 'empresa' else self.get_pdf_file(request, self.template_contrato_condominio, context)
                 
-                contrato_pdf = self.get_pdf_contrato(request, context) if form.cleaned_data['opcoes'] == 'empresa' else self.get_pdf_contrato_condominio(request, context)
-
-                pathContrato = str( settings.BASE_DIR / 'temp/files/financeiro/contrato_honorario_{0}.pdf'.format(request.session.session_key) )
-
-                file = open(pathContrato, 'wb')
-                file.write(contrato_pdf)
-                file.close()
-
-                response = self.get_merged_file(request, pathContrato)
-
-                return response
+                return self.get_file_response(contrato_pdf, f"Contrato Honorário - {form.cleaned_data.get('codigo_empresa')}")
             except Exception as ex:
                 messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
         return render(request, self.template, {'form': form})
-
-    def get_merged_file(self,request, pathContrato):
-        file = open(pathContrato, 'rb')
-        response = HttpResponse(file, content_type="application/pdf")
-        response['Content-Disposition'] = 'filename="%s"' % 'honorario.pdf'
-        os.remove(pathContrato)
-        return response
-
-    def get_pdf_contrato(self, request, context):
-        html_string = render_to_string(self.template_contrato, context)
-        html = HTML(string=html_string, base_url=request.build_absolute_uri())
-        pdf = html.write_pdf()
-        return pdf
-
-    def get_pdf_contrato_condominio(self, request, context):
-        html_string = render_to_string(self.template_contrato_condominio, context)
-        html = HTML(string=html_string, base_url=request.build_absolute_uri())
-        pdf = html.write_pdf()
-        return pdf
 
 class InadimplentesView(View):
     template_form = "./geradoc/inadimplentes/form.html"

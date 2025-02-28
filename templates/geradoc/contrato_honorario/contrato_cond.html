@@ -796,7 +796,6 @@
                     <tr>
                         <td class="font-weight-bold">CNPJ</td>
                         <td class="text-center font-weight-bold">{{ empresa.inscricao_federal }}</td>
-                        <td class="text-center font-weight-bold">{{ regime_tributario }}</td>
                     </tr>
     
                     <tr> <td colspan="3"></td> </tr>
@@ -813,15 +812,7 @@
                     </tr>
                     <tr>
                         <td class="text-left">FOLHA DE PAGAMENTO</td>
-                        <td class="text-center">
-                            
-                            {% if limite_empregados > 0 %}
-                                ACIMA DE {{ limite_empregados }}
-                            {% else %}
-                                POR EMPREGADO QUE TRANSITAR
-                            {% endif %}
-                                
-                        </td>
+                        <td class="text-center">POR EMPREGADO QUE TRANSITAR</td>
                         <td class="text-center">{{ valor_por_empregado }}</td>
                     </tr>
                     <tr>

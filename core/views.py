@@ -9,6 +9,7 @@ from django.views import View
 from datetime import datetime as dt
 import zipfile
 import os
+import io
 from weasyprint import HTML
 from .models import LogPID
 
@@ -81,5 +82,18 @@ class PDFFileView(View):
 
     def get_file_response(self, file, filename="documento", filetype="pdf"):
         response = HttpResponse(file, content_type="application/pdf")
-        response['Content-Disposition'] = 'filename="{0}.{1}"'.format(filename, filetype)
+        response['Content-Disposition'] = 'attachment; filename="{0}.{1}"'.format(filename, filetype)
         return response
+
+    def prepare_zip_file_content(self, dict_data_contains):
+        """returns Zip bytes ready to be saved with 
+        open('C:/1.zip', 'wb') as f: f.write(bytes)
+        @dict_data_contains dict like {'1.txt': 'string', '2.txt": b'bytes'} 
+        """
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for file_name, file_data in dict_data_contains.items():
+                zip_file.writestr(file_name, file_data)
+
+        zip_buffer.seek(0)
+        return zip_buffer.getvalue()

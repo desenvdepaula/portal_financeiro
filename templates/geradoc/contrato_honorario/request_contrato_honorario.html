@@ -32,37 +32,27 @@
                 {% bootstrap_messages messages %}
                 <div class="collapse" id="collapseExample">
                     <div class="card card-body">
-                        <p class="text-justify"> <i class="far fa-question-circle"></i><strong> Processo para gerar o contrato de prestação de serviços onde as informações devem ser retiradas do Trello.</p></strong>
+                        <p class="text-justify"> <i class="far fa-question-circle"></i><strong> Processo para gerar o contrato de prestação de serviços onde as informações devem ser retiradas do Asana.</p></strong>
                     </div><br><br>
                 </div>
-                <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                <div class="card shadow-lg p-3 bg-body rounded">
                     <div class="card-body">
                     <form method="POST" action="{% url 'request_contrato_honorario' %}"> 
                         {% csrf_token %}
 
-                        <center><h4 class="text-purple mb-4">CONTRATO HONORÁRIO </h4></center>
+                        <center><h4 class="text-purple mb-5">CONTRATO HONORÁRIO </h4></center>
                         
-                        <div class="form-row mb-4">
-                            {% bootstrap_field form.opcoes label_class='font-weight-bold' form_group_class="col-12 col-sm-12" %}                             
+                        <div class="form-row mb-5">
+                            {% bootstrap_field form.opcoes label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                            {% bootstrap_field form.codigo_empresa label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                            {% bootstrap_field form.data_inicio_contrato label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
                         </div>
-                        <div class="form-row mb-4">
-                            {% bootstrap_field form.codigo_empresa label_class='font-weight-bold' form_group_class="col-12 col-sm-6" %}
-                            {% bootstrap_field form.data_inicio_contrato label_class='font-weight-bold' form_group_class="col-12 col-sm-6" %}                               
+                        <div class="form-row mb-5">
+                            {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-4"  %}
+                            {% bootstrap_field form.valor_por_empregado label_class='font-weight-bold' form_group_class="col-12 col-sm-4 col-lg-4" %} 
+                            {% bootstrap_field form.honorario label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
                         </div>
-                        <div class="form-row mb-4">
-                            {% bootstrap_field form.regime_tributario label_class='font-weight-bold' form_group_class="col-12 col-sm-6"  %}                    
-                            {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-6"  %}                    
-                        </div>
-                        <div class="form-row mb-4">
-                            {% bootstrap_field form.limite_empregados label_class='font-weight-bold' form_group_class="col-12 col-sm-6 col-lg-4"  %}
-                            {% bootstrap_field form.valor_por_empregado label_class='font-weight-bold' form_group_class="col-12 col-sm-6 col-lg-4" %} 
-                            {% bootstrap_field form.honorario label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}   
-                            
-                            {% comment %}
-                                {% bootstrap_field form.valor_ecd label_class='font-weight-bold' form_group_class="col-12 col-sm-6 col-lg-4" %}    
-                            {% endcomment %}
-                                                            
-                        </div>
+                        
                         <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                             <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
                         </button> 
