@@ -1,63 +1,8 @@
 from django.db import models
 
-import fdb
 import pyodbc
 import psycopg2
 
-class Connection():
-
-    def __init__(self, *args, **kwargs):
-        self.host = kwargs.get('host')
-        self.database = kwargs.get('database')
-        self.user = kwargs.get('user')
-        self.password = kwargs.get('password')
-    
-    def connect(self):
-        self.connection  = fdb.connect(
-            host = self.host,
-            database= self.database,
-            user=self.user,
-            password=self.password,
-            charset='ISO8859_1'
-        )
-        self.cursor = self.connection.cursor()
-
-    def conn(self):
-        self.connection  = fdb.connect(
-            host = self.host,
-            database= self.database,
-            user=self.user,
-            password=self.password,
-            charset='ISO8859_1'
-        )
-        return self.connection
-    
-    def default_connect(self):    
-        self.host = '192.168.1.14'
-        self.database = '/home/firebird/questor.fdb'
-        self.user = 'sysdba'
-        self.password = 'masterkey'
-        return self
-
-    def disconnect(self):
-        self.cursor.close()
-        self.connection.close()
-
-    def execute_sql(self, sql):
-        return self.cursor.execute(sql)
-    
-    def commit_changes(self):
-        self.connection.commit()
-
-    def run_query(self, params):
-        self.connect()
-        context = {
-            param['name']: self.execute_sql(param['query']).fetchonemap() if param['many'] == False else self.execute_sql(param['query']).fetchallmap()
-            for param in params
-        }
-        self.disconnect()
-        return context
-    
 class PostgreSQLConnection():
 
     def __init__(self, *args, **kwargs):

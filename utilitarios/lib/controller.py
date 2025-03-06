@@ -8,7 +8,7 @@ import zipfile
 import os
 from PyPDF2 import PdfWriter, PdfReader, PdfMerger
 from io import BytesIO
-from Database.models import Connection, PostgreSQLConnection
+from Database.models import PostgreSQLConnection
 from .sql import SQLSNFManual, SQLSNotasAntecipadas, SQLSNFRetorno, BoletosSQL
 
 class Controller(PostgreSQLConnection):
