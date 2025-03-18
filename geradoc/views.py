@@ -19,6 +19,7 @@ from .lib.sql import InadimplenciaSqls
 from .objects import InadimplenciaObj
 from .models import Inadimplencia
 from .forms import ContratoHonorarioForm
+import locale
 
 class ContratoHonorarioView(PDFFileView):
     template = "./geradoc/contrato_honorario/request_contrato_honorario.html"
@@ -32,6 +33,7 @@ class ContratoHonorarioView(PDFFileView):
 
     def post(self, request):
         form = self.form_class(request.POST or None)
+        locale.setlocale(locale.LC_ALL, "pt_BR.UTF-8")
         if form.is_valid():
             # form.clean_log(request.user.username)
             try:
