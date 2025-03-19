@@ -6,7 +6,7 @@ def get_recebimentos(escritorio,dataini,datafim,codigos):
             c.datarctocr,
             c.codigocaixaconta, 
             c.numerodctocr,
-	        (r.codigocliente||' - '||p.nome) cliente,
+            (r.codigocliente||' - '||p.nome) cliente,
             sum(c.valorrctocr) valor
         from
             contarecebida c
@@ -27,9 +27,9 @@ def get_recebimentos(escritorio,dataini,datafim,codigos):
             s.codigoescrit,
             s.dataemissaons,
             s.codigocaixaconta,
-	        s.seriens ||s.numerons numerodctocr,
-	        (s.codigocliente||' - '||p.nome) cliente,
-            sum(s.valorbruto) valor
+            s.seriens ||s.numerons numerodctocr,
+            (s.codigocliente||' - '||p.nome) cliente,
+            sum(s.valorliquido) valor
         from
             serviconota s
         join 
