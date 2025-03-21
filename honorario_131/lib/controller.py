@@ -436,8 +436,7 @@ class Controller():
             raise Exception(f"{response.status_code}: Erro na Chamada da API")
         
     def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial=1):
-        self.manager.execute_sql(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial))
-        self.manager.commit_changes()
+        self.manager.execute_and_commit(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial))
 
     def returnCompetToValidation(self, compet):
         _, mes, ano = compet.split('.')

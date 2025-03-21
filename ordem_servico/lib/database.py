@@ -40,8 +40,7 @@ class ManagerTareffa(PostgreSQLConnection):
                         end as int) = {self.codigo_empresa} and
                         estaativa = true
             """
-            self.execute_sql(sql)
-            result = [list(i) for i in self.cursor.fetchall()]
+            result = [list(i) for i in self.run_query_for_select(sql)]
         except Exception as err:
             raise Exception(err)
         else:
@@ -71,8 +70,7 @@ class ManagerTareffa(PostgreSQLConnection):
                 where
                     estaativa = true
             """
-            self.execute_sql(sql)
-            result = [list(i) for i in self.cursor.fetchall()]
+            result = [list(i) for i in self.run_query_for_select(sql)]
         except Exception as err:
             raise Exception(err)
         else:
