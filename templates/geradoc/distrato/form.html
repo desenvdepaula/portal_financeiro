@@ -1,0 +1,212 @@
+{% extends '../../base.html' %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block body %}
+    
+    <style>
+        fieldset{ border:1px solid #5040c9; margin-bottom: 10px; margin-top: 10px;}
+        fieldset legend{ color: #5040c9; font-weight: 620; padding-right: 4px; padding-left: 4px;}
+        fieldset p{text-align: justify; font-weight: 500; line-height: 120%;}
+
+        .text-field{
+            outline: none; 
+            padding: 3px; padding-left: 5px; padding-right: 5px;
+            font-size: 16px; font-weight: 500; color: #352a83;
+            border: none; border-bottom: 1px solid #5040c9;   
+            transition: 0.4s;
+        }
+        .text-field:focus{
+            border-bottom: 2px solid #5040c9;   
+            border-top-right-radius: 6px; border-top-left-radius: 6px; 
+            background-color: #e3e1f5;
+            transition: 0.4s;
+        }
+        .button{
+            padding: 5px;
+            border-radius: 2px;
+            border: none; outline: none;
+            transition: 0.4s;
+        }
+        .button:hover{
+            transition: 0.4s;
+            padding: 6px;
+            margin-bottom: -1px;
+            
+        }
+        .btn-purple{
+            background-color: #5040c9;
+            color: white;
+        }
+        .v2{
+            color: #6f42c1;
+            border-color: #6f42c1;
+        }
+        .v2:hover{
+            background-color: #6f42c1;
+            color: #fff;
+        }
+    </style>
+
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                    {% bootstrap_messages messages %}
+                    <div class="card shadow-lg p-3 mb-5 bg-body rounded">
+                        <div class="card-body">
+                            <form method="POST" action="{% url 'request_distrato' %}"> 
+                                {% csrf_token %}
+
+                                <center><h4 class="text-purple">DISTRATO </h4></center>
+                                
+                                <div class="form-row">
+                                    {% bootstrap_field form.codigo_empresa label_class='font-weight-bold' form_group_class="col-12 col-sm-6" %}
+                                    {% bootstrap_field form.codigo_estab label_class='font-weight-bold' form_group_class="col-12 col-sm-6" %}
+                                </div>
+                                <div class="form-row mt-5">
+                                    {% bootstrap_field form.data_competencia label_class='font-weight-bold' form_group_class="col-12 col-sm-4"  %}      
+                                    {% bootstrap_field form.data_novo_contador label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                    {% bootstrap_field form.ano_competencia label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                </div>
+
+                                <fieldset class="p-3 rounded mt-3">
+                                    <legend class="w-auto">OBRIGAÇÕES ANUAIS</legend>
+                                    
+                                    <div class="form-row">
+                                        {% for obrigacao in form.obrigacoes_anuais %}
+                                            <div class="col-4 col-sm-2">
+                                                {{ obrigacao }}
+                                            </div>
+                                        {% endfor %}
+                                        <div class="col-6 col-sm-6">
+                                            <label for="selecionar_todos" style="color: #6f42c1;">
+                                                <input type="checkbox" id="selecionar_todos" onclick="checkAllOrNo(this)"> TODAS AS OBRIGAÇÕES
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                </fieldset>   
+
+                                <hr>
+                                <div class="form-row">
+                                    {% bootstrap_field form.boletos_a_pagar label_class='font-weight-bold' form_group_class="col-12 col-sm-6"  %}
+                                </div>
+                                <hr>
+
+                                <fieldset id="boletos-fieldset" class="p-3 rounded" style="display: none;">
+                                    <legend class="w-auto">BOLETOS</legend>
+                                    <div class="form-row">
+                                        <div class="col">
+                                            <input id="nr_boletos" class="text-field" type="text" size="1">
+                                            <button type="button" class="button btn-purple" onclick="addBoleto()" ><i class="fas fa-plus"></i></button>
+                                        </div>
+                                                                    
+                                    </div>
+                                    <hr>
+                                    
+                                </fieldset>                
+                
+                                <button class="btn btn-outline v2 float-right mt-3" data-toggle="popover" data-placement="bottom" data-trigger="hover" data-content="ADICONAR EMPRESA"> 
+                                    <i class="far fa-file-pdf"></i> <strong>Gerar Distrato</strong>
+                                </button>                       
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+        
+    <script>
+        var boletos = [];
+
+        function checkAllOrNo(source){
+            checkboxes = document.getElementsByName('obrigacoes_anuais');
+            for (checkbox of checkboxes) {
+                checkbox.checked = source.checked;
+            }
+        }
+
+        $(function(){
+            
+            var checked = $("#id_boletos_a_pagar").prop('checked');
+
+            if (checked == true){
+                $("#boletos-fieldset").show();
+            }
+            else if(checked == false){
+                $("#boletos-fieldset").hide();
+            }
+            
+            $("#nr_boletos").mask("0");
+
+            $("#id_boletos_a_pagar").change(function(){
+                var checked = $(this).prop('checked');
+                if (checked == true){
+                    $("#boletos-fieldset").show();
+                    $("#id_nr_boleto").prop('required', true);
+                    $("#id_data_vencimento_boletos").prop('required', true);
+                    $("#id_valor").prop('required', true);
+                }
+                else if(checked == false){
+                    $("#boletos-fieldset").hide();
+                    $("#id_nr_boleto").prop('required', false);
+                    $("#id_data_vencimento_boletos").prop('required', false);
+                    $("#id_valor").prop('required', false);
+                }
+            });
+        
+        });
+
+        function addBoleto(){
+            var nr_boletos = Number($("#nr_boletos").val());
+            var iter = boletos[ boletos.length -1] || 0;
+            for(i=iter+1 || 0; i < nr_boletos + iter+1; i++){
+                boletos.push(i)
+                $("#boletos-fieldset").append(
+                  `
+                    <div id="boletos_${i}">
+                        <div class="form-row">
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <div class="input-group mb-2 mr-sm-2">
+                                    <div class="input-group-prepend">
+                                      <div class="input-group-text"><strong>N°</strong></div>
+                                    </div>
+                                    <input type="text" class="form-control" name="nr_boleto_${i}" >
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <div class="input-group mb-2 mr-sm-2">
+                                    <div class="input-group-prepend">
+                                      <div class="input-group-text"> <i class="fas fa-calendar-check"></i>&nbsp; </div>
+                                    </div>
+                                    <input type="date" class="form-control" name="data_boleto_${i}">
+                                </div>
+                            </div>
+                            <div class="col-11 col-sm-5 col-md-3">
+                                <div class="input-group mb-2 mr-sm-2">
+                                    <div class="input-group-prepend">
+                                      <div class="input-group-text"><strong>R$</strong></div>
+                                    </div>
+                                    <input type="number" class="form-control" name="valor_boleto_${i}" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-1">
+                                <button type="button" class="button btn-danger mt-2 pl-2 pr-2" onclick="removeBoleto('#boletos_${i}')" ><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <hr>
+                    </div>
+                  `  
+                );
+            }
+        }
+
+        function removeBoleto(id_boleto){
+            $(id_boleto).remove();
+        }
+
+    </script>
+{% endblock %}
+    
