@@ -11,11 +11,14 @@ from .models import Usuario
 
 # <-- LOGIN --> #
 def request_login(request):
-    logout(request)
     template = "./usuarios/login.html"
     context = {
         'login_form': LoginForm(request.POST or None) 
     }
+    if not request.user.groups.filter(name__in=['Diretoria', 'Financeiro']).exists():
+        messages.error(request, "Usuário não Logado ou não tem Permissão para acessar este portal")
+    else:
+        return redirect("core:home")
     return render(request, template, context)
 
 def validate_groups(grupos):

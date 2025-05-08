@@ -9,12 +9,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '6%!q_x9-seq8nuozd=5wpe+529e^22zb)90ffp3!x6ln_e9z)%'
+SECRET_KEY = 'wb71be3$x5(z8km=s64k77os5fg7)42mko0wfss1x8@ac1zbcr'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-SESSION_COOKIE_NAME = "sessionid_financeiro"
+# SESSION_COOKIE_NAME = "sessionid_financeiro"
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+DATABASE_ROUTERS = ['portal_financeiro.routers.AuthRouter']
 
 ALLOWED_HOSTS = ['*']
 
@@ -51,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'portal_financeiro.middlewares.GrupoAutorizadoMiddleware',
 ]
 
 ROOT_URLCONF = 'portal_financeiro.urls'
