@@ -246,9 +246,10 @@ class DistratoView(View):
             """
             Fica acertado entre as partes que, em razão dos serviços e atividades desenvolvidos até o momento, 
             a <strong>CONTRATADA</strong> entregará à <strong>CONTRATANTE</strong>, todos os arquivos necessários a continuidade dos serviços, tão logo todos serviços sejam concluídos, bem como toda a documentação, livros e arquivos magnéticos das obrigações fiscais entregues ao Fisco, devidamente protocolados.<br>
-            <strong>PARÁGRAFO PRIMEIRO:</strong> As obrigações acessórias, como {{ obrigacoes_anuais.0 }} referentes ano-base {{ano_competencia}} ({{anoCompetencia}}), 
+            <strong>PARÁGRAFO PRIMEIRO:</strong> A entrega da documentação será feita somente após a assinatura do presente instrumento por ambas as partes.
+            <strong>PARÁGRAFO SEGUNDO:</strong> As obrigações acessórias, como {{ obrigacoes_anuais.0 }} referentes ano-base {{ano_competencia}} ({{anoCompetencia}}), 
             são de responsabilidade da <strong>CONTRATADA</strong> e já foram ou serão entregues dentro do prazo legal estabelecido.<br>
-            <strong>PARÁGRAFO SEGUNDO:</strong> A fim de que a <strong>CONTRATADA</strong> possa satisfazer o compromisso de entregar as obrigações acessórias, 
+            <strong>PARÁGRAFO TERCEIRO:</strong> A fim de que a <strong>CONTRATADA</strong> possa satisfazer o compromisso de entregar as obrigações acessórias, 
             a <strong>CONTRATANTE</strong> compromete-se a manter atualizada sua certificação digital e a conservar válidas as procurações 
             eletrônicas substabelecidas à <strong>CONTRATADA</strong> até a execução dos serviços. Além disso, a <strong>CONTRATANTE</strong> garante manter o acesso, através de senhas, 
             ao posto fiscal, prefeitura municipal, conectividade social da Caixa Econômica Federal, 
@@ -260,7 +261,8 @@ class DistratoView(View):
             """ if singular else """
             Fica acertado entre as partes que, em razão dos serviços e atividades desenvolvidos até o momento, 
             a <strong>CONTRATADA</strong> entregará à <strong>CONTRATANTE</strong>, todos os arquivos necessários a continuidade dos serviços, tão logo todos serviços sejam concluídos, bem como toda a documentação, livros e arquivos magnéticos das obrigações fiscais entregues ao Fisco, devidamente protocolados.<br>
-            <strong>PARÁGRAFO PRIMEIRO:</strong> As obrigações acessórias, como 
+            <strong>PARÁGRAFO PRIMEIRO:</strong> A entrega da documentação será feita somente após a assinatura do presente instrumento por ambas as partes.
+            <strong>PARÁGRAFO SEGUNDO:</strong> As obrigações acessórias, como 
             {% for obrigacao in obrigacoes_anuais %}
                 {% if forloop.counter == nr_obrigacoes %}
                     {{ obrigacao }}
@@ -272,7 +274,7 @@ class DistratoView(View):
             {% endfor %}
             referentes ano-base {{ano_competencia}} ({{anoCompetencia}}), 
             são de responsabilidade da <strong>CONTRATADA</strong> e já foram ou serão entregues dentro do prazo legal estabelecido.<br>
-            <strong>PARÁGRAFO SEGUNDO:</strong> A fim de que a <strong>CONTRATADA</strong> possa satisfazer o compromisso de entregar as obrigações acessórias, 
+            <strong>PARÁGRAFO TERCEIRO:</strong> A fim de que a <strong>CONTRATADA</strong> possa satisfazer o compromisso de entregar as obrigações acessórias, 
             a <strong>CONTRATANTE</strong> compromete-se a manter atualizada sua certificação digital e a conservar válidas as procurações 
             eletrônicas substabelecidas à <strong>CONTRATADA</strong> até a execução dos serviços. Além disso, a <strong>CONTRATANTE</strong> garante manter o acesso, através de senhas, 
             ao posto fiscal, prefeitura municipal, conectividade social da Caixa Econômica Federal, 
