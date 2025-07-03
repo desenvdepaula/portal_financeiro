@@ -43,6 +43,7 @@ class SqlHonorarios131:
             where
                 h.codigoempresa in {empresa}
                 and p.compet = '{compet}' 
+		        and (fc.datatransfemp is null or fc.datatransfemp <= p.datafinalfolha)
                 and ((codigotipocontr <> 5 and codigoevento = 5021) or (codigotipocontr = 5 and codigoevento = 5022)) 
                 and p.codigotipocalc = 1
             group by
@@ -176,6 +177,7 @@ class SqlHonorarios131:
             where
                 h.codigoempresa in {empresas} and 
                 p.compet = date('01.' ||date_part('month', date(current_date - interval'1 month')) || '.' || date_part('year', date(current_date - interval'1 month')))
+		        and (fc.datatransfemp is null or fc.datatransfemp <= p.datafinalfolha)
                 and ((codigotipocontr <> 5 and codigoevento = 5021) or (codigotipocontr = 5 and codigoevento = 5022)) 
                 and p.codigotipocalc = 1
             group by
@@ -253,6 +255,7 @@ class SqlHonorarios131:
                 and h.codigopercalculo = p.codigopercalculo 
             where
                 p.compet = date('01.' ||date_part('month', date(current_date - interval'1 month')) || '.' || date_part('year', date(current_date - interval'1 month')))
+		        and (fc.datatransfemp is null or fc.datatransfemp <= p.datafinalfolha)
                 and ((codigotipocontr <> 5 and codigoevento = 5021) or (codigotipocontr = 5 and codigoevento = 5022)) 
                 and p.codigotipocalc = 1
             group by
