@@ -7,7 +7,7 @@ class Controller(PostgreSQLConnection):
     
     def __init__(self, *args, **kwargs):
         self.default_connect()
-        init_args = {'driver': '{ODBC Driver 17 for SQL Server}', 'server': '192.168.200.45,391', 'database': 'nGestaao3', 'uid': 'sa', 'pwd': 'QER159357XT$'}
+        init_args = {'driver': '{ODBC Driver 17 for SQL Server}', 'server': '192.168.1.28,391', 'database': 'nGestaao3', 'uid': 'sa', 'pwd': 'QER159357XT$'}
         self.sqlserver = SQLServerConnection(**init_args)
 
     def gerarRecebimentosJuros(self, inicio_periodo, fim_periodo, relacao_empresas):
