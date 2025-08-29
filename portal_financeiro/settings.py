@@ -1,5 +1,16 @@
 from pathlib import Path
 import os
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="pandas only supports SQLAlchemy"
+)
+
+warnings.filterwarnings(
+    "ignore",
+    message="NumPy was imported from a Python sub-interpreter"
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
