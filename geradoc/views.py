@@ -29,6 +29,8 @@ class ContratoHonorarioView(PDFFileView):
     template = "./geradoc/contrato_honorario/request_contrato_honorario.html"
     template_contrato = "./geradoc/contrato_honorario/contrato.html"
     template_contrato_condominio = "./geradoc/contrato_honorario/contrato_cond.html"
+    template_empresas_paralisadas = "./geradoc/contrato_honorario/empresas_paralisadas.html"
+    template_termo_aditivo = "./geradoc/contrato_honorario/termo_aditivo.html"
     form_class = ContratoHonorarioForm
 
     def get(self, request):
@@ -45,7 +47,15 @@ class ContratoHonorarioView(PDFFileView):
                 context = controller.get_dados_honorario(**form.cleaned_data)
                 context.update(form.cleaned_data)
                 context['data_inicio_contrato'] = context['data_inicio_contrato'].strftime('%d/%m/%Y')
-                contrato_pdf = self.get_pdf_file(request, self.template_contrato, context) if form.cleaned_data['opcoes'] == 'empresa' else self.get_pdf_file(request, self.template_contrato_condominio, context)
+                if form.cleaned_data['opcoes'] == 'empresa':
+                    contrato_pdf = self.get_pdf_file(request, self.template_contrato, context)
+                elif form.cleaned_data['opcoes'] == 'emp_paralisadas':
+                    contrato_pdf = self.get_pdf_file(request, self.template_empresas_paralisadas, context)
+                elif form.cleaned_data['opcoes'] == 'termo':
+                    context['list_clausulas'] = request.POST.getlist("clausulas_select")
+                    contrato_pdf = self.get_pdf_file(request, self.template_termo_aditivo, context)
+                else:
+                    contrato_pdf = self.get_pdf_file(request, self.template_contrato_condominio, context)
                 
                 return self.get_file_response(contrato_pdf, f"Contrato Honorário - {form.cleaned_data.get('codigo_empresa')}")
             except Exception as ex:

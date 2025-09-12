@@ -26,46 +26,98 @@
 
     <br>
     <br>
-    <section>
-        <div class="row">
-            <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
-                {% bootstrap_messages messages %}
-                <div class="collapse" id="collapseExample">
-                    <div class="card card-body">
-                        <p class="text-justify"> <i class="far fa-question-circle"></i><strong> Processo para gerar o contrato de prestação de serviços onde as informações devem ser retiradas do Asana.</p></strong>
-                    </div><br><br>
-                </div>
-                <div class="card shadow-lg p-3 bg-body rounded">
-                    <div class="card-body">
-                    <form method="POST" action="{% url 'request_contrato_honorario' %}"> 
-                        {% csrf_token %}
+    <main role="main" class="main-content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-8 offset-sm-1 offset-md-2 offset-lg-2">
+                    {% bootstrap_messages messages %}
+                    <div class="collapse" id="collapseExample">
+                        <div class="card card-body">
+                            <p class="text-justify"> <i class="far fa-question-circle"></i><strong> Processo para gerar o contrato de prestação de serviços onde as informações devem ser retiradas do Asana.</p></strong>
+                        </div><br><br>
+                    </div>
+                    <div class="card shadow-lg p-3 bg-body rounded">
+                        <div class="card-body">
+                            <form method="POST" action="{% url 'request_contrato_honorario' %}"> 
+                                {% csrf_token %}
 
-                        <center><h4 class="text-purple mb-5">CONTRATO HONORÁRIO </h4></center>
-                        
-                        <div class="form-row mb-5">
-                            {% bootstrap_field form.opcoes label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
-                            {% bootstrap_field form.codigo_empresa label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
-                            {% bootstrap_field form.data_inicio_contrato label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                <center><h4 class="text-purple mb-5">CONTRATO HONORÁRIO </h4></center>
+                                
+                                <div class="form-row mb-5">
+                                    <div class="col-12 col-sm-4">
+                                        <label class="font-weight-bold" for="id_opcoes">Empresa / Condomínio</label>
+                                        <select name="opcoes" class="form-control" title="Selecione uma das opções (obrigatório)" id="id_opcoes" onchange="update_sel(event)">
+                                            <option value="empresa">EMPRESA</option>
+                                            <option value="emp_paralisadas">EMPRESA PARALISADAS</option>
+                                            <option value="termo">TERMO ADITIVO</option>
+                                            <option value="condominio">CONDOMÍNIO</option>
+                                        </select>
+                                        <small class="form-text text-muted">Selecione uma das opções (obrigatório)</small>
+                                    </div>
+                                    {% bootstrap_field form.codigo_empresa label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                    {% bootstrap_field form.data_inicio_contrato label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                </div>
+                                <div class="form-row mb-5">
+                                    {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-4"  %}
+                                    {% bootstrap_field form.valor_por_empregado label_class='font-weight-bold' form_group_class="col-12 col-sm-4 col-lg-4" %} 
+                                    {% bootstrap_field form.honorario label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
+                                </div>
+                                <div class="form-group mb-5" style="display: none;" id="div_clau_sel">
+                                    <label for="clausulas_select">Selecione as Cláusulas para o Termo Aditivo: </label>
+                                    <select class="form-control select2-multiple" id="clausulas_select" name="clausulas_select">
+                                        <option value="1">CLÁUSULA 1ª</option>
+                                        <option value="2">CLÁUSULA 2ª</option>
+                                        <option value="3">CLÁUSULA 3ª</option>
+                                        <option value="4">CLÁUSULA 4ª</option>
+                                        <option value="5">CLÁUSULA 5ª</option>
+                                        <option value="6">CLÁUSULA 6ª</option>
+                                        <option value="7" selected="selected">CLÁUSULA 7ª</option>
+                                        <option value="8">CLÁUSULA 8ª</option>
+                                        <option value="9">CLÁUSULA 9ª</option>
+                                        <option value="10">CLÁUSULA 10ª</option>
+                                    </select>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                    <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
+                                </button> 
+                                
+                                <button class="btn btn-outline v2 float-right mt-4" data-toggle="popover" data-placement="bottom" data-trigger="hover" data-content="ADICONAR EMPRESA"> 
+                                    <i class="far fa-file-pdf"></i> <strong>Gerar Contrato</strong>
+                                </button>                       
+                            </form>
                         </div>
-                        <div class="form-row mb-5">
-                            {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-4"  %}
-                            {% bootstrap_field form.valor_por_empregado label_class='font-weight-bold' form_group_class="col-12 col-sm-4 col-lg-4" %} 
-                            {% bootstrap_field form.honorario label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
-                        </div>
-                        
-                        <button class="btn btn-outline-primary float-left mt-4" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                            <i class="far fa-question-circle"></i> <strong> MAIS INFORMAÇÕES </strong>
-                        </button> 
-                        
-                        <button class="btn btn-outline v2 float-right mt-4" data-toggle="popover" data-placement="bottom" data-trigger="hover" data-content="ADICONAR EMPRESA"> 
-                            <i class="far fa-file-pdf"></i> <strong>Gerar Contrato</strong>
-                        </button>                       
-                    </form>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </main>
         
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'js/select2.min.js' %}"></script>
+
+<script>
+
+    function update_sel(event){
+        if (event.target.value === 'termo'){
+            document.getElementById("div_clau_sel").style.display = "block";
+        }else{
+            document.getElementById("div_clau_sel").style.display = "none";
+        }
+    }
+
+    $('.select2-multiple').select2(
+        {
+            multiple: true,
+            theme: 'bootstrap4',
+            width: '100%'
+        }
+    );
+
+</script>
+
 {% endblock %}
     

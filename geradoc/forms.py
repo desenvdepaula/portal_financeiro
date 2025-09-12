@@ -14,6 +14,8 @@ class ContratoHonorarioForm(forms.Form):
 
     OPTIONS = (
         ('empresa', 'EMPRESA'),
+        ('emp_paralisadas', 'EMPRESA PARALIZADAS'),
+        ('termo', 'TERMO ADITIVO'),
         ('condominio', 'CONDOMÍNIO'),
     )
 

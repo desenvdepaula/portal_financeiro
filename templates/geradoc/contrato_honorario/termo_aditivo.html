@@ -1,0 +1,695 @@
+{% extends '../../components/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+    <style>
+        @page {
+            size: A4;
+            margin: 0px 0px 15px 0px;
+            padding: 1.6cm; padding-top: 3.5cm; padding-bottom: 1.6cm;
+            @bottom-left {
+                content: "Pág. " counter(page);
+                font-size: 10pt;
+                color: #555;
+            }
+        }
+        body{
+            background-image: url("{% static 'img/papel_timbrado.jpg' %}");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 100%;
+        }       
+
+        body div{
+            margin: 0px;
+            padding: 0px;
+            max-width: 674px;
+        }
+
+        p, span, th, td, li{
+            font-size: 14px;
+            line-height: 108%;
+            text-align: justify;
+            font-weight: 100;
+        }
+
+        strong{
+            font-weight: 900;
+        }
+        
+        .corpo h6{
+            margin: 3px;
+        }
+
+        .corpo{
+            display: flex;
+            flex-direction: column;
+            text-align: justify;
+        }
+
+        .space{
+            margin-top: 500px;
+        }
+
+        .corpo p{
+            font-size: 14.4px;
+            line-height: 108%;
+            margin: 3.5px;
+        }
+        
+        .p{text-indent: 2em;}
+        .ul{list-style: none;}
+
+        .flex-container{ display: flex; justify-content: center;}
+
+        .line-h-default{
+            line-height: normal;
+        }
+        .line-h-large{
+            line-height: 1.6;
+        }
+        .line-h-small{
+            line-height: 108%;
+        }
+        
+        .data-header p{
+            line-height: 95%;
+            margin: 6px;
+        }
+        
+        .text-content{
+            font-size: 17px;
+        }
+
+        ul{ padding-left: 30px; margin: 6px; font-size: 14.4px;}
+        li strong:first-child{ margin-left: -15px; }
+    </style>
+    <div class="d-block">
+        <div>
+            <div class="d-flex">
+                <div class="w-75">
+                    <h6 class="text-center font-weight-bold">TERMO ADITIVO AO CONTRATO DE PRESTAÇÃO DE SERVIÇOS PROFISSIONAIS DE CONTABILIDADE</h6>
+                </div>
+                <div class="border border-5 border-dark mb-3" style="padding: 10px; max-height: 50px;">
+                    <h4><b>N° {{ empresa.codigo }}<b></h4>
+                </div>
+            </div>
+        </div>
+        <div>
+            <p>
+                <strong>CONTRATADA: DE PAULA CONTADORES LTDA,</strong> pessoa jurídica de direito privado com sede e foro à Rua Antônio Raposo, 310, Centro, Foz do Iguaçu, Paraná, inscrita no Cadastro Nacional da Pessoa Jurídica CNPJ sob o n. 77.812.196/0001-43, neste ato representada pela sua titular <strong>ELIZANGELA DE PAULA KUHN</strong>, brasileira, maior, casada sob o regime de comunhão parcial de bens, contadora, residente e domiciliada à Avenida Tancredo Neves, n. 3000, Jardim Itaipu, Foz do Iguaçu, Paraná, portadora da Cédula de Identidade Civil Registro Geral n. 4.981.596-4, expedida pelo Instituto de Identificação do Estado do Paraná e inscrita no Cadastro de Pessoas Físicas - CPF sob o n. 815.257.459.72.
+            </p>
+            <p>
+                <strong>CONTRATANTE: {{ empresa.nome_empresa }},</strong> pessoa jurídica de direito privado, com sede à {{ empresa.endereco.tipo_logradouro }}. 
+                {{ empresa.endereco.logradouro }}, nº {{ empresa.endereco.numero }}, {{ empresa.endereco.bairro }}, CEP: {{ empresa.endereco.cep }}, 
+                {{ empresa.endereco.cidade }} - {{ empresa.endereco.uf }}, inscrita no Cadastro Nacional da Pessoa Jurídica - 
+                CNPJ sob o nº {{ empresa.inscricao_federal }},  neste ato representada por seu(sua) titular {{ socio_administrador.nome }}, 
+                maior, nascido(a) em {{ socio_administrador.data_nascimento|date:"d/m/Y" }}, empresário(a), residente e domiciliado(a) à
+                {{ socio_administrador.endereco.tipo_logradouro }}. {{ socio_administrador.endereco.logradouro }}, n° {{ socio_administrador.endereco.numero }},              
+                {% if socio_administrador.endereco.complemento %} {{ socio_administrador.endereco.complemento }}, {% endif %}
+                {{ socio_administrador.endereco.bairro }}, CEP: {{ socio_administrador.endereco.cep }}, {{ socio_administrador.endereco.cidade }}, 
+                Estado do {{ socio_administrador.endereco.estado }}, portador(a) da Cédula de Identidade Civil Registro Geral nº {{ socio_administrador.rg }}, 
+                expedida pela {{ socio_administrador.orgao_emissor }} {{ socio_administrador.estado_rg }} e inscrito(a) no Cadastro de Pessoas Físicas do Ministério da Fazenda - CPF sob o nº {{ socio_administrador.inscricao_federal }}.
+            </p>
+            <p>
+                Pelo presente instrumento particular, as partes acima devidamente qualificadas, doravante denominadas simplesmente <strong>CONTRATADA</strong> e <strong>CONTRATANTE</strong>, resolvem aditar o <strong>INSTRUMENTO PARTICULAR DE CONTRATO DE PRESTAÇÃO DE SERVIÇOS PROFISSIONAIS DE CONTABILIDADE</strong> número {{ empresa.codigo }}, firmado em {{ data_inicio_contrato }}, nos termos e condições a seguir estipulados.
+            </p>
+            <p>
+                Este termo aditivo tem por objeto alterar, atualizar ou adequar pontos específicos do Contrato original supramencionado, o qual formaliza a prestação de serviços pela <strong>CONTRATADA</strong> à <strong>CONTRATANTE</strong>. Com exceção ao disposto no presente termo aditivo, as demais cláusulas, condições, direitos e obrigações estabelecidos no Contrato Original permanecem integralmente vigentes e inalterados.
+            </p>
+            <p>
+                Declaram, por fim, que o presente ajuste não constitui novação do contrato, destinando-se apenas a adequar os itens previstos neste instrumento entre as partes.
+            </p>
+        </div>
+
+        {% if '1' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 1ª – DO OBJETO DO CONTRATO: SERVIÇOS HABITUAIS OU PERMANENTES</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 1ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <p>
+                    O objeto do presente contrato consiste na prestação pela <strong>CONTRATADA</strong> à <strong>CONTRATANTE</strong> dos seguintes serviços profissionais habituais:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>1.1 ÁREA CONTÁBIL</strong>
+                        <ul style="list-style: none;">
+                            <li><strong>1.1.1</strong> Elaboração da contabilidade de acordo com as Normas Brasileiras de Contabilidade.</li>
+                            <li><strong>1.1.2</strong> Emissão dos Balancetes e da DRE (Demonstração do Resultado do Exercício).</li>
+                            <li><strong>1.1.3</strong> Envio de obrigações acessórias mensais, PGDAS (Programa Gerador do Documento de Arrecadação do Simples Nacional), SPED ICMS (Sistema Público de Escrituração Digital – ICMS/IPI), SPED Contribuições (Sistema Público de Escrituração Digital das Contribuições para o PIS/PASEP e COFINS), DESTDA (Declaração de Substituição Tributária, Diferencial de Alíquota e Antecipação devida por Contribuintes da categoria Simples Nacional), EFD-REINF (Escrituração Fiscal Digital de Retenções e Outras Informações Fiscais – Retenções de tributos e distribuição de lucros) e DCTFWEB (Declaração de Débitos e Créditos Tributários Federais Previdenciários e de Outras Entidades e Fundos) a partir dos arquivos enviados pela <strong>CONTRATANTE</strong>.</li>
+                            <li><strong>1.1.4</strong> Elaboração do Balanço Patrimonial e demais demonstrações contábeis obrigatórias.</li>
+                            <li><strong>1.1.5</strong> Prestar informações relativas à escrituração e informações contábeis, quando formalmente solicitadas.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>1.2 ÁREA FISCAL</strong>
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong >1.2.1</strong> Escrituração dos registros fiscais obrigatórios, elaboração de guias de contribuições e tributos devidos.
+                            </li>
+                            <li>
+                                <strong>1.2.2</strong> Atendimento aos questionamentos relativos à tributação nas operações da <strong>CONTRATANTE</strong> e correspondentes à atividade exercida pela mesma, tais como tributação sobre compra, venda, prestação de serviços e outras, condicionado ao questionamento efetuado pela <strong>CONTRATANTE</strong> utilizando o sistema de comunicação <strong>TAREFFA</strong>.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>1.3 ÁREA TRABALHISTA E PREVIDENCIÁRIA</strong>
+                        <ul style="list-style: none;">
+                            <li><strong>1.3.1</strong> Orientação e controle da aplicação dos preceitos da Consolidação das Leis do Trabalho e das convenções coletivas, bem como aqueles atinentes à Previdência Social, “PIS”, “FGTS” e outros aplicáveis às relações de emprego mantidas pela <strong>CONTRATANTE</strong>.</li>
+                            <li>
+                                <strong>1.3.2</strong> Manutenção dos Registros de Empregados e serviços correlatos.
+                            </li>
+                            <li>
+                                <strong>1.3.3</strong> Elaboração da Folha de Pagamento dos empregados e de Pró-labore, bem como das guias de recolhimento dos encargos sociais e tributários afins.
+                            </li>
+                            <li>
+                                <strong>1.3.4</strong> Envio dos arquivos relacionados ao eSocial relativos à folha de pagamento, nos prazos estabelecidos, condicionando-se ao recebimento das informações necessárias para cada fato, com a antecedência relacionado no <strong>ANEXO I</strong> deste instrumento.
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '2' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 2ª – DO OBJETO DO CONTRATO: SERVIÇOS EVENTUAIS OU EXTRAORDINÁRIOS:</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 2ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <p>
+                    Os serviços os quais não estejam expressamente mencionados na Cláusula Primeira deste contrato são considerados serviços eventuais ou extraordinários. Esses serviços não estão inclusos nos honorários mensais pactuados para a prestação de serviços contábeis regulares e, portanto, serão cobrados à parte, conforme orçamento previamente aprovado pela <strong>CONTRATANTE</strong>, hora trabalho, ou tabela de valores previamente estabelecida pela <strong>CONTRATADA</strong>.
+                </p>
+                <p>
+                    A seguir, apresenta-se uma relação exemplificativa de serviços eventuais ou extraordinários, sem prejuízo de outras demandas que possam surgir no curso da execução do contrato e que, pela sua natureza, também sejam considerados serviços extras:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>2.1</strong> Cópias reprográficas, autenticação de documentos e reconhecimento de firma
+                    </li>
+                    <li>
+                        <strong>2.2</strong> Alteração estatutária ou contratual.
+                    </li>
+                    <li>
+                        <strong>2.3</strong> Emissão de certidões negativas que não estejam disponíveis para emissão via internet, que dependam de deslocamento aos órgãos públicos ou que exijam a realização de serviços complementares.
+                    </li>
+                    <li>
+                        <strong>2.4</strong> Autenticação ou registro de livros.
+                    </li>
+                    <li>
+                        <strong>2.5</strong> Declaração de ajuste do Imposto de Renda Pessoa Física (IRPF) dos sócios e terceiros.
+                    </li>
+                    <li>
+                        <strong>2.6</strong> Preenchimento de fichas cadastrais e formulários do IBGE.
+                    </li>
+                    <li>
+                        <strong>2.7</strong> Registro em conselhos de classes.
+                    </li>
+                    <li>
+                        <strong>2.8</strong> Entrega de obrigações acessórias anuais, como a ECD (Escrituração Contábil Digital) e a ECF (Escrituração Contábil Fiscal).
+                    </li>
+                    <li>
+                        <strong>2.9</strong> Dependendo da atividade e do regime tributário da empresa ou entidade, as obrigações acessórias a elas relativas, podendo ser: DEFIS (Declaração de Informações Socioeconômicas e Fiscais) para empresas do Simples Nacional, DIRF (Declaração do Imposto sobre a Renda Retido na Fonte) quando aplicável, DMED (Declaração de Serviços Médicos e de Saúde) para empresas da área da saúde, DIMOB (Declaração de Informações sobre Atividades Imobiliárias) para atividades imobiliárias, CBE (Declaração de Capitais Brasileiros no Exterior) para quem possui investimentos no exterior e DIRBI (Declaração de Incentivos, Renúncias, Benefícios e Imunidades de Natureza Tributária).
+                    </li>
+                    <li>
+                        <strong>2.10</strong> Contabilização de obras, reformas ou outras atividades que exijam a criação de centros de custo adicionais na folha de pagamento e/ou na contabilidade, incluindo ajustes na alocação de despesas, parametrizações contábeis e acompanhamento de registros específicos.
+                    </li>
+                    <li>
+                        <strong>2.11</strong> Habilitação de RADAR (importação e exportação) na Receita Federal do Brasil.
+                    </li>
+                    <li>
+                        <strong>2.12</strong> Renovação de alvarás e demais licenças exigidas anualmente.
+                    </li>
+                    <li>
+                        <strong>2.13</strong> Elaboração de informações exigidas por novas normas estabelecidas pelos poderes públicos.
+                    </li>
+                    <li>
+                        <strong>2.14</strong> Retificação da escrituração ou de registros fiscais em decorrência de informação errônea ou incompleta fornecida pela <strong>CONTRATANTE</strong>.
+                    </li>
+                    <li>
+                        <strong>2.15</strong> Treinamentos específicos solicitados pela <strong>CONTRATANTE</strong>, incluindo aqueles relacionados à implantação ou substituição de sistemas ERP, abrangendo a parametrização de grades tributárias, a configuração de planos de contas e outros ajustes necessários para a adequação dos processos contábeis e fiscais.
+                    </li>
+                    <li>
+                        <strong>2.16</strong> Estudos de viabilidade na implantação de novos empreendimentos.
+                    </li>
+                    <li>
+                        <strong>2.17</strong> Defesas fiscais na esfera administrativa, incluindo a elaboração de impugnações e recursos, bem como a condução de processos administrativos para restituição de tributos pagos indevidamente, em valor superior ao devido ou em razão de benefícios fiscais aplicáveis.
+                    </li>
+                    <li>
+                        <strong>2.18</strong> Retificação de arquivos com incorreções enviadas pela <strong>CONTRATANTE</strong>, treinamentos realizados em razão da troca de colaboradores da <strong>CONTRATANTE</strong> e o cadastramento e/ou revisão do cadastro tributário de produtos e mercadorias comercializados, conforme as exigências fiscais aplicáveis.
+                    </li>
+                    <li>
+                        <strong>2.19</strong> Reemissão de guias previamente enviadas pela <strong>CONTRATADA</strong> à <strong>CONTRATANTE</strong>, quando não quitadas ou quando alteradas em decorrência dos serviços previstos no item 2.18.
+                    </li>
+                    <li>
+                        <strong>2.20</strong> Processamento de folha de pagamento complementar, seja por solicitação da <strong>CONTRATANTE</strong> ou em razão da homologação tardia da Convenção Coletiva de Trabalho (folha de dissídio).
+                    </li>
+                    <li>
+                        <strong>2.21</strong> O preenchimento de declarações, formulários e demais documentos exigidos para que a <strong>CONTRATANTE</strong> participe de processos licitatórios.
+                    </li>
+                    <li>
+                        <strong>2.22</strong> Preenchimento de pesquisas solicitadas por entidades para o fornecimento de informações contábeis, fiscais e trabalhistas, estatísticas ou setoriais exigidas por entidades como a FECOMÉRCIO a pedido da <strong>CONTRATANTE</strong>.
+                    </li>
+                    <li>
+                        <strong>2.23</strong> Demais serviços solicitados pela <strong>CONTRATANTE</strong> que não estejam expressamente especificados neste contrato, mas que sejam compatíveis com a natureza dos serviços prestados pela <strong>CONTRATADA</strong>.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '3' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 3ª – DOS DEVERES E OBRIGAÇÕES</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 3ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <p>
+                    Os serviços serão executados nas dependências da <strong>CONTRATADA</strong> mediante cumprimento das seguintes condições:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>3.1 OBRIGAÇÕES DA CONTRATANTE:</strong>
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>3.1.1</strong> Enviar todas as informações indispensáveis ao desempenho dos serviços arrolados na Cláusula Primeira, ou qualquer outro que venha a ser prestado pela <strong>CONTRATADA</strong>, devendo ser enviado por meio do sistema de comunicação oficial, exclusivo de propriedade da <strong>CONTRATADA</strong>, denominado <strong>TAREFFA</strong>.
+                            </li>
+                            <li>
+                                <strong>3.1.2</strong> Disponibilização à <strong>CONTRATADA</strong> de acesso ao seu sistema (ERP) e fornecerá orientações relativas a sua utilização, para importação de dados e geração de relatórios com a movimentação financeira e patrimonial da <strong>CONTRATANTE</strong>, com informações que possibilitem a integração de dados suficientes para a escrituração contábil, fiscal e prestação das demais obrigações acessórias pertinentes.
+                            </li>
+                            <li>
+                                <strong>3.1.3</strong> Disponibilização de senha de acesso com poderes de simples leitura, a todas as contas-correntes, cartões de crédito, débito e voucher, empréstimos e de investimentos da empresa, bem como arquivos de remessa e recebimento de boletos.
+                            </li>
+                            <li>
+                                <strong>3.1.4</strong> Disponibilização de arquivos eletrônicos contendo os registros XML (Extensible Markup Language) das notas fiscais emitidas ou canceladas, bem como notas fiscais de serviços tomados/prestados fora do município de Foz do Iguaçu (Paraná) e demais documentos que eventualmente não constem no sistema informatizado da <strong>CONTRATANTE</strong> e que envolvam custos, despesas, investimentos ou operação de qualquer natureza.
+                            </li>
+                            <li>
+                                <strong>3.1.5</strong> Enviar mensalmente os arquivos relativos ao SPED (EFD ICMS/IPI e EFD-CONTRIBUIÇÕES) com informações para encaminhamento aos órgãos correspondentes e arquivos relativos a estoques de mercadorias e produtos, quando exigidos.
+                            </li>
+                            <li>
+                                <strong>3.1.6</strong> Informações, em meio magnético, relativas ao controle de frequência dos empregados, jornada de trabalho, afastamentos, admissões, demissões, correções salariais espontâneas, verbas variáveis, comunicação para programação e concessão de férias, bem como quaisquer outros dados que impactem os cálculos da folha de pagamento e/ou demais obrigações relativas ao contrato de trabalho dos empregados da <strong>CONTRATANTE</strong>.
+                            </li>
+                            <li>
+                                <strong>3.1.7</strong> Realizar e enviar à <strong>CONTRATADA</strong>, em arquivo magnético, o inventário anual de estoques, contendo todas as informações necessárias para a elaboração do balanço patrimonial e demais demonstrações contábeis obrigatórias.
+                            </li>
+                            <li>
+                                <strong>3.1.8</strong> A <strong>CONTRATANTE</strong> compromete-se a respeitar os prazos estabelecidos para a entrega das informações necessárias à execução dos serviços, conforme as orientações da <strong>CONTRATADA</strong> constantes no <strong>ANEXO I</strong>. O envio dessas informações deverá ser realizado exclusivamente por meio do sistema de comunicação <strong>TAREFFA</strong>. Caso a <strong>CONTRATANTE</strong> descumpra os prazos estipulados, a <strong>CONTRATADA</strong> ficará isenta de qualquer responsabilidade por atrasos na execução dos serviços contratados, no cumprimento de obrigações acessórias dentro dos prazos legais, bem como por eventuais penalidades, encargos ou consequências decorrentes do referido descumprimento.
+                            </li>
+                            <li>
+                                <strong>3.1.9</strong> A <strong>CONTRATANTE</strong> declara estar ciente de que, enquanto sua empresa for considerada paralisada (sem movimentação financeira, patrimonial, fiscal ou trabalhista de qualquer espécie), a <strong>CONTRATADA</strong> realizará a escrituração contábil e a transmissão das obrigações acessórias com base nas informações expressamente fornecidas pela <strong>CONTRATANTE</strong>. Sendo assim, caso haja início ou retomada de qualquer movimentação, é de exclusiva responsabilidade da <strong>CONTRATANTE</strong> comunicar formalmente à <strong>CONTRATADA</strong> a data exata do início das atividades, utilizando o sistema de comunicação oficial <strong>TAREFFA</strong>. A <strong>CONTRATADA</strong> não possui meios autônomos possíveis de identificar o início das movimentações e, portanto, não será responsabilizada por declarações incorretas de inatividade, omissões de informações ou penalidades fiscais impostas pelos órgãos reguladores decorrentes da falta de comunicação tempestiva pela <strong>CONTRATANTE</strong>. O descumprimento desta obrigação sujeitará a <strong>CONTRATANTE</strong> às sanções fiscais cabíveis, incluindo multas, juros, bloqueios cadastrais e demais penalidades aplicáveis, isentando integralmente a <strong>CONTRATADA</strong> de qualquer responsabilidade, obrigação ou encargo decorrente, seja perante a própria <strong>CONTRATANTE</strong>, órgãos fiscalizadores ou terceiros.
+                            </li>
+                            <li>
+                                <strong>3.1.10</strong> A <strong>CONTRATANTE</strong> obriga-se a disponibilizar à <strong>CONTRATADA</strong> o certificado digital e-CNPJ, válido e ativo, necessário para a realização das procurações eletrônicas nos órgãos públicos competentes, por meio dos quais são efetuadas as transmissões das obrigações acessórias apuradas pela <strong>CONTRATADA</strong>. O fornecimento do certificado digital deve ocorrer dentro dos prazos estabelecidos, garantindo a continuidade da prestação dos serviços contábeis e fiscais contratados.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>3.2 OBRIGAÇÕES DA CONTRATADA:</strong>
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>3.2.1</strong> A <strong>CONTRATADA</strong> desempenhará os serviços enumerados na Cláusula Primeira com zelo, diligência, eficiência e fidelidade, observada a legislação vigente, resguardando os interesses da <strong>CONTRATANTE</strong>, sem prejuízo da dignidade e independência profissional, sujeitando-se, ainda, às normas do Código de Ética Profissional do Contador, aprovado pela Resolução n. 803/96 do Conselho Federal de Contabilidade.
+                            </li>
+                            <li>
+                                <strong>3.2.2</strong> Entregar, por meio do sistema de comunicação <strong>TAREFFA</strong>, as guias de recolhimento de tributos e contribuições à <strong>CONTRATANTE</strong> com antecedência de até 2 (dois) dias antes do vencimento da obrigação, desde que todas as informações necessárias mencionadas no item 3.1 e seus subitens tenham sido enviadas nos prazos estabelecidos e em conformidade com os prazos definidos neste contrato e em seu <strong>ANEXO I</strong>.
+                            </li>
+                            <li>
+                                <strong>3.2.3</strong> Entregar, por meio do sistema de comunicação <strong>TAREFFA</strong>, a folha de pagamento (holerites), recibos de férias e demais obrigações trabalhistas, em até 48 (quarenta e oito) horas, após o recebimento das informações mencionadas no item 3.1.6.
+                            </li>
+                            <li>
+                                <strong>3.2.4</strong> Entregar os balancetes até o dia 20 (vinte) do 3º (terceiro) mês subsequente ao período de apuração, ou em período inferior se acordado com o <strong>CONTRATANTE</strong>, não inferior a 05 (cinco) dias úteis após a entrega dos últimos documentos e informações necessárias ao fechamento da contabilidade.
+                            </li>
+                            <li>
+                                <strong>3.2.5</strong> Entregar o balanço anual e demais demonstrações contábeis obrigatórias em até 90 (noventa) dias após o recebimento completo dos dados e informações necessários ao seu encerramento.
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '4' in list_clausulas %}
+
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 4ª – DEMAIS RESPONSABILIDADES DOS CONTRATANTES</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 4ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>4.1</strong> Responsabilizar-se-á a <strong>CONTRATADA</strong> por todos os prepostos que atuarem nos serviços ora contratados, indenizando a <strong>CONTRATANTE</strong> em caso de culpa ou dolo.  
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>4.1.1</strong> A <strong>CONTRATADA</strong> assume integral responsabilidade por eventuais multas fiscais decorrentes de imperfeições ou atrasos na execução dos serviços ora contratados, excetuando-se aqueles resultantes de casos de força maior ou caso fortuito, conforme definidos em lei, bem como atrasos na prestação de informações essenciais por parte da <strong>CONTRATANTE</strong>. A responsabilidade da <strong>CONTRATADA</strong> somente será configurada após o esgotamento de todos os procedimentos de defesa administrativa cabíveis.
+                            </li>
+                            <li>
+                                <strong>4.1.2</strong> Não se incluem na responsabilidade assumida pela <strong>CONTRATADA</strong> os juros e a correção monetária de qualquer natureza, visto que não se tratam de apenamento pela mora, mas simples recomposição do valor não recolhido por qualquer motivo.
+                            </li>
+                            <li>
+                                <strong>4.1.3</strong> A <strong>CONTRATADA</strong> é responsável por todos os documentos e informações entregues pela <strong>CONTRATANTE</strong> enquanto permanecerem sob sua guarda para a execução dos serviços pactuados, respondendo pelo seu mau uso, perda, extravio ou inutilização, salvo comprovado caso fortuito ou força maior, ainda que decorra de ação ou omissão de seus prepostos ou quaisquer pessoas que a eles tenham acesso.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>4.2</strong> A <strong>CONTRATADA</strong> não assume qualquer responsabilidade por consequências decorrentes de informações, declarações ou documentos inidôneos, incompletos ou imprecisos fornecidos pela <strong>CONTRATANTE</strong> ou por terceiros, bem como por omissões, erros ou ações que resultem do descumprimento da legislação vigente ou do não seguimento das orientações prestadas pela <strong>CONTRATADA</strong>. Sempre que informações necessárias ao cumprimento de obrigações não forem enviadas pela <strong>CONTRATANTE</strong> em tempo hábil, resultando em processamento e envio intempestivo aos órgãos competentes, a responsabilidade por eventuais multas, penalidades, juros ou bloqueios será exclusivamente da <strong>CONTRATANTE</strong>, isentando a <strong>CONTRATADA</strong> de qualquer ônus, encargo ou obrigação decorrente.
+                    </li>
+                    <li>
+                        <strong>4.3</strong> A <strong>CONTRATADA</strong> se compromete por seus administradores e prepostos a manter rigoroso sigilo sobre todas as informações e documentos que tiver acesso em decorrência deste contrato, inclusive dados pessoais e dados pessoais sensíveis que possuir ou tratar.
+                    </li>
+                    <li>
+                        <strong>4.4</strong> A <strong>CONTRATADA</strong> utilizará as informações e documentos fornecidos pela <strong>CONTRATANTE</strong>, devidamente recebidos por meio do sistema de comunicação <strong>TAREFFA</strong>, e aptos para fins de escrituração contábil, cumprimento de obrigações acessórias e prestação de informações aos órgãos públicos competentes, quando exigido. A responsabilidade pela veracidade, integridade e tempestividade das informações enviadas é integralmente da <strong>CONTRATANTE</strong>, isentando a <strong>CONTRATADA</strong> de qualquer responsabilidade por eventuais inconsistências, omissões ou erros nos dados fornecidos.
+                    </li>
+                    <li>
+                        <strong>4.5</strong> A <strong>CONTRATADA</strong> não toma parte nas decisões administrativas ou gerenciais da empresa <strong>CONTRATANTE</strong>, bem como não participa da elaboração de documentos ou informações emitidas pela mesma, quer sejam para uso interno ou para envio à <strong>CONTRATADA</strong>.
+                    </li>
+                    <li>
+                        <strong>4.6</strong> A <strong>CONTRATANTE</strong> se compromete a seguir rigorosamente as orientações fornecidas pela <strong>CONTRATADA</strong> para a execução dos serviços contratados. Caso a <strong>CONTRATANTE</strong> deixe de cumprir tais orientações, a <strong>CONTRATADA</strong> ficará isenta de qualquer responsabilidade decorrente da não observância das diretrizes estabelecidas.
+                    </li>
+                    <li>
+                        <strong>4.7</strong> A <strong>CONTRATADA</strong> se obriga a manter sigilo em relação aos dados dos quais tiver posse, bem como informações, materiais, pormenores, inovações, segredos comerciais, marcas, estratégias, relatórios, criações, designs, layouts, especificações técnicas e comerciais, dentre outros, que diretamente ou por intermédio de seus empregados e/ou prepostos venha a ter acesso ou conhecimento em razão do presente instrumento.
+                    </li>
+                    <li>
+                        <strong>4.8</strong> A <strong>CONTRATANTE</strong> compromete-se, de igual forma, a não revelar, reproduzir, utilizar ou dar conhecimento de informações técnicas ou profissionais da <strong>CONTRATADA</strong> a terceiros. Compromete-se ainda em não permitir que seus empregados e/ou prepostos façam uso de forma indevida dos itens mencionados. As aludidas informações serão consideradas segredos de negócios nos termos do Código Penal, artigos 153 e 154.
+                    </li>
+                    <li>
+                        <strong>4.9</strong> Quando previamente acordado e devidamente contratado, serão realizados pela <strong>CONTRATADA</strong> os procedimentos de regularização da empresa junto a agentes da administração pública, abrangendo formalidades nas juntas comerciais, liberação do CNPJ e demais obrigações junto à Receita Federal, liberação de alvará de funcionamento municipal, inscrição estadual junto à Receita Estadual, solicitação de vistoria do Corpo de Bombeiros e demais exigências para regularizar a atividade da <strong>CONTRATANTE</strong>.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>4.9.1</strong> Caso as obrigações da Cláusula 4.9 estejam condicionadas ao cumprimento de requisitos legais, elaboração de laudos específicos, inspeções de agentes da administração pública, ou outra obrigação, fica a <strong>CONTRATADA</strong> desobrigada do cumprimento da obrigação até regularização da situação por parte da <strong>CONTRATANTE</strong>.
+                            </li>
+                            <li>
+                                <strong>4.9.2</strong> As alterações contratuais, aberturas de filiais e outras operações para regularização posterior aos trâmites iniciais previstos na Cláusula 4.9, solicitados pela <strong>CONTRATANTE</strong>, serão considerados pela <strong>CONTRATADA</strong> como serviços extras, cobrados à parte.
+                            </li>
+                            <li>
+                                <strong>4.9.3</strong> Quando, em razão de atividades especiais ou diferenciadas da <strong>CONTRATANTE</strong>, houver necessidade de procedimentos específicos para a regularização de alvarás de funcionamento, cadastros, controle de taxas ou outras obrigações junto a agentes da administração pública, decorrentes de leis especiais ou exigências regulatórias setoriais, caberá exclusivamente à <strong>CONTRATANTE</strong> providenciar a contratação de responsável técnico especializado para atender a tais requisitos. A <strong>CONTRATADA</strong> não se responsabiliza por essas obrigações, tampouco por sua obtenção ou renovação, restando expressamente desobrigada de qualquer responsabilidade quanto a tais procedimentos.
+                            </li>
+                            <li>
+                                <strong>4.9.4</strong> O registro, controle de taxas, declarações ambientais, obtenção e renovação de licenças específicas de funcionamento, bem como quaisquer outras obrigações oriundas do Ministério do Meio Ambiente, da Política Nacional de Meio Ambiente e das legislações ambientais vigentes, sejam elas impostas por órgãos municipais, estaduais ou federais, são de responsabilidade exclusiva da <strong>CONTRATANTE</strong> e deverão ser cumpridas por meio de responsável técnico devidamente habilitado por ela contratado. A <strong>CONTRATADA</strong> não assume qualquer obrigação relacionada ao cumprimento dessas exigências ambientais e regulatórias.
+                            </li>
+                            <li>
+                                <strong>4.9.5</strong> A título exemplificativo, não cabe à <strong>CONTRATADA</strong> a responsabilidade pela obtenção, regularização, monitoramento ou manutenção de registros, licenças e controle de taxas, bem como pelo cumprimento de obrigações decorrentes de legislação especial perante os seguintes órgãos e entidades reguladoras: IBAMA, SISNAMA, IAP, ANTT, ICMBIO, ADAPAR, IAT, ANVISA, CREA, CORE, CADASTUR, conselhos de classe profissional, entre outros que venham a ser exigidos conforme a atividade da <strong>CONTRATANTE</strong>.
+                            </li>
+                            <li>
+                                <strong>4.9.6</strong> No caso de a matriz ou filial da <strong>CONTRATANTE</strong> estar localizada em município distinto de Foz do Iguaçu - PR, será de sua exclusiva responsabilidade a verificação de alterações legislativas e prazos específicos para pagamento de taxas de alvará e demais tributos municipais, considerando as particularidades e a ausência de padronização das normas municipais vigentes.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>4.10</strong> A <strong>CONTRATADA</strong> se resguarda no direito de não fornecer back-up ou arquivo equivalente dos softwares que utiliza para execução dos serviços contratados. Este impedimento se justifica em razão do arquivo conter parâmetros tributários, configurações de utilização do software, métodos de operação e outras informações que são propriedades intelectuais e/ou segredos técnicos e comerciais da <strong>CONTRATADA</strong>. Este contrato não concede à <strong>CONTRATANTE</strong> direito algum sobre a propriedade intelectual da <strong>CONTRATADA</strong>.
+                    </li>
+                    <li>
+                        <strong>4.11</strong> É vedado à <strong>CONTRATANTE</strong> contratar, por qualquer meio, admitir ou solicitar a prestação de serviços, seja na modalidade de autônomo ou contratação direta, com vínculo trabalhista ou não, empregado ou ex-empregado da <strong>CONTRATADA</strong>, sendo a vedação abrangente ainda que o serviço seja realizado por meio de empresas terceirizadas, a fim de evitar que o empregado ou ex-empregado da <strong>CONTRATADA</strong> seja admitido por concorrentes e continue a prestar serviços à <strong>CONTRATANTE</strong> de forma indireta ou por outros meios.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>4.11.1</strong> Em caso de violação do contido no item 4.11 desta cláusula, a <strong>CONTRATANTE</strong> fica obrigada a pagar à <strong>CONTRATADA</strong>, uma multa equivalente a dez vezes o custo mensal do empregado ou ex-empregado da <strong>CONTRATADA</strong>, sendo considerado, como base para o cálculo, o último salário pago ao empregado. Essa exigência e a penalidade decorrente no caso do descumprimento por parte da <strong>CONTRATANTE</strong>, justifica-se em razão dos investimentos realizados pela <strong>CONTRATADA</strong> em treinamento da sua equipe com relação à capacitação técnica, comportamental, motivacional, integrativo e corporativo. Além disso, a presente vedação zela pela segurança da informação da <strong>CONTRATANTE</strong>, uma vez que impossibilita aos demais clientes da <strong>CONTRATADA</strong> contratarem ex-empregados desta, assim, resguardando os segredos comerciais da <strong>CONTRATANTE</strong>.
+                            </li>
+                            <li>
+                                <strong>4.11.2</strong> A vedação de contratação de empregados ou ex-empregados da <strong>CONTRATADA</strong> pela <strong>CONTRATANTE</strong> é válida enquanto o empregado da <strong>CONTRATADA</strong> a ela prestar serviços e se estende após o encerramento do vínculo empregatício, independente do motivo da rescisão, pelo período de 2 (dois) anos.
+                            </li>
+                            <li>
+                                <strong>4.11.3</strong> Podem as partes, contratantes, pactuarem de forma diversa quanto ao item 4.11 e seguintes, se chegarem a um consenso.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>4.12</strong> É de responsabilidade da <strong>CONTRATANTE</strong> acompanhar e cumprir as disposições da Convenção Coletiva de Trabalho (CCT) ou do Acordo Coletivo de Trabalho (ACT) aplicável à sua categoria, incluindo pisos salariais, benefícios obrigatórios, reajustes, adicionais, jornada de trabalho e demais obrigações. A <strong>CONTRATADA</strong> pode fornecer esclarecimentos e orientações, mas não se responsabiliza pelo acompanhamento contínuo das atualizações ou pelo cumprimento dessas normas, nem controla e se responsabiliza pelos prazos dos Acordos Coletivos de Trabalho firmados pela <strong>CONTRATANTE</strong>.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '5' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 5ª – DA COMUNICAÇÃO ENTRE OS CONTRATANTES</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 5ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>5.1</strong> Todas as comunicações entre a <strong>CONTRATADA</strong> e a <strong>CONTRATANTE</strong>, incluindo seus prepostos, deverão ser realizadas exclusivamente por meio do sistema de comunicação oficial <strong>TAREFFA</strong>, ou outro sistema equivalente que venha a substituí-lo, disponibilizado pela <strong>CONTRATADA</strong> em seu sítio eletrônico próprio (https://app.tareffa.com.br/chat) ou pelo sítio (www.depaulacontadores.com.br).
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>5.1.1</strong> Os registros eletrônicos das comunicações realizadas por meio deste sistema possuem plena validade legal e probatória para todos os fins de direito. Sua utilização é indispensável para garantir controle, rastreabilidade, segurança e confidencialidade das informações, incluindo documentos, relatórios e demonstrações contábeis, cujo acesso pode ser gerenciado pela <strong>CONTRATANTE</strong>.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>5.2</strong> É de inteira responsabilidade da <strong>CONTRATANTE</strong> acessar regularmente o sistema de comunicação <strong>TAREFFA</strong> para coletar todas as informações, orientações, documentos, guias, relatórios, demonstrações contábeis, notas fiscais e quaisquer outros documentos enviados pela <strong>CONTRATADA</strong>.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>5.2.1</strong> A <strong>CONTRATANTE</strong> declara estar ciente de que o não acesso regular ao sistema poderá resultar na perda de prazos, informações relevantes ou documentos essenciais para a correta execução dos serviços contratados, não podendo a <strong>CONTRATADA</strong> ser responsabilizada por eventuais prejuízos decorrentes dessa omissão.
+                            </li>
+                            <li>
+                                <strong>5.2.2</strong> A negligência na consulta das informações não exime a <strong>CONTRATANTE</strong> de suas obrigações contratuais e legais, nem poderá ser usada como justificativa para atrasos ou penalidades aplicadas pelos órgãos fiscalizadores.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>5.3</strong> A <strong>CONTRATANTE</strong> é responsável por informar à <strong>CONTRATADA</strong>, de forma expressa e tempestiva, a inclusão, exclusão ou alteração de usuários autorizados a acessar o sistema <strong>TAREFFA</strong>, bem como seus respectivos níveis de permissão.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>5.3.1</strong> A <strong>CONTRATADA</strong> procederá às alterações conforme solicitado, não se responsabilizando por acessos indevidos, uso inadequado ou falhas decorrentes da falta de atualização das permissões pela <strong>CONTRATANTE</strong>.
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '6' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 6ª – DO FORNECIMENTO E PROTEÇÃO DE DADOS PESSOAIS</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 6ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>6.1</strong> <strong>CONTRATADA</strong> e <strong>CONTRATANTE</strong> declaram-se cientes das obrigações, penalidades e direitos previstos na Lei Geral de Proteção de Dados (LGPD) Lei 13.709 de 2018 e assumem o compromisso de implementar os dispositivos da lei, zelando pela proteção de dados pessoais e dados pessoais sensíveis, adotando medidas técnicas e administrativas de segurança, proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas de destruição, perda, alteração, comunicação ou qualquer forma de tratamento inadequado ou ilícito, conforme determina a LGPD.
+                    </li>
+                    <li>
+                        <strong>6.2</strong> A <strong>CONTRATANTE</strong> fornecerá à <strong>CONTRATADA</strong> todos dados pessoais e dados pessoais sensíveis indispensáveis à execução do presente contrato e esta se compromete em utilizar somente o necessário para cumprir suas obrigações previstas neste instrumento, assumindo o compromisso de não utilizar com finalidade distinta a que prevê o presente contrato. A <strong>CONTRATADA</strong> compromete-se em zelar, por meios técnicos de segurança, pelo sigilo e proteção dos dados pessoais e dados pessoais sensíveis repassados, mantendo-os em sua posse exclusivamente durante a vigência deste contrato.
+                    </li>
+                    <li>
+                        <strong>6.3</strong> A <strong>CONTRATADA</strong> pode, na utilização de softwares de terceiros e para melhor desempenho das suas atividades, compartilhar dados pessoais com sub-operadores. O compartilhamento ocorrerá com empresas responsáveis e adequadas à LGPD, que visem à proteção de dados pessoais e que busquem constantemente aprimorar medidas técnicas e administrativas de segurança aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais.
+                    </li>
+                    <li>
+                        <strong>6.4</strong> A <strong>CONTRATANTE</strong> assume o compromisso de coletar, por meio do TERMO DE CIÊNCIA DE TRATAMENTO E COMPARTILHAMENTO DE DADOS PESSOAIS, a ciência de seus empregados quanto ao compartilhamento de seus dados pessoais e dados pessoais sensíveis indispensáveis à execução do contrato de trabalho, escrituração digital e cumprimento de exigências da legislação trabalhista, fiscal e previdenciária.
+                    </li>
+                    <li>
+                        <strong>6.5</strong> Caso ocorra algum incidente de segurança que possa acarretar risco ou dano relevante a Titular de dados, <strong>CONTRATADA</strong> e <strong>CONTRATANTE</strong> deverão comunicar, em prazo razoável, o Titular e a Autoridade Nacional de Proteção de Dados (ANPD), conforme artigo 48 da Lei n. 13.709/2018.
+                    </li>
+                    <li>
+                        <strong>6.6</strong> A <strong>CONTRATADA</strong> apresenta em seu site (https://depaulacontadores.com.br) sua Política de Privacidade e de Proteção de Dados Pessoais, o nome do seu encarregado pelo tratamento de dados pessoais e o canal de contato (dpo@depaulacontadores.com.br). Por meio deste canal serão respondidos questionamentos e requisições cabíveis a respeito de dados pessoais e dados pessoais sensíveis do titular.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '7' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 7ª – DOS HONORÁRIOS E DEMAIS DEVERES DA CONTRATANTE</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 7ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>7.1</strong> A <strong>CONTRATANTE</strong> pagará à <strong>CONTRATADA</strong> os honorários profissionais no valor de {{ honorario }} ({{ honorario_extenso }}) mensais para a execução dos serviços relativos à <strong>ESCRITURAÇÃO FISCAL</strong> e <strong>CONTÁBIL</strong>,e demais serviços constantes na Cláusula Primeira.
+                    </li>
+                    <li>
+                        <strong>7.2</strong> Para a execução dos serviços da <strong>ÁREA TRABALHISTA</strong> e <strong>PREVIDENCIÁRIA</strong>, a cobrança será realizada com base no número de folhas de pagamento processadas no mês, sendo devido o valor de {{ valor_por_empregado }} ({{ valor_por_empregado_extenso }}) por vida que transitar na folha de pagamento mensalmente.
+                    </li>
+                    <li>
+                        <strong>7.3</strong> Os serviços eventuais ou extraordinários, descritos na Cláusula Segunda, serão cobrados à parte, mediante orçamento prévio aprovado pela <strong>CONTRATANTE</strong> ou, quando aplicável, com base na hora trabalhada. A cobrança por orçamento será aplicada nos casos de serviços não previstos no contrato ou decorrentes de inovações legislativas que alterem o regime tributário, trabalhista ou previdenciário, sendo necessária a aprovação da <strong>CONTRATANTE</strong> antes da execução dos serviços.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>7.3.1</strong> Caso não haja orçamento prévio, os serviços extraordinários serão cobrados com base no valor da hora trabalhada, calculado em percentuais sobre o salário mínimo nacional na seguinte proporção: PROFISSIONAL ESPECIALISTA – 23% (vinte e três por cento), PROFISSIONAL – 17% (dezessete por cento) e AUXILIAR – 10% (dez por cento).
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>7.4</strong> Além da parcela acima avençada, a <strong>CONTRATANTE</strong> pagará anualmente à <strong>CONTRATADA</strong> um adicional equivalente a 01 (um) mês de honorários em razão do trabalho necessário no fechamento do balanço anual e folha de pagamento do décimo terceiro salário. O adicional será pago em duas parcelas, vencendo-se a primeira em 15 (quinze) de Novembro e a segunda em 15 (quinze) de Dezembro de cada ano.
+                    </li>
+                    <li>
+                        <strong>7.5</strong> Os honorários devem ser pagos até o dia 05 (cinco) do mês subsequente ao vencido, mediante boleto bancário, o qual será enviado com antecedência mínima de 48 (quarenta e oito) horas úteis.
+                    </li>
+                    <li>
+                        <strong>7.6</strong> Os honorários pagos após a data acordada no item 7.5 acarretarão à <strong>CONTRATANTE</strong> o acréscimo de multa de 2% (dois por cento) e de juros moratórios de 1% (um por cento) ao mês ou fração.
+                    </li>
+
+                    {% if reajuste == 'igpm' %}
+                        <li>
+                            <strong>7.7</strong> Os honorários serão reajustados anualmente e automaticamente segundo a variação do mesmo índice de reajuste IGPM (Índice Geral de Preços do Mercado) acumulado dos últimos 12 (doze) meses.
+                        </li>
+                    {% elif reajuste == 'icc' %}
+                        <li>
+                            <strong>7.7</strong> Os honorários serão reajustados anualmente e automaticamente com base na variação acumulada do Índice de Custo Contábil (ICC) nos 12 (doze) meses anteriores.
+                        </li>
+                    {% else %}
+                        <li>
+                            <strong>7.7</strong> Os honorários serão reajustados anualmente e automaticamente segundo a variação do salário mínimo nacional vigente.
+                        </li>
+                    {% endif %}
+
+                    <li>
+                        <strong>7.8</strong> O valor dos honorários previstos no item 7.1 foi estabelecido com base nas atividades atualmente desenvolvidas e no porte da empresa <strong>CONTRATANTE</strong>, levando em consideração o volume de serviço previsto e estimativa do número de lançamentos contábeis, bem como o regime tributário. Fica acertado e convencionado que, havendo início efetivo das operações ou quaisquer alterações, ampliações ou inovações nas atividades que impliquem aumento de volume ou complexidade dos serviços, o valor dos honorários será imediatamente revisto. Além disso, ainda que não haja alteração nas atividades, mas fique evidenciado, na média trimestral, que o volume de serviço está superior aos parâmetros mencionados na proporção de 20% (vinte por cento), passará a viger novo valor com aumento proporcional ao novo volume de serviço, visando manter o equilíbrio financeiro do contrato entre as partes. Esse acompanhamento é realizado por sistema da <strong>CONTRATADA</strong>, que leva em conta o custo de cada colaborador envolvido, calculado por meio do tempo despendido acrescido proporcionalmente dos custos indiretos.
+                    </li>
+                    <li>
+                        <strong>7.9</strong> Após a legalização da empresa, enquanto a <strong>CONTRATANTE</strong> permanecer sem qualquer movimentação financeira, patrimonial, fiscal ou trabalhista, os honorários previstos no item 7.1 não serão aplicáveis. No entanto, para o cumprimento das obrigações acessórias exigidas por lei, será devido um valor mensal acordado entre as partes, relativo aos serviços de envio das declarações obrigatórias aos órgãos públicos. A <strong>CONTRATANTE</strong> deverá observar a obrigação prevista no item 3.1.9, comunicando formalmente à <strong>CONTRATADA</strong> qualquer início ou retomada de movimentação financeira e atividades da empresa, sob pena de arcar integralmente com eventuais penalidades, multas e demais sanções decorrentes da omissão, isentando a <strong>CONTRATADA</strong> de qualquer responsabilidade.
+                    </li>
+                    <li>
+                        <strong>7.10</strong> Caso sejam instituídas novas obrigações legais por órgãos governamentais que impactem as rotinas contábeis, fiscais, trabalhistas ou previdenciárias da <strong>CONTRATANTE</strong>, e que exijam a prestação de serviços pela <strong>CONTRATADA</strong>, esses serviços poderão ser cobrados como extraordinários. Se tais obrigações resultarem em aumento significativo e contínuo do volume ou complexidade do trabalho originalmente contratado, os honorários mensais poderão ser reavaliados. A <strong>CONTRATADA</strong> notificará a <strong>CONTRATANTE</strong> sobre os impactos e eventuais ajustes nos valores praticados, sendo que a continuidade do serviço estará condicionada à aceitação formal da <strong>CONTRATANTE</strong>.
+                    </li>
+
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '8' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 8ª – DA VIGÊNCIA, RESCISÃO E INADIMPLÊNCIA</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 8ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>8.1</strong> O presente contrato vigorará a partir de {{ data_inicio_contrato }}, por prazo indeterminado, e poderá ser rescindido mediante aviso prévio mínimo de 30 (trinta) dias, realizado por notificação formal, seja ela física ou eletrônica por meio do sistema de comunicação <strong>TAREFFA</strong>, desde que formalizada em documento assinado digitalmente pelo responsável legal da empresa.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>8.1.1</strong> A parte que não comunicar por escrito a rescisão ou efetuá-la de forma sumária, desrespeitando o aviso prévio referido no item 8.1, ficará obrigada ao pagamento de multa compensatória no valor de 01 (uma) parcela mensal dos honorários vigentes à época.
+                            </li>
+                            <li>
+                                <strong>8.1.2</strong> No caso de rescisão, a dispensa pela <strong>CONTRATANTE</strong> da execução de quaisquer serviços, seja qual for a razão, durante o prazo do aviso prévio, deverá ser feita por escrito ou via sistema de comunicação <strong>TAREFFA</strong>, em documento formal e assinado digitalmente pelo responsável legal da empresa, não a desobrigando do pagamento dos honorários integrais dos serviços prestados.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>8.2</strong> Ocorrendo a transferência da prestação dos serviços à outra empresa de contabilidade, a <strong>CONTRATANTE</strong> deverá informar à <strong>CONTRATADA</strong>, por meio de notificação formal física ou via sistema de comunicação <strong>TAREFFA</strong> (desde que formalizado em documento assinado digitalmente pelo responsável legal da empresa), o nome da nova prestadora, endereço, nome do responsável técnico e número da inscrição junto ao CRC (Conselho Regional de Contabilidade). Tais dados são requeridos a fim de que a <strong>CONTRATADA</strong> possa cumprir as formalidades ético-profissionais e transmitir dados e informações necessárias à continuidade dos serviços e ainda comunicar às repartições públicas sua desvinculação quanto a responsabilidade pelas obrigações fiscais decorrentes. Diante de eventual inércia da <strong>CONTRATANTE</strong>, estará a <strong>CONTRATADA</strong> desobrigada do cumprimento das obrigações supramencionadas.
+                        <ul style="list-style: none;">
+                            <li>
+                                <strong>8.2.1</strong> Entre os dados e informações a serem fornecidos, não estão incluídos detalhes técnicos dos sistemas de informática da <strong>CONTRATADA</strong>, os quais são de sua exclusiva propriedade.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>8.3</strong> A falta de pagamento de qualquer parcela de honorários faculta à <strong>CONTRATADA</strong> suspender imediatamente a prestação dos serviços, bem como considerar o contrato rescindido de pleno direito, independentemente de notificação judicial ou extrajudicial, sem prejuízo do disposto no item 8.1.1.
+                    </li>
+                    <li>
+                        <strong>8.4</strong> A falta de pagamento de qualquer parcela também autoriza a <strong>CONTRATADA</strong> a incluir a <strong>CONTRATANTE</strong> nos cadastros de órgãos de proteção ao crédito (Serviço Central de Proteção ao Crédito – SCPC, Serviço de Proteção ao Crédito – SPC e SERASA) e a protestar o débito junto ao Cartório de Protestos, podendo adotar as medidas cabíveis para recuperação do crédito.
+                    </li>
+                    <li>
+                        <strong>8.5</strong> A falência da <strong>CONTRATANTE</strong> facultará a rescisão do presente contrato pela <strong>CONTRATADA</strong> independentemente de notificação judicial ou extrajudicial, não estando incluída, nos serviços ora pactuados, a elaboração das peças contábeis e demais obrigações arroladas no artigo 51 e seguintes da Lei n. 11.101/2005.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '9' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 9ª – DO FORO</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 9ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>9.1</strong> Para solucionar judicialmente demanda entre as partes signatárias deste contrato e dirimir quaisquer controvérsias decorrentes da interpretação ou execução deste, as partes elegem o Foro da Comarca de Foz do Iguaçu, Paraná.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if '10' in list_clausulas %}
+            <div>
+                <br>
+                <h6 class="font-weight-bold">CLÁUSULA 10ª – DAS DISPOSIÇÕES GERAIS</h6>
+                <p class="mt-3 mb-3">
+                    Tendo por objeto atualizar o valor dos honorários contábeis previstos na <strong>CLÁUSULA 10ª</strong> em razão de início, alteração ou inovação nas operações da <strong>CONTRATANTE</strong>, novas obrigações decorrentes de inovações legislativas por parte de órgãos públicos, ou qualquer aumento desproporcional do volume de serviços demandados pela <strong>CONTRATANTE</strong> e prestados pela <strong>CONTRATADA</strong>, a presente cláusula passa a viger nos seguintes termos:
+                </p>
+                <ul style="list-style: none;">
+                    <li>
+                        <strong>10.1</strong> A <strong>CONTRATANTE</strong>, por intermédio de seu representante legal, declara conhecer as obrigações da <strong>CONTRATADA</strong> decorrentes da Lei n. 9.613/98, e alterações, (Lei de Lavagem de Dinheiro) e a Resolução CFC (Conselho Federal de Contabilidade) n. 1.530/17, as quais obrigam as organizações contábeis e os profissionais da área a prestar informações ao COAF (Conselho de Controle de Atividades Financeiras), nos casos que especifica.
+                    </li>
+                    <li>
+                        <strong>10.2</strong> A <strong>CONTRATANTE</strong> se obriga, antes do encerramento do exercício social, a fornecer à <strong>CONTRATADA</strong> a carta de responsabilidade da administração devidamente assinada.
+                    </li>
+                    <li>
+                        <strong>10.3</strong> A <strong>CONTRATADA</strong> somente declarará aos órgãos competentes que a <strong>CONTRATANTE</strong> está sem movimento financeiro se a informação estiver condizente com a realidade. Reforça-se o dever previsto no item 3.1.9.
+                    </li>
+                    <li>
+                        <strong>10.4</strong> Caso a <strong>CONTRATANTE</strong> realize operações de importação ou exportação com pessoas físicas ou jurídicas relacionadas ou coligadas, ainda que por interposta pessoa, e, em consequência, seja obrigada a elaborar cálculos e demonstrativos dos “<strong>preços de transferência</strong>”, conforme previsto na IN SRF n. 2.161/2023, a serem informados na ECF (SPED Contábil Fiscal), deverá, por sua conta e risco, providenciar essas informações ou contratar empresa ou profissional especializado para a realização desse serviço. A obrigação inclui a preparação das informações detalhadas necessárias ao preenchimento da ECF, uma vez que a <strong>CONTRATADA</strong> não possui acesso ou responsabilidade sobre os dados necessários para realizar as comparações de preços e operações exigidas pela legislação vigente. Assim, a responsabilidade integral por eventuais omissões, informações incorretas ou suas consequências recai exclusivamente sobre a <strong>CONTRATANTE</strong>.
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+
+        <div>
+            <br>
+            <!-- <p> style="page-break-before: always;" -->
+            <p>
+                E, por estarem justos e contratados, assinam o presente termo aditivo, em duas vias de igual teor e para um só efeito, junto à presença de duas testemunhas instrumentárias.
+            </p>
+            <br>
+            <br>
+        </div>
+        
+        <div class="d-block" style="break-inside: avoid;">
+            <p class="text-right">
+                Foz do Iguaçu - PR, {% now "d" %} de {% now "F" %} de {% now "Y" %}
+            </p>
+            <br>
+            <div class="d-flex">
+                <div class="w-50">
+                    <p><strong>TESTEMUNHAS:</strong></p><br><br><br>
+                    <div>
+                        <p>
+                            <strong>DÉBORA DE PAULA LOPES</strong><br>
+                            <strong>CPF - 089.376.289-02</strong>
+                        </p>
+                    </div><br><br>
+                    <div>
+                        <p>
+                            <strong>ANDRÉA DE PAULA GRENTESKI</strong><br>
+                            <strong>CPF - 003.575.759-03</strong>
+                        </p>
+                    </div><br>
+                </div>
+                <div class="w-50">
+                    <div>
+                        <p>
+                            <strong>CONTRATADA:</strong><br>
+                            <strong>DE PAULA CONTADORES EIRELLI</strong>
+                        </p>
+                    </div><br><br>
+                    <div>
+                        <p>
+                            <strong>ELIZANGELA DE PAULA KUHN</strong><br>
+                            <strong>CRC - PR 038529/O-9</strong>
+                        </p>
+                    </div><br><br>
+                    <div>
+                        <p>
+                            <strong>CONTRATANTE:</strong><br>
+                            <strong>{{ empresa.nome_empresa }}</strong>
+                        </p>
+                    </div><br><br>
+                    <div>
+                        <p>
+                            <strong>{{ socio_administrador.nome }}</strong><br>
+                            <strong>{{ socio_administrador.cargo }}</strong>
+                        </p>
+                    </div><br><br>
+                </div>
+            </div>
+        </div>
+    
+    </div>
+
+{% endblock %}
