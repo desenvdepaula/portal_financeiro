@@ -45,7 +45,7 @@
                                 
                                 <div class="form-row mb-5">
                                     <div class="col-12 col-sm-4">
-                                        <label class="font-weight-bold" for="id_opcoes">Empresa / Condomínio</label>
+                                        <label class="font-weight-bold" for="id_opcoes">Empresa / Condomínio:</label>
                                         <select name="opcoes" class="form-control" title="Selecione uma das opções (obrigatório)" id="id_opcoes" onchange="update_sel(event)">
                                             <option value="empresa">EMPRESA</option>
                                             <option value="emp_paralisadas">EMPRESA PARALISADAS</option>
@@ -58,7 +58,7 @@
                                     {% bootstrap_field form.data_inicio_contrato label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
                                 </div>
                                 <div class="form-row mb-5">
-                                    {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-4"  %}
+                                    {% bootstrap_field form.reajuste label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
                                     {% bootstrap_field form.valor_por_empregado label_class='font-weight-bold' form_group_class="col-12 col-sm-4 col-lg-4" %} 
                                     {% bootstrap_field form.honorario label_class='font-weight-bold' form_group_class="col-12 col-sm-4" %}
                                 </div>

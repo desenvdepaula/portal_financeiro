@@ -19,12 +19,12 @@ class ContratoHonorarioForm(forms.Form):
         ('condominio', 'CONDOMÍNIO'),
     )
 
-    codigo_empresa = forms.IntegerField(label="N° da Empresa", help_text="Número inteiro que identifica a empresa.")
-    data_inicio_contrato = forms.DateField(label="Início do Contrato", help_text="Data para o início do contrato de honorário", widget=forms.DateInput(attrs={'type':'date'}))
-    reajuste = forms.ChoiceField(label="Reajuste", help_text="Selecione o Reajuste", choices=OPCOES)
-    opcoes = forms.ChoiceField(label="Empresa / Condomínio", help_text="Selecione uma das opções (obrigatório)", choices=OPTIONS)
-    honorario = forms.DecimalField(label="Valor de Honorário", help_text="Valor fixo do honorário", max_digits=8, decimal_places=2)
-    valor_por_empregado = forms.DecimalField(label="Valor por Empregado", help_text="", max_digits=5, decimal_places=2)
+    codigo_empresa = forms.IntegerField(label="N° da Empresa:", help_text="Número inteiro que identifica a empresa.")
+    data_inicio_contrato = forms.DateField(label="Início do Contrato:", help_text="Data para o início do contrato de honorário", widget=forms.DateInput(attrs={'type':'date'}))
+    reajuste = forms.ChoiceField(label="Reajuste:", help_text="Selecione o Reajuste", choices=OPCOES)
+    opcoes = forms.ChoiceField(label="Empresa / Condomínio:", help_text="Selecione uma das opções (obrigatório)", choices=OPTIONS)
+    honorario = forms.DecimalField(label="Valor de Honorário:", help_text="Valor fixo do honorário", max_digits=8, decimal_places=2)
+    valor_por_empregado = forms.DecimalField(label="Valor por Empregado:", help_text="", max_digits=5, decimal_places=2)
 
     def clean_log(self, username):
         codigo_empresa = self.cleaned_data['codigo_empresa']
