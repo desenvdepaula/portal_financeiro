@@ -30,7 +30,7 @@ class ManagerTareffa(PostgreSQLConnection):
                         end as int) filial,	
                     e.razaosocial
                 from 
-                    depaula.view_empresas e
+                    ottimizza_clientes.depaula_view_empresas e
                 where
                     cast(
                         case
@@ -66,7 +66,7 @@ class ManagerTareffa(PostgreSQLConnection):
                     razaosocial, 
                     regimetributario 
                 from
-                    depaula.view_empresas e
+                    ottimizza_clientes.depaula_view_empresas e
                 where
                     estaativa = true
             """

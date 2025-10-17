@@ -37,11 +37,12 @@ class PostgreSQLConnection():
         self.port = '5432'
         return self
     
-    def default_connect_tareffa(self):    
-        self.host = 'ec2-52-5-29-151.compute-1.amazonaws.com'
-        self.database = 'd5cjhu9om6udeu'
-        self.user = 'user_depaula'
-        self.password = 'p6f3e0ad2304ce92ab5a5eec1898d1bcb18e163acede7158d316bd0f2bcb9a18c'
+    def default_connect_tareffa(self):
+        self.port = '5432'
+        self.host="ottimizza-reader-prd.cje60wgquvok.us-east-2.rds.amazonaws.com"
+        self.database="d5cjhu9om6udeu"
+        self.user="user_depaula"
+        self.password="920EF02A460DC821A46D37DF6B072A9E"
         return self
 
     def disconnect(self):
