@@ -5,10 +5,12 @@ from .views import OrdemServicoView, ServicosView, Departamento
 urlpatterns = [
     path('list_ordem_servico', login_required(OrdemServicoView.as_view()), name="list_ordem_servico"),
     path('debitar_em_lote', login_required(OrdemServicoView.debitar_em_lote), name="debitar_em_lote"),
+    path('atualizar_empresas_omie', login_required(OrdemServicoView.atualizar_empresas_omie), name="atualizar_empresas_omie"),
     path('delete_ordem_servico', OrdemServicoView.delete, name="delete_ordem_servico"),
     path('buscar_ordem_servico/<int:id_ordem>/', OrdemServicoView.buscar_ordem_servico),
     path('debitar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_debitar_ordem_servico),
     path('arquivar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_arquivar_ordem_servico),
+    path('download_boletos_escritorio/', OrdemServicoView.request_download_boletos_escritorio, name="download_boletos_escritorio"),
     path('baixar_planilha_ordens_servico', OrdemServicoView.request_download_planilha, name="baixar_planilha_ordens_servico"),
     
     path('controle_servicos_OS', login_required(ServicosView.as_view()), name="controle_servicos_OS"),

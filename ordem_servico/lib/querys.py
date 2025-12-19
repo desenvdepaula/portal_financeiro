@@ -59,6 +59,19 @@ def filter_planilha(filtros):
     else:
         return dados
 
+def get_cnpj_empresas():
+    return rf"""
+        select 
+            regexp_replace(e.codigoquestor, '^(\d+)[-/.]s*.*$', '\1')::int codigoquestor,
+            case when regexp_replace(e.codigoquestor, '^(\d+)[-/.](\d+)', '\2') = e.codigoquestor then '1' else regexp_replace(e.codigoquestor, '^(\d+)[-/.](\d+)', '\2') end::int filial,
+            e.cnpj
+        from 
+            ottimizza_clientes.depaula_view_empresas e
+        where 
+            e.codigoquestor not in ('999-000-909', '9999', '999999999')
+            and e.situacao not in ('BAIXADA','RESCINDIDA')
+    """
+
 def get_codigo_escritorio(empresa, cursor):
     sql = f"""
         select

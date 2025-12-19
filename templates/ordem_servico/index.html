@@ -33,16 +33,15 @@
             <div id="alert_geral_sucesso"></div>
             <div class="card shadow" id="cardOs">
               <div class="card-header">
-                <div class="d-flex justify-content-between">
-                  <div class="d-lg-flex">
-                    <select class="custom-select ml-2" style="max-width: 250px" id="find_status" onchange="search(event)" >
-                      <option value="">Status...</option>
-                      <option value="DEBITAR">DEBITAR</option>
-                      <option value="DEBITADO">DEBITADO</option>
-                      <option value="ARQUIVADO">ARQUIVADO</option>
-                    </select>
-                  </div>
-                  <div class="d-lg-flex">
+
+                <div class="d-lg-flex justify-content-between">
+                  <select class="custom-select ml-2" style="max-width: 50%;" id="find_status" onchange="search(event)">
+                    <option value="">Status...</option>
+                    <option value="DEBITAR">DEBITAR</option>
+                    <option value="DEBITADO">DEBITADO</option>
+                    <option value="ARQUIVADO">ARQUIVADO</option>
+                  </select>
+                  <div class="d-flex flex-row">
                     <input 
                         type="date" 
                         id="min-date"
@@ -59,12 +58,16 @@
                         class="date-range-filter form-control"
                         placeholder="Período Final:">
                   </div>
-                  <div>
-                    <a class="btn btn-warning" style="color:#fff;" onclick="list_checks_table(event)">Debitar em Lote</a>
-                    <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
-                    <a class="btn btn-orange ml-1" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
-                  </div>
                 </div>
+
+                <div class="d-flex justify-content-between mt-3 w-100">
+                  <a class="btn btn-warning" style="color:#fff;" onclick="list_checks_table(event)">Debitar em Lote</a>
+                  <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
+                  <a class="btn btn-orange ml-1" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
+                  <a class="btn btn-secondary ml-1" style="color:#fff;" onclick="open_modal_atualizar_empresas()">Atualizar Empresas OMIE</a>
+                  <a class="btn btn-info ml-1" style="color:#fff;" onclick="open_modal_baixar_boletos()">Baixar Boletos</a>
+                </div>
+
               </div>
               <div class="card-body">
                 <!-- table -->
@@ -233,6 +236,75 @@
   </div>
 </div>
 
+<div class="modal fade" id="modalDownloadPdfs" role="dialog" aria-labelledby="modalDownloadPdfsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalDownloadPdfsLabel">Baixar Boletos Por Escritório</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_dow"></div>
+          <div id="div_body_dow"></div>
+          <form enctype="multipart/form-data" id="form_for_dow">
+            {% csrf_token %}
+            <label for="customFile">Arquivo com as OS que deram algum erro ! (* Opcional *) </label>
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
+              <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
+            </div>
+            <div class="mt-4">
+              <label for="select_escritorio" class="font-weight-bold">Selecione o Escritório:</label>
+              <select class="custom-select" id="select_escritorio" name="select_escritorio">
+                <option value="501">501</option>
+                <option value="502">502</option>
+                <option value="505">505</option>
+                <option value="567">567</option>
+                <option value="575">575</option>
+              </select>
+            </div>
+            <div class="mt-4">
+              <label for="select_filename" class="font-weight-bold">Selecione ou Digite o NOME DOS ARQUIVOS:</label>
+              <select class="select2" id="select_filename" name="select_filename" required>
+                <option value="HONORARIO CONTABIL MESANO">HONORARIO CONTABIL MESANO</option>
+              </select>
+            </div>
+            <center>
+                <button class="btn btn-outline-success mt-5" onclick="baixar_boletos_escritorio(event)">
+                  <strong>Baixar Boletos !</strong>
+                </button>
+            </center>
+          </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal fade" id="modalUpdateEmpresas" tabindex="-1" role="dialog" aria-labelledby="modalUpdateEmpresasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalUpdateEmpresasLabel">Atualizar Empresas OMIE</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <div id="error_aviso_up"></div>
+          <div id="div_body_up"></div>
+          <center>
+              <button class="btn btn-outline-success btn-lg" id="button_update_empresas" onclick="atualizar_empresas_omie(event)">
+                <strong>Atualizar Empresas</strong>
+              </button>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DELETE -->
 <div class="modal fade" id="modalDeleteOrdem" tabindex="-1" role="dialog" aria-labelledby="modalDeleteOrdemLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
@@ -299,7 +371,7 @@
 </div>
 
 <div class="modal fade" id="modalDebitoLote" tabindex="-1" role="dialog" aria-labelledby="modalDebitoLoteLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="modalDebitoLoteLabel">Debitar Ordens em Lote</h5>
@@ -309,8 +381,19 @@
         </div>
         <div class="modal-body">
           <div id="error_aviso_lotes"></div>
+          <div class="form-group mb-3">
+            <form enctype="multipart/form-data" id="form_for_file">
+              {% csrf_token %}
+              <label for="customFile">Arquivo de Ordens para Débito Em Lote no OMIE</label>
+              <div class="custom-file">
+                <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
+                <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
+              </div>
+            </form>
+          </div>
+          <hr>
           <div id="bodyDebitoLote"></div>
-        </div>
+        </hr>
         <div class="modal-footer">
           <button class="btn btn-outline-success btn-lg" onclick="debitar_ordens_lote(event)">
             Debitar
@@ -321,6 +404,15 @@
 </div>
 
 <script>
+
+  $('#customFile').on("change", (el) => {
+    let text = el.target.nextElementSibling;
+    if (!el.target.value.includes("xlsx")){
+      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
+    }else{
+      text.textContent = el.target.value.split('\\').pop();
+    }
+  })
 
   function contabilizar(event){
     let text = document.getElementById('caracteres_descricao').textContent.split(' ')
@@ -385,6 +477,16 @@
     document.getElementById('typecreate_ordem').innerHTML = ''
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
     contabilizar_edit()
+    myModal.toggle()
+  }
+
+  function open_modal_atualizar_empresas(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'))
+    myModal.toggle()
+  }
+
+  function open_modal_baixar_boletos(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalDownloadPdfs'))
     myModal.toggle()
   }
 
@@ -661,6 +763,7 @@
 
 {% block scripts %}
 
+<script src="{% static 'js/select2.min.js' %}"></script>
 <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
 <script src="{% static 'js/jquery.mask.min.js' %}"></script>
@@ -725,48 +828,142 @@
   }
 
   function list_checks_table(event){
-    let orders = table.rows('.selected').data()
-    if (orders.length == 0){
-      return null;
-    }
-    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'))
-    document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`
-    myModal.toggle()
+    let orders = table.rows('.selected').data();
+    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'));
+    document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`;
+    myModal.toggle();
   }
 
-  function debitar_ordens_lote(e){
-    e.preventDefault();
-    data = {
-      orders: [],
-      csrfmiddlewaretoken: '{{ csrf_token }}',
+  function baixar_arquivo(data){
+    try{
+      const byteCharacters = atob(data.file);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.location.href = "{% url 'list_ordem_servico' %}";
+    }catch (e) {
+      mostrarAlert('error_aviso_lotes', 'danger', e.message || "Houve Algum Erro no Processo");
     }
+  }
+
+  async function debitar_ordens_lote(e){
+    e.preventDefault();
+    const formulario_file = document.getElementById("form_for_file");
+    const formData = new FormData(formulario_file);
 
     table.rows('.selected').data().map(tr => {
       let result = tr[6].match('[0-9]+')[0] || null
       if(result){
-        data.orders.push(result)
+        formData.append("orders[]", result);
       }
     })
 
+    if (!formData.get("orders[]") && !formData.get("arquivo_os").name){
+      return null;
+    }
+    
     button_spinner(e.target, true)
-
-    $.ajax({
-      url: "{% url 'debitar_em_lote' %}",
-      type: 'POST',
-      data: data,
-      success: function(data){
-        if (Object.keys(data).includes("error")){
-          mostrarAlert('error_aviso_lotes', 'danger', "Erro, Contate o Programador, ele saberá o que fazer, talvez kkk 😎");
-          setTimeout(() => window.location.href = "{% url 'list_ordem_servico' %}", 5000);
-        }else{
-          window.location.href = "{% url 'list_ordem_servico' %}";
-        }
-      },
-      error: function(data){
-        mostrarAlert('error_aviso_lotes', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
-        button_spinner(e.target, false, 'Debitar Novamente')
-      },
+    await fetch("{% url 'debitar_em_lote' %}", {
+        method: "POST",
+        body: formData
     })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(`${err.message}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+      baixar_arquivo(data.auditoria);
+    })
+    .catch(error => {
+      mostrarAlert('error_aviso_lotes', 'danger', error);
+      button_spinner(e.target, false, 'Debitar Novamente');
+    });
+  }
+
+  async function atualizar_empresas_omie(e){
+    e.preventDefault();
+    button_spinner(e.target, true)
+    await fetch("{% url 'atualizar_empresas_omie' %}", { method: "GET" })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(`${err.message}`);
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      if (data.errors?.length > 0){
+        document.getElementById('div_body_up').innerHTML = `${data.errors.map(tr => `${tr}`).join("<br>")}`;
+      }else{ }
+    })
+    .catch(error => {
+      mostrarAlert('error_aviso_up', 'danger', error);
+    })
+    .finally(() => {
+      button_spinner(e.target, false, 'Atualizar Empresas');
+    });
+  }
+
+  async function baixar_boletos_escritorio(e){
+    e.preventDefault();
+    const formulario_file = document.getElementById("form_for_dow");
+    const formData = new FormData(formulario_file);
+    button_spinner(e.target, true)
+    await fetch("{% url 'download_boletos_escritorio' %}", { method: "POST", body: formData})
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(`${err.message}`);
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (Object.keys(data).includes('files_zip')){
+        const byteCharacters = atob(data.files_zip);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {
+            type: 'application/zip'
+        });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `Boletos das OS ${data.escritorio}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        //window.location.href = "{% url 'list_ordem_servico' %}";
+        fecharModal('modalDownloadPdfs');
+      }else{
+        mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
+      }
+    })
+    .catch(error => {
+      mostrarAlert('error_aviso_dow', 'danger', error);
+    })
+    .finally(() => {
+      button_spinner(e.target, false, 'Baixar Boletos !');
+    });
   }
 
   function search(event){
@@ -796,6 +993,8 @@
   {
     reverse: true
   });
+
+  $('.select2').select2( { theme: 'bootstrap4', width: '100%', tags:true } );
 
   $.fn.dataTableExt.afnFiltering.push(
     function( settings, data, dataIndex ) {

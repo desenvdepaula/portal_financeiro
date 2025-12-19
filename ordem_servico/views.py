@@ -4,12 +4,14 @@ from django.contrib import messages
 from django.views import View
 import pandas as pd
 from io import BytesIO
+import datetime
+import base64
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
 from .models import OrdemServico, DepartamentosControle, Servico
 from relatorios.models import ClassificacaoServicos
-from core.views import request_project_log
+from core.views import request_project_log, PDFFileView
     
 class Departamento():
     
@@ -220,22 +222,31 @@ class OrdemServicoView(View):
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
             return redirect('list_ordem_servico') 
     
+    def atualizar_empresas_omie(request):
+        try:
+            controller = Controller()
+            response = controller.update_empresas_for_omie()
+            # response = {'errors': ['Este CNPJ/CPF não se encontra em nosso Banco: 00.304.148/0001-10 Escritório: 501 Cliente: 11017049475','Este CNPJ/CPF não se encontra em nosso Banco: 650.040.948-53 Escritório: 502 Cliente: 4421084722','Este CNPJ/CPF não se encontra em nosso Banco: 45.372.763/0001-00 Escritório: 502 Cliente: 4421082417','Este CNPJ/CPF não se encontra em nosso Banco: 81.506.842/0001-11 Escritório: 502 Cliente: 4421085603','Este CNPJ/CPF não se encontra em nosso Banco: 59.564.932/0001-00 Escritório: 505 Cliente: 8596021541','Este CNPJ/CPF não se encontra em nosso Banco: 55.257.460/0001-91 Escritório: 505 Cliente: 8596020152','Erro ao Buscar este Cliente (8596016064) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Erro ao Buscar este Cliente (8596019650) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Este CNPJ/CPF não se encontra em nosso Banco: 175.788.769-53 Escritório: 575 Cliente: 3835127619','Este CNPJ/CPF não se encontra em nosso Banco: 089.376.289-02 Escritório: 575 Cliente: 3830611943']}
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        else:
+            return JsonResponse(response)
+        
     def debitar_em_lote(request):
         try:
+            response_data = {}
             list_ordens = request.POST.getlist('orders[]')
+            file = request.FILES.get("arquivo_os").temporary_file_path() if "arquivo_os" in request.FILES else None
             controller = Controller()
-            errors = controller.debitar_em_lote_ordem_servico(list_ordens)
+            sucessos, errors = controller.debitar_em_lote_ordem_servico(list_ordens, file)
         except Exception as err:
-            return JsonResponse({"error": str(err)}, status=500)
+            return JsonResponse({"message": str(err)}, status=500)
         else:
-            if errors:
-                text = " | ".join(errors)
-                return JsonResponse({"error":text}, status=200)
-            else:
-                text = f"Lote de Ordens: {list_ordens}"
-                
-            request_project_log(0, text, "ORDEM DE SERVIÇO / DEBITAR ORDEM EM LOTE", request.user.username)
-            return JsonResponse({'msg': 'correto'})
+            dfSucessos = pd.DataFrame(sucessos, columns=['OS', 'ESCRITORIO'])
+            dfErros = pd.DataFrame(errors, columns=['ID OS', 'CÓDIGO EMPRESA', 'NOME', 'CNPJ', 'ESCRIT.','DESCRIÇÃO DO ERRO'])
+            request_project_log(0, "", "ORDEM DE SERVIÇO / DEBITAR ORDEM EM LOTE", request.user.username)
+            response_data['auditoria'] = controller.gerar_arquivo_excel_auditoria_debitos(dfSucessos, dfErros)
+            return JsonResponse(response_data)
         
     def delete(request):
         try:
@@ -284,6 +295,29 @@ class OrdemServicoView(View):
             return JsonResponse({"error": str(err)}, status=500)
         else:
             return JsonResponse({"msg": 'sucesso'}, status=200)
+        
+    def request_download_boletos_escritorio(request):
+        zip_view = PDFFileView()
+        response_data = {}
+        try:
+            compet_atual = datetime.date.today().strftime("%m%Y")
+            controller = Controller()
+            escritorio = request.POST.get("select_escritorio")
+            file = request.FILES.get("arquivo_os")
+            filename = request.POST.get("select_filename").replace("/", "").replace("MESANO", compet_atual).replace("mesano", compet_atual)
+            
+            response = controller.gerar_boletos_por_escritorio(escritorio, file, filename)
+            dfSucessos = pd.DataFrame(response['success'], columns=['OS', 'DESCRIÇÃO DA REQUISIÇÃO'])
+            dfErros = pd.DataFrame(response['errors'], columns=['OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
+            auditoria_file = controller.gerar_arquivo_excel_auditoria_download_boletos(dfSucessos, dfErros)
+            response['files']["Auditoria de Boletos.xlsx"] = auditoria_file
+            zip_file = zip_view.prepare_zip_file_content(response.get("files"))
+            response_data['escritorio'] = escritorio
+            response_data['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        else:
+            return JsonResponse(response_data, status=200)
 
     def request_download_planilha(request):
         try:
