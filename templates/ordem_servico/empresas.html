@@ -1,0 +1,272 @@
+{% extends '../base.html' %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block body %}
+
+<style>
+  .btn-orange{
+    background-color: #FD7E14;
+  }
+  input[type='checkbox'] {
+    -webkit-appearance:none;
+    width:25px;
+    height:25px;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+  }
+  input[type='checkbox']:checked {
+      background: #6F46B7;
+  }
+</style>
+
+<main role="main" class="main-content">
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="row my-4">
+          <h2 class="text-center ml-3 mb-3">EMPRESAS OMIE</h2>
+          <!-- Small table -->
+          <div class="col-md-12">
+            {% bootstrap_messages messages %}
+            <div id="alert_geral_sucesso"></div>
+            <div class="card shadow" id="cardOs">
+              <div class="card-header">
+
+                <div class="d-flex justify-content-end mt-3 w-100">
+                  <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_atualizar_empresas()">Atualizar Empresas OMIE</a>
+                </div>
+
+              </div>
+              <div class="card-body">
+                <!-- table -->
+                <table class="table datatables table-hover" id="dataTable-1">
+                  <thead>
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Escritório</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for empresa in empresas %}
+                      <tr id="tr_{{empresa.codigo_cliente_omie}}">
+                        <td class="h6">{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}}</td>
+                        <td class="h6">{{empresa.escritorio}}</td>
+                        <td class="h6">
+                          <button class="btn btn-outline-warning" onclick="open_modal_atualizar_escritorio(`{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}}`, '{{empresa.codigo_cliente_omie}}', '{{empresa.escritorio}}')"><i class="fe fe-edit fe-16"></i></button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div> <!-- simple table -->
+        </div>
+      </div> <!-- .col-12 -->
+    </div> <!-- .row -->
+  </div> <!-- .container-fluid -->
+</main> <!-- main -->
+
+
+<div class="modal fade" id="modalUpdateEmpresas" tabindex="-1" role="dialog" aria-labelledby="modalUpdateEmpresasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalUpdateEmpresasLabel">Atualizar Empresas OMIE</h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+          <form id="form_for_dow">
+            {% csrf_token %}
+            <h6> Atualizar Empresas Específicas: <h6>
+            <select class="select2" id="select_empresas" name="select_empresas"></select>
+            <small> Se não for passado nenhuma Empresa, Todas vão ser Atualizadas <small>
+            <hr>
+          </form>
+          <div id="error_aviso_up"></div>
+          <div id="div_body_up"></div>
+          <center>
+              <button class="btn btn-outline-success btn-lg mt-5" id="button_update_empresas" onclick="atualizar_empresas_omie(event)">
+                <strong>Atualizar Empresas</strong>
+              </button>
+          </center>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalUpdateEscritorios" tabindex="-1" aria-labelledby="modalUpdateEscritoriosLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalUpdateEscritoriosLabel"></h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="alert_form_update_escritorio_class" class="mb-4"></div>
+        <form id="form_update_escritorio">
+          {% csrf_token %}
+          <div class="form-row mb-4">
+            <div class="col-12">
+              <input id="codigo_empresa_update_escritorio" name="codigo_empresa_update_escritorio" style="display: none;" required>
+              <label for="input_update_escritorio">Escolha o Escritório:</label>
+              <select class="custom-select" id="select_update_escritorio" name="select_update_escritorio" required>
+                <option value="501">501</option>
+                <option value="502">502</option>
+                <option value="505">505</option>
+                <option value="567">567</option>
+                <option value="575">575</option>
+              </select>
+            </div>
+          </div>
+          <center>
+            <button type="button" class="btn btn-outline-success mb-3" onclick="fetch_update_escritorio(event)">Alterar Escritório desta Empresa</button>
+          </center>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function open_modal_atualizar_escritorio(empresa, codigo_cliente_omie, escritorio){
+    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEscritorios'));
+    document.getElementById('modalUpdateEscritoriosLabel').textContent = `Alterar Escritório da Empresa: ${empresa}`;
+    document.getElementById('select_update_escritorio').value = escritorio;
+    document.getElementById('codigo_empresa_update_escritorio').value = codigo_cliente_omie;
+    myModal.toggle();
+  }
+
+  function open_modal_atualizar_empresas(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'), {backdrop: 'static'});
+    myModal.toggle();
+  }
+
+  async function fetch_update_escritorio(event){
+    event.preventDefault();
+    const formulario = document.getElementById("form_update_escritorio");
+    const formData = new FormData(formulario);
+    await fetch("{% url 'update_escritorio_empresa' %}", {
+      method: "POST",
+      body: formData
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById(`tr_${data.codigo_cliente_omie}`).children[1].textContent = data.escritorio;
+        fecharModal("modalUpdateEscritorios");
+      })
+      .catch(error => {
+        mostrarAlert('alert_form_update_escritorio_class', 'danger', error);
+      });
+  }
+
+  function mostrarAlert(div_id_class, type_alert, mensagem){
+    document.getElementById(div_id_class).innerHTML = `<div class="alert alert-${type_alert} alert-dismissible fade show" role="alert"><strong class="text-dark">${mensagem}</strong> <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>`
+
+    setTimeout(() => {
+      $('.alert').alert('close')
+    }, 5000)
+  }
+
+  function fecharModal(modalClass){
+    var myModalEl = document.getElementById(modalClass);
+    var modal = bootstrap.Modal.getOrCreateInstance(myModalEl);
+    modal.hide();
+  }
+
+</script>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{% static 'js/select2.min.js' %}"></script>
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js" type="text/javascript"></script>
+<script src="https://cdn.datatables.net/plug-ins/1.10.19/sorting/datetime-moment.js" type="text/javascript"></script>
+
+<script>
+
+  $('.select2').select2( 
+    { 
+      theme: 'bootstrap4',
+      width: '100%',
+      tags: true,
+      multiple: true,
+      allowClear: true,
+      placeholder: "Select an attribute",
+      createTag: function (params) {
+        var term = $.trim(params.term.replace(/[^0-9]/g, ''));
+        if (term === '' || term.length > 5) {
+          return null;
+        }
+        return { id: term, text: term }
+      }
+    } 
+  );
+
+  var table = $('#dataTable-1').DataTable();
+
+  function button_spinner(button, active, html=''){
+    button.innerHTML = active ? `
+      <center>
+        <div class="spinner-border justify-center" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      </center>
+    ` : `${html}`;
+    button.disabled = active;
+  }
+
+  async function atualizar_empresas_omie(e){
+    e.preventDefault();
+    document.getElementById('div_body_up').innerHTML = "";
+    button_spinner(e.target, true)
+    const formulario_file = document.getElementById("form_for_dow");
+    const formData = new FormData(formulario_file);
+    await fetch("{% url 'list_empresas_omie' %}", { method: "POST", body: formData })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.errors?.length > 0){
+          document.getElementById('div_body_up').innerHTML = `${data.errors.map(tr => `${tr}`).join("<br>")}`;
+        }else{
+          window.location.href = "{% url 'list_empresas_omie' %}";
+        }
+      })
+      .catch(error => {
+        mostrarAlert('error_aviso_up', 'danger', error);
+      })
+      .finally(() => {
+        button_spinner(e.target, false, 'Atualizar Empresas');
+      });
+  }
+
+</script>
+
+{% endblock %}
+    

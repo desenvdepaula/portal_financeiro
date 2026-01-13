@@ -63,6 +63,7 @@ def get_cnpj_empresas():
     return rf"""
         select 
             regexp_replace(e.codigoquestor, '^(\d+)[-/.]s*.*$', '\1')::int codigoquestor,
+            upper(e.razaosocial) razaosocial,
             case when regexp_replace(e.codigoquestor, '^(\d+)[-/.](\d+)', '\2') = e.codigoquestor then '1' else regexp_replace(e.codigoquestor, '^(\d+)[-/.](\d+)', '\2') end::int filial,
             e.cnpj
         from 

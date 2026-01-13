@@ -446,24 +446,31 @@ class Controller():
         except Exception as err:
             raise Exception(err)
         
-    def update_empresas_for_omie(self):
+    def update_empresas_for_omie(self, empresas_request):
         self.manager.default_connect_tareffa()
         self.manager.connect()
+        empresas_list_omie = []
+        response = {'errors': []}
         try:
-            EmpresasOmie.objects.all().delete()
+            if empresas_request:
+                empresas_list_omie = [int(emp.codigo_cliente_omie) for emp in EmpresasOmie.objects.filter(cd_empresa__in=empresas_request)]
+                if not empresas_list_omie:
+                    raise Exception("Nenhuma destas Empresas estão cadastradas !!")
+
             params_contrato = {
                 "pagina": 1,
                 "registros_por_pagina": 1000
             }
-            response = {'errors': []}
             escritorios = ['501', '502', '505', '567', '575']
-            empresas = { i[2]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas())}
+            empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas())}
             for escrit in escritorios:
                 data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", params_contrato)
                 result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
                 json_contrato = result_contrato.json()
                 if result_contrato.status_code == 200:
                     codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro']])
+                    if empresas_list_omie:
+                        codigos_client = set([c for c in codigos_client if c in empresas_list_omie])
                     for client in codigos_client:
                         data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
                         result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
@@ -473,15 +480,15 @@ class Controller():
                             cnpj_cpf = json_client['cnpj_cpf']
                             if cnpj_cpf in empresas:
                                 try:
-                                    empresa, estab, cnpj = empresas[cnpj_cpf]
-                                    EmpresasOmie.objects.create(
-                                        codigo_cliente_omie = client,
-                                        escritorio = escrit,
-                                        cd_empresa = empresa,
-                                        estab = estab,
-                                        cnpj_cpf = cnpj,
-                                        email = email
-                                    )
+                                    empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
+                                    enterprise, _ = EmpresasOmie.objects.get_or_create( codigo_cliente_omie = client )
+                                    enterprise.escritorio = escrit
+                                    enterprise.cd_empresa = empresa
+                                    enterprise.estab = estab
+                                    enterprise.name_empresa = razaosocial
+                                    enterprise.cnpj_cpf = cnpj
+                                    enterprise.email = email
+                                    enterprise.save()
                                 except Exception as err:
                                     response['errors'].append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
                             else:

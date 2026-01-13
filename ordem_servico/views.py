@@ -9,7 +9,7 @@ import base64
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
-from .models import OrdemServico, DepartamentosControle, Servico
+from .models import OrdemServico, DepartamentosControle, Servico, EmpresasOmie
 from relatorios.models import ClassificacaoServicos
 from core.views import request_project_log, PDFFileView
     
@@ -42,6 +42,37 @@ class Departamento():
         else:
             return JsonResponse({"msg": "Deletado com Sucesso !!"})
                 
+class EmpresasOmieView(View):
+    template = "ordem_servico/empresas.html"
+
+    def get(self, request, *args, **kwargs):
+        context = { 'empresas': EmpresasOmie.objects.all() }
+        return render(request, self.template, context)
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            controller = Controller()
+            empresas = request.POST.getlist("select_empresas") or None
+            response = controller.update_empresas_for_omie(empresas)
+            # response = {'errors': ['Este CNPJ/CPF não se encontra em nosso Banco: 00.304.148/0001-10 Escritório: 501 Cliente: 11017049475','Este CNPJ/CPF não se encontra em nosso Banco: 650.040.948-53 Escritório: 502 Cliente: 4421084722','Este CNPJ/CPF não se encontra em nosso Banco: 45.372.763/0001-00 Escritório: 502 Cliente: 4421082417','Este CNPJ/CPF não se encontra em nosso Banco: 81.506.842/0001-11 Escritório: 502 Cliente: 4421085603','Este CNPJ/CPF não se encontra em nosso Banco: 59.564.932/0001-00 Escritório: 505 Cliente: 8596021541','Este CNPJ/CPF não se encontra em nosso Banco: 55.257.460/0001-91 Escritório: 505 Cliente: 8596020152','Erro ao Buscar este Cliente (8596016064) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Erro ao Buscar este Cliente (8596019650) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Este CNPJ/CPF não se encontra em nosso Banco: 175.788.769-53 Escritório: 575 Cliente: 3835127619','Este CNPJ/CPF não se encontra em nosso Banco: 089.376.289-02 Escritório: 575 Cliente: 3830611943']}
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        else:
+            return JsonResponse(response)
+        
+    def update_escritorio_for_empresa(request):
+        try:
+            cd_omie = request.POST.get("codigo_empresa_update_escritorio")
+            escritorio = request.POST.get("select_update_escritorio")
+            empresa = EmpresasOmie.objects.get(codigo_cliente_omie=cd_omie)
+            empresa.escritorio = escritorio
+            empresa.save()
+            response = { 'escritorio': escritorio, 'codigo_cliente_omie': cd_omie }
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        else:
+            return JsonResponse(response)
+            
 class ServicosView(View):
     
     template = "ordem_servico/servicos.html"
@@ -221,16 +252,6 @@ class OrdemServicoView(View):
         else:
             messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
             return redirect('list_ordem_servico') 
-    
-    def atualizar_empresas_omie(request):
-        try:
-            controller = Controller()
-            response = controller.update_empresas_for_omie()
-            # response = {'errors': ['Este CNPJ/CPF não se encontra em nosso Banco: 00.304.148/0001-10 Escritório: 501 Cliente: 11017049475','Este CNPJ/CPF não se encontra em nosso Banco: 650.040.948-53 Escritório: 502 Cliente: 4421084722','Este CNPJ/CPF não se encontra em nosso Banco: 45.372.763/0001-00 Escritório: 502 Cliente: 4421082417','Este CNPJ/CPF não se encontra em nosso Banco: 81.506.842/0001-11 Escritório: 502 Cliente: 4421085603','Este CNPJ/CPF não se encontra em nosso Banco: 59.564.932/0001-00 Escritório: 505 Cliente: 8596021541','Este CNPJ/CPF não se encontra em nosso Banco: 55.257.460/0001-91 Escritório: 505 Cliente: 8596020152','Erro ao Buscar este Cliente (8596016064) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Erro ao Buscar este Cliente (8596019650) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Este CNPJ/CPF não se encontra em nosso Banco: 175.788.769-53 Escritório: 575 Cliente: 3835127619','Este CNPJ/CPF não se encontra em nosso Banco: 089.376.289-02 Escritório: 575 Cliente: 3830611943']}
-        except Exception as err:
-            return JsonResponse({"message": str(err)}, status=500)
-        else:
-            return JsonResponse(response)
         
     def debitar_em_lote(request):
         try:

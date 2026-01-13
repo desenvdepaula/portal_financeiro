@@ -64,7 +64,6 @@
                   <a class="btn btn-warning" style="color:#fff;" onclick="list_checks_table(event)">Debitar em Lote</a>
                   <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
                   <a class="btn btn-orange ml-1" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
-                  <a class="btn btn-secondary ml-1" style="color:#fff;" onclick="open_modal_atualizar_empresas()">Atualizar Empresas OMIE</a>
                   <a class="btn btn-info ml-1" style="color:#fff;" onclick="open_modal_baixar_boletos()">Baixar Boletos</a>
                 </div>
 
@@ -283,29 +282,6 @@
 </div>
 
 <!-- MODAL DELETE -->
-<div class="modal fade" id="modalUpdateEmpresas" tabindex="-1" role="dialog" aria-labelledby="modalUpdateEmpresasLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="modalUpdateEmpresasLabel">Atualizar Empresas OMIE</h5>
-            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-          <div id="error_aviso_up"></div>
-          <div id="div_body_up"></div>
-          <center>
-              <button class="btn btn-outline-success btn-lg" id="button_update_empresas" onclick="atualizar_empresas_omie(event)">
-                <strong>Atualizar Empresas</strong>
-              </button>
-          </center>
-        </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DELETE -->
 <div class="modal fade" id="modalDeleteOrdem" tabindex="-1" role="dialog" aria-labelledby="modalDeleteOrdemLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
@@ -477,11 +453,6 @@
     document.getElementById('typecreate_ordem').innerHTML = ''
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
     contabilizar_edit()
-    myModal.toggle()
-  }
-
-  function open_modal_atualizar_empresas(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'))
     myModal.toggle()
   }
 
@@ -892,32 +863,6 @@
     .catch(error => {
       mostrarAlert('error_aviso_lotes', 'danger', error);
       button_spinner(e.target, false, 'Debitar Novamente');
-    });
-  }
-
-  async function atualizar_empresas_omie(e){
-    e.preventDefault();
-    button_spinner(e.target, true)
-    await fetch("{% url 'atualizar_empresas_omie' %}", { method: "GET" })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(err => {
-          throw new Error(`${err.message}`);
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log(data);
-      if (data.errors?.length > 0){
-        document.getElementById('div_body_up').innerHTML = `${data.errors.map(tr => `${tr}`).join("<br>")}`;
-      }else{ }
-    })
-    .catch(error => {
-      mostrarAlert('error_aviso_up', 'danger', error);
-    })
-    .finally(() => {
-      button_spinner(e.target, false, 'Atualizar Empresas');
     });
   }
 
