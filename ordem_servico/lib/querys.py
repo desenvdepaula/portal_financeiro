@@ -48,9 +48,9 @@ def filter_planilha(filtros):
         if 'status' in filtros:
             status = filtros.get('status').upper()
             if status == 'DEBITADO':
-                dados = dados.filter(debitar=True)
+                dados = dados.filter(cod_os_omie__isnull=False)
             if status == 'DEBITAR':
-                dados = dados.filter(debitar=False, arquivado=False)
+                dados = dados.filter(cod_os_omie__isnull=True, arquivado=False)
             if status == 'ARQUIVADO':
                 dados = dados.filter(arquivado=True)
         
@@ -72,95 +72,3 @@ def get_cnpj_empresas():
             e.codigoquestor not in ('999-000-909', '9999', '999999999')
             and e.situacao not in ('BAIXADA','RESCINDIDA')
     """
-
-def get_codigo_escritorio(empresa, cursor):
-    sql = f"""
-        select
-            distinct
-            s.codigoescrit
-        from
-            servicofixo s
-        join
-            pessoafinanceiro p on
-            s.codigocliente = p.codigopessoafin
-        where
-            p.codigopessoafin = {empresa} and
-            s.codigoservicoescrit in (1,81,115,127,151,155)
-    """
-    cursor.execute(sql)
-    query = cursor.fetchone()
-    return query[0] if query else None
-
-def get_sequencia_variavel_empresa(empresa, data_cobranca, cursor):
-    sql = f"""
-        select
-            case
-                when max(seqservvar) is null then 1
-                else max(seqservvar+1)
-            end seqvar
-        from
-            servicovariavel
-        where
-            codigocliente = {empresa}
-            and dataservvar = '{data_cobranca}'
-    """
-    cursor.execute(sql)
-    query = cursor.fetchone()
-    return query[0] if query else None
-
-def get_id_ordem_servico(cursor):
-    sql = """
-        select
-            case
-                when max(sequenciacaixa) is null then 1
-                else max(sequenciacaixa+1)
-            end seqvar
-        from
-            servicovariavel
-    """
-    cursor.execute(sql)
-    query = cursor.fetchone()
-    return query[0] if query else None
-
-def valid_notas_delete(id_ordem_banco, cursor):
-    sql = f"""
-        select
-            seriens,
-            numerons,
-            case
-                when seriens is null and numerons is null then 'SEM NOTA FISCAL'
-                else 'POSSUI NOTA'
-            end
-        from
-            servicovariavel
-        where
-            sequenciacaixa = {id_ordem_banco}
-    """
-    response = {'valid': True, 'msg': ''}
-    cursor.execute(sql)
-    query = cursor.fetchall()
-    if query:
-        query = query[0]
-        if query[2] == 'SEM NOTA FISCAL':
-            response['valid'] = True
-        else:
-            response['valid'] = False
-            response['msg'] = f"Primeiramente Apague as Notas desta OS: {'SERIENS: '+str(query[0]) if query[0] else '' }, {'NUMERONS: '+str(query[1]) if query[1] else ''}"
-    else:
-        response['valid'] = False
-        response['msg'] = "Erro na Busca das Notas, tente Novamente."
-        
-    return response
-
-def build_insert_os(id_ordem_banco, ordem, codigo_escritorio, sequencia_variavel_empresa):
-    valor_total = ordem.quantidade * ordem.valor
-    sql = f"""
-        insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({codigo_escritorio}, {ordem.cd_empresa}, {ordem.cd_servico}, '{ordem.data_cobranca}', {sequencia_variavel_empresa}, null, null, null, {ordem.quantidade}, {ordem.valor}, {valor_total}, '{ordem.ds_servico.replace("'","").replace("–","-")}', null, null, 492, now(), 3, null, null, {id_ordem_banco}, null) returning sequenciacaixa;
-    """
-    return sql
-
-def build_delete_os(id_ordem_banco):
-    sql = f"""
-        delete from servicovariavel where sequenciacaixa = {id_ordem_banco}
-    """
-    return sql

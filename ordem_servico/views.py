@@ -6,10 +6,12 @@ import pandas as pd
 from io import BytesIO
 import datetime
 import base64
+import requests
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
-from .models import OrdemServico, DepartamentosControle, Servico, EmpresasOmie
+from core.views import get_request_to_api_omie
+from .models import OrdemServico, DepartamentosControle, Servico, EmpresasOmie, OrdemServicoProvisoria
 from relatorios.models import ClassificacaoServicos
 from core.views import request_project_log, PDFFileView
     
@@ -219,11 +221,7 @@ class OrdemServicoView(View):
     def get(self, request, *args, **kwargs):
         context = { 'form': self.form() }
         context['ordens'] = OrdemServico.objects.all()
-        context['servicos'] = []
-        
-        for servico in Servico.objects.all().order_by('name_servico'):
-            value = servico.cd_servico + ' * ' + servico.name_servico
-            context['servicos'].append([value, servico.name_servico])
+        context['empresas'] = EmpresasOmie.objects.all()
             
         for ordem in context['ordens']:
             ordem.data_cobranca = ordem.data_cobranca.strftime('%d/%m/%Y')
@@ -236,22 +234,33 @@ class OrdemServicoView(View):
 
     def post(self, request, *args, **kwargs):
         context = { 'form': self.form(request.POST or None) }
-        if context['form'].is_valid():
-            context['form'].clean_log(request.user.username)
-            try:
+        try:
+            if context['form'].is_valid():
+                empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=request.POST.get("id_empresa"))
+                context['form'].clean_log(request.user.username, empresa_db.cd_empresa)
                 controller = Controller()
-                if request.POST.get('id_ordem'):
-                    return controller.update_ordem_servico(context['form'].cleaned_data, request.user.username)
-                else:
-                    controller.update_ordem_servico(context['form'].cleaned_data, request.user.username)
-                    messages.success(request, "Cadastrado com sucesso")
-                    return redirect('list_ordem_servico') 
-            except Exception as ex:
-                messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
-                raise Exception(ex)
+                return controller.update_ordem_servico(context['form'].cleaned_data, request.user.username, empresa_db)
+            else:
+                raise Exception("Ocorreu um erro no Formulário, Verifique Novamente")
+        except Exception as ex:
+            return JsonResponse({"error": str(ex)}, status=500)
+        
+    def request_get_services_escritorio(request):
+        escrit = request.POST.get("escritorio")
+        try:
+            response = {'servicos': []}
+            data_get_service = get_request_to_api_omie(escrit, "ListarCadastroServico", {"nPagina": 1, "nRegPorPagina": 1000})
+            result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/servico/", json=data_get_service, headers={'content-type': 'application/json'})
+            json_contrato = result_contrato.json()
+            if result_contrato.status_code == 200:
+                for serv in json_contrato.get("cadastros"):
+                    response['servicos'].append([serv['intListar'].get("nCodServ"), serv['descricao'].get("cDescrCompleta")])
+            else:
+                raise Exception(f"{json_contrato}")
+        except Exception as err:
+            return JsonResponse({"message": f"Erro na Operação: {err}"}, status=400)
         else:
-            messages.error(request, "Ocorreu um erro no Formulário, Verifique Novamente")
-            return redirect('list_ordem_servico') 
+            return JsonResponse(response)
         
     def debitar_em_lote(request):
         try:
@@ -272,10 +281,7 @@ class OrdemServicoView(View):
     def delete(request):
         try:
             ordem = OrdemServico.objects.get(id=int(request.POST.get('id_ordem')))
-            controller = Controller()
-            if ordem.ordem_debitada_id:
-                controller.delete_ordem_servico_debitada(ordem)
-            cd_empresa = ordem.cd_empresa
+            cd_empresa = ordem.empresa.cd_empresa if ordem.empresa else 0
             text = f"Serviço: {ordem.servico}, Realizado: {ordem.data_realizado}, Executado: {ordem.executado}, Quantidade: {ordem.quantidade}, Valor: {ordem.valor}"
             ordem.delete()
         except Exception as err:
@@ -286,8 +292,12 @@ class OrdemServicoView(View):
         
     def buscar_ordem_servico(request, id_ordem):
         try:
-            ordem = OrdemServico.objects.get(id=id_ordem)
-            ordem = vars(ordem)
+            ordem_db = OrdemServico.objects.get(id=id_ordem)
+            ordem = vars(ordem_db)
+            if ordem_db.empresa:
+                empresa = vars(ordem_db.empresa)
+                del empresa['_state']
+                ordem['empresa'] = empresa
             del ordem['_state']
             ordem['data_cobranca'] = ordem['data_cobranca'].strftime('%d/%m/%Y')
             ordem['data_realizado'] = ordem['data_realizado'].strftime('%d/%m/%Y')
@@ -302,7 +312,7 @@ class OrdemServicoView(View):
     def request_debitar_ordem_servico(request, id_ordem):
         try:
             controller = Controller()
-            controller.debitar_or_delete_ordem_servico(id_ordem, request.GET.get('debitar') == 'True')
+            controller.debitar_omie_ordem_servico(id_ordem)
         except Exception as err:
             return JsonResponse({"error": str(err)}, status=500)
         else:
@@ -310,8 +320,9 @@ class OrdemServicoView(View):
             
     def request_arquivar_ordem_servico(request, id_ordem):
         try:
-            controller = Controller()
-            controller.debitar_or_delete_ordem_servico(id_ordem, False, arquivar=request.GET.get('arquivar') == 'True')
+            ordem = OrdemServico.objects.get(id=int(id_ordem))
+            ordem.arquivado = not ordem.arquivado
+            ordem.save()
         except Exception as err:
             return JsonResponse({"error": str(err)}, status=500)
         else:
@@ -347,3 +358,110 @@ class OrdemServicoView(View):
         except Exception as err:
             messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
         return redirect('list_ordem_servico')
+    
+class OrdensProvisoriasView(View):
+    
+    template = "ordem_servico/provisorias.html"
+    form = OrdemServicoForm
+
+    def get(self, request, *args, **kwargs):
+        context = { 'form': self.form() }
+        context['ordens'] = OrdemServicoProvisoria.objects.all()
+        context['empresas'] = EmpresasOmie.objects.all()
+            
+        for ordem in context['ordens']:
+            ordem.data_cobranca = ordem.data_cobranca.strftime('%d/%m/%Y')
+            preco = float(ordem.valor)
+            preco_convertido = f"R$ {preco:_.2f}"
+            preco_final = preco_convertido.replace('.',',').replace('_','.')
+            ordem.valor = preco_final
+            
+        return render(request, self.template, context)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            ordem = OrdemServicoProvisoria.objects.get(id=int(request.POST.get('id_ordem')))
+            try:
+                controller = Controller()
+                cd_serv, name_serv = request.POST.get("servico").split(" * ")
+                ordem.departamento = request.POST.get("id_departamento")
+                ordem.cd_servico = cd_serv
+                ordem.servico = name_serv
+                ordem.ds_servico = request.POST.get("descricao")
+                ordem.observacoes_servico = request.POST.get("descricao_servico")
+                ordem.cd_empresa = request.POST.get("id_empresa")
+                ordem.nome_empresa = request.POST.get("name_empresa")
+                ordem.data_realizado = request.POST.get("data")
+                ordem.data_cobranca = request.POST.get("data_cobranca")
+                ordem.quantidade = request.POST.get("quantidade")
+                ordem.hora_trabalho = controller.validar_tempo_execucao(request.POST.get('execucao'))
+                ordem.valor = float(request.POST.get("valor").replace('.','').replace(',','.'))
+                ordem.autorizado_pelo_cliente = True if request.POST.get("autorizacao") == 'SIM' else False
+                ordem.type_solicitacao = request.POST.get("solicitacaoLocal")
+                ordem.solicitado = request.POST.get("solicitacao")
+                ordem.executado = request.POST.get("executado")
+                ordem.save()
+                return JsonResponse({"message": "Alterado"})
+            except Exception as ex:
+                raise Exception(ex)
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        
+    def delete_provisoria(request):
+        try:
+            ordem = OrdemServicoProvisoria.objects.get(id=int(request.POST.get('id_ordem')))
+            text = f"Serviço: {ordem.servico}, Realizado: {ordem.data_realizado}, Executado: {ordem.executado}, Quantidade: {ordem.quantidade}, Valor: {ordem.valor}"
+            ordem.delete()
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        else:
+            request_project_log(0, text, "ORDEM DE SERVIÇO PROVISÓRIO / DELETAR ORDEM", request.user.username)
+            return JsonResponse({'msg': 'correto'})
+        
+    def criar_os_real(request, id_ordem):
+        try:
+            order_db = OrdemServicoProvisoria.objects.get(id=id_ordem)
+            ordem = vars(order_db).copy()
+            del ordem['_state']
+            del ordem['os_criada']
+            del ordem['arquivado']
+            del ordem['id']
+            if ordem.get("cd_empresa") == '0':
+                raise Exception("Nenhuma EMPRESA foi Selecionada Nesta Ordem de Serviço")
+            if ordem.get("cd_servico") == '0':
+                raise Exception("Nenhuma SERVIÇO foi Selecionado Nesta Ordem de Serviço")
+            empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=ordem['cd_empresa'])
+            new_order = OrdemServico(**ordem)
+            new_order.empresa = empresa_db
+            new_order.save()
+            order_db.os_criada = True
+            order_db.save()
+        except Exception as err:
+            return JsonResponse({'error': str(err)}, status=500)
+        else:
+            return JsonResponse({'message': "OS CRIADA COM SUCESSO !!"})
+        
+    def buscar_ordem_servico_provisoria(request, id_ordem):
+        try:
+            ordem = OrdemServicoProvisoria.objects.get(id=id_ordem)
+            ordem = vars(ordem)
+            del ordem['_state']
+            ordem['data_cobranca'] = ordem['data_cobranca'].strftime('%d/%m/%Y')
+            ordem['data_realizado'] = ordem['data_realizado'].strftime('%d/%m/%Y')
+            preco = float(ordem['valor'])
+            preco_convertido = f"R$ {preco:_.2f}"
+            preco_final = preco_convertido.replace('.',',').replace('_','.')
+            ordem['valor'] = preco_final
+            return JsonResponse(ordem)
+        except Exception as err:
+            raise Exception(err)
+            
+    def request_arquivar_ordem_servico_provisoria(request, id_ordem):
+        try:
+            ordem = OrdemServicoProvisoria.objects.get(id=int(id_ordem))
+            ordem.arquivado = not ordem.arquivado
+            ordem.save()
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        else:
+            return JsonResponse({"msg": 'sucesso'}, status=200)

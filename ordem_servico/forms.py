@@ -39,7 +39,7 @@ class OrdemServicoForm(forms.Form):
 
     id_ordem = forms.IntegerField(required=False)
     servico = forms.CharField(max_length=255, label="Servico: ")
-    empresa = forms.IntegerField(max_value=9999999, label="Código da Empresa:")
+    empresa = forms.IntegerField(max_value=9999999, label="Código da Empresa:", required=False)
     data = forms.DateField(label="Data do Serviço Realizado: ", help_text="", widget=forms.DateInput(attrs={'type': 'date'}))
     execucao = forms.CharField(label="Tempo de Execução: ", help_text="Formato: HH:MM.")
     descricao = forms.CharField(max_length=47, label="Descrição:", help_text="Descrever a Descrição (47 Caracteres)", widget=forms.Textarea(attrs={'rows': 3, 'cols': 40}), required=False)
@@ -64,8 +64,7 @@ class OrdemServicoForm(forms.Form):
     def clean_autorizacao(self):
         return True if self.cleaned_data['autorizacao'] == 'SIM' else False
     
-    def clean_log(self, username):
-        cod = self.cleaned_data['empresa']
+    def clean_log(self, username, cod):
         descricao = ' '.join(self.cleaned_data['descricao'].split('\n'))
         data = self.cleaned_data['data']
         servico = self.cleaned_data['servico']

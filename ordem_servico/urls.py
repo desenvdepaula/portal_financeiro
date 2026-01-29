@@ -1,8 +1,15 @@
 from django.urls import path, include
 from django.contrib.auth.decorators import login_required
-from .views import OrdemServicoView, ServicosView, Departamento, EmpresasOmieView
+from .views import OrdemServicoView, ServicosView, Departamento, EmpresasOmieView, OrdensProvisoriasView
 
 urlpatterns = [
+    path('list_ordens_provisorias', login_required(OrdensProvisoriasView.as_view()), name="list_ordens_provisorias"),
+    path('delete_ordem_servico_provisoria', OrdensProvisoriasView.delete_provisoria, name="delete_ordem_servico_provisoria"),
+    path('arquivar_ordem_servico_provisoria/<int:id_ordem>/', OrdensProvisoriasView.request_arquivar_ordem_servico_provisoria),
+    path('buscar_ordem_servico_provisoria/<int:id_ordem>/', OrdensProvisoriasView.buscar_ordem_servico_provisoria),
+    path('criar_os_real/<int:id_ordem>/', OrdensProvisoriasView.criar_os_real),
+    
+    path('servicos_os/', login_required(OrdemServicoView.request_get_services_escritorio), name="servicos_os"),
     path('list_ordem_servico', login_required(OrdemServicoView.as_view()), name="list_ordem_servico"),
     path('debitar_em_lote', login_required(OrdemServicoView.debitar_em_lote), name="debitar_em_lote"),
     path('delete_ordem_servico', OrdemServicoView.delete, name="delete_ordem_servico"),

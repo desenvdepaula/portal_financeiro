@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from core.views import get_request_to_api_omie
 from ..models import OrdemServico, EmpresasOmie
 from .database import Manager
-from .querys import filter_planilha, get_codigo_escritorio, get_sequencia_variavel_empresa, get_id_ordem_servico, build_insert_os, valid_notas_delete, build_delete_os, sql_get_services_questor, get_cnpj_empresas
+from .querys import filter_planilha, sql_get_services_questor, get_cnpj_empresas
 
 class Controller():
 
@@ -32,8 +32,6 @@ class Controller():
         finally:
             self.manager.disconnect()
     
-    #------------------ AUDITORIA 131 ------------------#
-    
     def gerarPlanilhasOrdens(self, filtros):
         try:
             results = filter_planilha(filtros)
@@ -44,8 +42,12 @@ class Controller():
                 alignCenter = workbook.add_format({'align': 'left'})
                 listOrdens = []
                 
-                for ordem in results:
-                    ordem = vars(ordem)
+                for order in results:
+                    ordem = vars(order)
+                    if order.empresa:
+                        empresa = vars(order.empresa)
+                        ordem['cd_empresa'] = empresa.get('cd_empresa')
+                        ordem['nome_empresa'] = empresa.get('name_empresa')
                     del ordem['_state']
                     del ordem['criador_os']
                     ordem['data_cobranca'] = ordem['data_cobranca'].strftime('%d/%m/%Y')
@@ -80,14 +82,15 @@ class Controller():
                 df2.to_excel(writer, sheet_name='Ordens de Serviços', index = False)
                 writer.sheets['Ordens de Serviços'].set_column('A:A', 8, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('B:C', 15, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('D:E', 40, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('D:E', 55, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('F:F', 70, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('G:G', 12, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('H:H', 60, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('I:M', 14, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('N:O', 20, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('P:Q', 60, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('R:T', 10, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('R:R', 10, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('S:T', 18, alignCenter)
                 
                 writer.close()
                 
@@ -104,28 +107,8 @@ class Controller():
         except Exception as err:
             raise Exception(err)
 
-    def delete_ordem_servico_debitada(self, ordem):
-        self.manager.connect()
+    def update_ordem_servico(self, cleaned_data, user, empresa_db):
         try:
-            valid = valid_notas_delete(ordem.ordem_debitada_id, self.manager.cursor)
-            if not valid['valid']:
-                raise Exception(valid['msg'])
-            self.manager.cursor.execute(build_delete_os(ordem.ordem_debitada_id))
-            self.manager.connection.commit()
-        except Exception as err:
-            raise Exception(err)
-        finally:
-            self.manager.disconnect()
-            
-    def update_ordem_servico(self, cleaned_data, user):
-        self.manager.connect()
-        try:
-            query = self.manager.run_query_for_select(f"select nome from pessoafinanceiro where codigopessoafin = {cleaned_data.get('empresa')}")
-            list_nomes = [nome for nome in query]
-            if not list_nomes:
-                raise Exception(f"Esta Empresa: {cleaned_data.get('empresa')} Não possui nome, Provavelmente não existe, escreva novamente !")
-            
-            nome_empresa = list(list_nomes[0])[0]
             cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
             
             if cleaned_data.get('id_ordem'):
@@ -134,8 +117,6 @@ class Controller():
                 ordem.servico = servicoDesc
                 ordem.ds_servico = cleaned_data.get('descricao')
                 ordem.observacoes_servico = cleaned_data.get('descricao_servico')
-                ordem.cd_empresa = cleaned_data.get('empresa')
-                ordem.nome_empresa = nome_empresa
                 ordem.data_realizado = cleaned_data.get('data')
                 ordem.data_cobranca = cleaned_data.get('data_cobranca')
                 ordem.quantidade = cleaned_data.get('quantidade')
@@ -145,14 +126,13 @@ class Controller():
                 ordem.type_solicitacao = cleaned_data.get('solicitacaoLocal')
                 ordem.solicitado = cleaned_data.get('solicitacao')
                 ordem.executado = cleaned_data.get('executado')
+                ordem.empresa = empresa_db
             else:
                 ordem = OrdemServico(
                     cd_servico = cd_servico,
                     servico = servicoDesc,
-                    ds_servico = "NULL",
+                    ds_servico = cleaned_data.get('descricao'),
                     observacoes_servico = cleaned_data.get('descricao_servico'),
-                    cd_empresa = cleaned_data.get('empresa'),
-                    nome_empresa = nome_empresa,
                     data_realizado = cleaned_data.get('data'),
                     data_cobranca = cleaned_data.get('data_cobranca'),
                     quantidade = cleaned_data.get('quantidade'),
@@ -162,10 +142,9 @@ class Controller():
                     type_solicitacao = cleaned_data.get('solicitacaoLocal'),
                     solicitado = cleaned_data.get('solicitacao'),
                     executado = cleaned_data.get('executado'),
-                    criador_os = user
+                    criador_os = user,
+                    empresa = empresa_db
                 )
-                if cleaned_data.get('typeCreate') == 'DEBITADO':
-                    ordem.debitar = True
                 if cleaned_data.get('typeCreate') == 'ARQUIVADO':
                     ordem.arquivado = True
         except Exception as err:
@@ -177,15 +156,15 @@ class Controller():
                 preco_convertido = f"R$ {preco:_.2f}"
                 preco_final = preco_convertido.replace('.',',').replace('_','.')
                 return JsonResponse({
-                    'empresa': f"{ordem.cd_empresa} - {ordem.nome_empresa}",
+                    'empresa': f"{ordem.empresa.cd_empresa} - {ordem.empresa.name_empresa}",
                     'servico': ordem.servico,
                     'ds_servico': ordem.ds_servico,
                     'cobranca': ordem.data_cobranca.strftime("%d/%m/%Y"),
                     'valor': preco_final,
                     'quantidade': ordem.quantidade,
                 })
-        finally:
-            self.manager.disconnect()
+            else:
+                return JsonResponse({})
             
     def validar_tempo_execucao(self, execucao):
         if not ':' in execucao:
@@ -194,48 +173,23 @@ class Controller():
             hora, minuto = execucao.split(":")
             return hora.zfill(2)+':'+minuto.zfill(2)
     
-    def debitar_or_delete_ordem_servico(self, id_ordem, debitar, arquivar=False):
-        self.manager.connect()
+    def debitar_omie_ordem_servico(self, id_ordem):
         try:
-            ordem = OrdemServico.objects.get(id=id_ordem)
-            if debitar:
-                if int(ordem.cd_empresa) > 99999:
-                    codigo_escritorio = 9505
-                else:
-                    codigo_escritorio = get_codigo_escritorio(ordem.cd_empresa, self.manager.cursor)
-                    
-                if not codigo_escritorio:
-                    raise Exception("Código do Escritório desta Empresa Não Encontrado")
-                sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
-                id_ordem_servico = get_id_ordem_servico(self.manager.cursor)
-                insert = build_insert_os(id_ordem_servico, ordem, codigo_escritorio, sequencia_variavel_empresa)
-                self.manager.cursor.execute(insert)
-                returning_id_ordem = self.manager.cursor.fetchone()
-                self.manager.connection.commit()
-                if returning_id_ordem:
-                    ordem.ordem_debitada_id = returning_id_ordem[0] or None
-                else:
-                    raise Exception("Lançamento não foi realizado")
-            elif not ordem.arquivado and ordem.ordem_debitada_id:
-                valid = valid_notas_delete(ordem.ordem_debitada_id, self.manager.cursor)
-                if not valid['valid']:
-                    raise Exception(valid['msg'])
-                self.manager.cursor.execute(build_delete_os(ordem.ordem_debitada_id))
-                self.manager.connection.commit()
-                ordem.ordem_debitada_id = None
-            elif ordem.debitar and not ordem.ordem_debitada_id:
-                raise Exception("Esta Ordem não pode ser Excluida, Cancelada e nem Arquivada")
-            else:
-                pass
+            pass
+            # ordem = OrdemServico.objects.get(id=id_ordem)
+            # if debitar:
+            #     pass
+            # elif not ordem.arquivado and ordem.ordem_debitada_id:
+            #     ordem.ordem_debitada_id = None
+            # elif ordem.debitar and not ordem.ordem_debitada_id:
+            #     raise Exception("Esta Ordem não pode ser Excluida, Cancelada e nem Arquivada")
+            # else:
+            #     pass
                 
         except Exception as err:
             raise Exception(err)
-        else:
-            ordem.debitar = debitar
-            ordem.arquivado = arquivar
-            ordem.save()
-        finally:
-            self.manager.disconnect()
+        # else:
+        #     ordem.save()
             
     def debitar_em_lote_ordem_servico(self, orders_list, file):
         self.manager.connect()
@@ -378,36 +332,6 @@ class Controller():
                     #     continue
                     
                 # break
-
-
-
-
-
-                
-            # for ordem in ordens:
-            #     print(ordem)
-            #     if int(ordem.cd_empresa) > 99999:
-            #         codigo_escritorio = 9505
-            #     else:
-            #         codigo_escritorio = get_codigo_escritorio(ordem.cd_empresa, self.manager.cursor)
-                    
-            #     if not codigo_escritorio:
-            #         errors.append(f"Código do Escritório da Empresa {ordem.cd_empresa} Não Encontrado")
-            #         continue
-                
-            #     sequencia_variavel_empresa = get_sequencia_variavel_empresa(ordem.cd_empresa, ordem.data_cobranca, self.manager.cursor)
-            #     id_ordem_servico = get_id_ordem_servico(self.manager.cursor)
-            #     insert = build_insert_os(id_ordem_servico, ordem, codigo_escritorio, sequencia_variavel_empresa)
-            #     self.manager.cursor.execute(insert)
-            #     returning_id_ordem = self.manager.cursor.fetchone()
-            #     self.manager.connection.commit()
-            #     if returning_id_ordem:
-            #         ordem.ordem_debitada_id = returning_id_ordem[0] or None
-            #         ordem.debitar = True
-            #         ordem.save()
-            #     else:
-            #         errors.append(f"Lançamento não foi realizado da Empresa {ordem.cd_empresa}, Codigo do Insert não retornado")
-            #         continue
                 
         except Exception as err:
             raise Exception(err)
@@ -461,7 +385,7 @@ class Controller():
                 "pagina": 1,
                 "registros_por_pagina": 1000
             }
-            escritorios = ['501', '502', '505', '567', '575']
+            escritorios = ['501', '502', '505', '567']
             empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas())}
             for escrit in escritorios:
                 data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", params_contrato)

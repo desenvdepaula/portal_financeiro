@@ -26,7 +26,7 @@
     <div class="row justify-content-center">
       <div class="col-12">
         <div class="row my-4">
-          <h2 class="text-center ml-3 mb-3">Controle de Ordens de Serviços</h2>
+          <h2 class="text-center ml-3 mb-3">Ordens de Serviços <b class="text-warning"><u>PROVISÓRIAS</b></u></h2>
           <!-- Small table -->
           <div class="col-md-12">
             {% bootstrap_messages messages %}
@@ -37,9 +37,9 @@
                 <div class="d-lg-flex justify-content-between">
                   <select class="custom-select ml-2" style="max-width: 50%;" id="find_status" onchange="search(event)">
                     <option value="">Status...</option>
-                    <option value="DEBITAR">DEBITAR</option>
-                    <option value="DEBITADO">DEBITADO</option>
+                    <option value="ABERTO">ABERTO</option>
                     <option value="ARQUIVADO">ARQUIVADO</option>
+                    <option value="CRIADA">OS CRIADA</option>
                   </select>
                   <div class="d-flex flex-row">
                     <input 
@@ -60,44 +60,34 @@
                   </div>
                 </div>
 
-                <div class="d-flex justify-content-between mt-3 w-100">
-                  <a class="btn btn-warning" style="color:#fff;" onclick="list_checks_table(event)">Debitar em Lote</a>
-                  <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_add_os()">Adicionar O.S.</a>
-                  <a class="btn btn-orange ml-1" style="color:#fff;" onclick="open_modal_auditoria()">Baixar Planilha</a>
-                  <a class="btn btn-info ml-1" style="color:#fff;" onclick="open_modal_baixar_boletos()">Baixar Boletos</a>
-                </div>
-
               </div>
               <div class="card-body">
                 <!-- table -->
                 <table class="table datatables table-hover" id="dataTable-1">
                   <thead>
                     <tr>
-                      <th>Empresa</th>
                       <th>Serviço</th>
                       <th>Data da Cobrança</th>
                       <th>Valor</th>
                       <th>Status</th>
                       <th>Action</th>
-                      <th>Debitar</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for ordem in ordens %}
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} - {{ordem.empresa.name_empresa}}</td>
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}} - (desc.: {{ordem.ds_servico}})</td>
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
+                          <td class="h6">{{ordem.servico}} - (desc.: {{ordem.ds_servico}})</td>
+                          <td class="h6">{{ordem.data_cobranca}}</td>
+                          <td class="h6">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
 
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
-                            {% if ordem.cod_os_omie %} 
-                              DEBITADO
-                            {% elif ordem.arquivado %} 
-                              ARQUIVADO 
+                          <td class="h6 {% if ordem.arquivado %} text-{% if ordem.os_criada %}warning{% else %}danger{% endif %} {% elif ordem.os_criada %} text-success {% else %} text-info {% endif %}" id="status">
+                            {% if ordem.arquivado %}
+                              ARQUIVADO {% if ordem.os_criada %} & OS CRIADA {% endif %}
+                            {% elif ordem.os_criada %}
+                              OS CRIADA
                             {% else %}
-                              DEBITAR
+                              ABERTO
                             {% endif %}
                           </td>
 
@@ -108,17 +98,12 @@
                             <div class="dropdown-menu dropdown-menu-right">
                               <button class="dropdown-item text-primary" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'view', 'tr_{{counter}}')"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar Ordem</button>
 
-                              {% if not ordem.cod_os_omie or ordem.cod_os_omie|length == 0 %}
+                              {% if not ordem.os_criada %}
                                 <button class="dropdown-item text-warning" onclick="buscar_ordem_for_id(event, {{ordem.id}}, 'edit', 'tr_{{counter}}')"><i class="fe fe-edit fe-16 mr-2"></i> Editar Ordem</button>
                               {% endif %}
 
-                              <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.empresa.cd_empresa}}', '{{ordem.empresa.name_empresa}}', 'tr_{{counter}}', '{{ordem.cod_os_omie}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
+                              <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.cd_empresa}}', '{{ordem.nome_empresa}}', 'tr_{{counter}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
                             </div>
-                          </td>
-                          <td class="h6 d-flex justify-content-center">
-                            {% if not ordem.cod_os_omie and not ordem.arquivado%}
-                              <input class="form-check-input" type="checkbox" value="" ordemid="{{ordem.id}}" id="flexCheckDefault">
-                            {% endif %}
                           </td>
                         </tr>
                       {% endwith %}
@@ -126,13 +111,12 @@
                   </tbody>
                   <tfoot>
                     <tr>
-                      <th>Empresa</th>
                       <th>Serviço</th>
                       <th>Data da Cobrança</th>
                       <th>Valor</th>
-                      <th id="filterDebitar">Status</th>
+                      <th id="filterStatus">Status</th>
                     </tr>
-                  </tfoot>
+                </tfoot>
                 </table>
               </div>
             </div>
@@ -145,11 +129,11 @@
 
 
 <!-- MODAL Create Regra -->
-<div class="modal fade" id="modalEditOrdem" tabindex="-1" role="dialog" aria-labelledby="modalEditOrdemLabel" aria-hidden="true">
+<div class="modal fade" id="modalEditOrdem" role="dialog">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="modalEditOrdemLabel"></h5>
+            <h5 class="modal-title" id="modalEditOrdemLabel"> Editar Esta Ordem </h5>
             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
             </button>
@@ -160,10 +144,6 @@
                 {% csrf_token %}
 
                 <input type="number" name="id_ordem" id="id_ordem_form" style="display: none;">
-
-                <div class="form-row" id="typecreate_ordem"></div>
-                <br>
-                <br>
 
                 <div class="form-row">
                   <div class="col-12 col-sm-12">
@@ -183,9 +163,17 @@
                 <br>
 
                 <div class="form-row">
-                  {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
-                  {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-4 col-sm-4"  %}
-                  {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
+                    <div class="col-6 col-sm-6">
+                      <label class="font-weight-bold" for="id_departamento">Departamento: </label>
+                      <input name="id_departamento" class="form-control" required id="id_departamento">
+                    </div>
+                    {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                </div>
+                <br>
+                <br>
+                <div class="form-row">
+                    {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                    {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-6 col-sm-6"  %}
                 </div>
                 <br>
                 <br>
@@ -195,8 +183,8 @@
                       <select name="servico" class="form-control select2" required id="id_servico"></select>
                       <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
                   </div>
-                  <div class="card mt-2"> 
-                    <div class="card-body" id="div_service_selected" style="display: none;">
+                  <div class="card mt-2">
+                    <div class="card-body">
                       Serviço Selecionado na Criação da OS: <b id="service_selected"></b>
                     </div>
                   </div>
@@ -239,55 +227,10 @@
                 <br>
                 <br>
 
-                <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
-                    <strong>Executar</strong>
+                <button class="btn btn-outline-success float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                  <strong>Alterar OS !</strong>
                 </button>
             </form>
-        </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalDownloadPdfs" role="dialog" aria-labelledby="modalDownloadPdfsLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="modalDownloadPdfsLabel">Baixar Boletos Por Escritório</h5>
-            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-          <div id="error_aviso_dow"></div>
-          <div id="div_body_dow"></div>
-          <form enctype="multipart/form-data" id="form_for_dow">
-            {% csrf_token %}
-            <label for="customFile">Arquivo com as OS que deram algum erro ! (* Opcional *) </label>
-            <div class="custom-file">
-              <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
-              <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
-            </div>
-            <div class="mt-4">
-              <label for="select_escritorio" class="font-weight-bold">Selecione o Escritório:</label>
-              <select class="custom-select" id="select_escritorio" name="select_escritorio">
-                <option value="501">501</option>
-                <option value="502">502</option>
-                <option value="505">505</option>
-                <option value="567">567</option>
-              </select>
-            </div>
-            <div class="mt-4">
-              <label for="select_filename" class="font-weight-bold">Selecione ou Digite o NOME DOS ARQUIVOS:</label>
-              <select class="select2" id="select_filename" name="select_filename" required>
-                <option value="HONORARIO CONTABIL MESANO">HONORARIO CONTABIL MESANO</option>
-              </select>
-            </div>
-            <center>
-                <button class="btn btn-outline-success mt-5" onclick="baixar_boletos_escritorio(event)">
-                  <strong>Baixar Boletos !</strong>
-                </button>
-            </center>
-          </form>
         </div>
     </div>
   </div>
@@ -328,64 +271,7 @@
         <div class="modal-body" id="view_ordem"></div>
         <div class="modal-footer d-flex justify-content-between">
           <button type="button" class="btn btn-warning" id="button_arquive_view"></button>
-          <button type="button" id="button_debito_view"></button>
-        </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalAuditoria" tabindex="-1" role="dialog" aria-labelledby="modalAuditoriaLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="modalAuditoriaLabel">Baixar Planilha das Ordens de Serviços Cadastrados</h5>
-            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-        <div class="modal-body">
-            <form method="POST" action="{% url 'baixar_planilha_ordens_servico' %}">
-              {% csrf_token %}
-              <div id="div_inputs_filter"></div>
-              <center>
-                <button class="btn btn-outline-success btn-lg mt-5">
-                  <strong>Baixar Planilha</strong>
-                </button>
-              </center>
-            </form>
-        </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalDebitoLote" tabindex="-1" role="dialog" aria-labelledby="modalDebitoLoteLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalDebitoLoteLabel">Debitar Ordens em Lote</h5>
-          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div id="error_aviso_lotes"></div>
-          <div class="form-group mb-3">
-            <form enctype="multipart/form-data" id="form_for_file">
-              {% csrf_token %}
-              <label for="customFile">Arquivo de Ordens para Débito Em Lote no OMIE</label>
-              <div class="custom-file">
-                <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
-                <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
-              </div>
-            </form>
-          </div>
-          <hr>
-          <div id="bodyDebitoLote"></div>
-        </hr>
-        <div class="modal-footer">
-          <button class="btn btn-outline-success btn-lg" onclick="debitar_ordens_lote(event)">
-            Debitar
-          </button>
+          <button type="button" id="button_create_os"></button>
         </div>
     </div>
   </div>
@@ -393,135 +279,52 @@
 
 <script>
 
-  $('#customFile').on("change", (el) => {
-    let text = el.target.nextElementSibling;
-    if (!el.target.value.includes("xlsx")){
-      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
-    }else{
-      text.textContent = el.target.value.split('\\').pop();
-    }
-  })
-
   function open_modal_update(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'), {backdrop: 'static'});
-    if (typeof ordem.empresa != 'object'){
+    if (ordem.cd_empresa == 0){
       $("#form_cadastra_update_os").find('input, textarea, select, button').prop('disabled', true);
       $('#id_empresa').val(null).trigger('change');
     }else{
-      $('#id_empresa').val(`${ordem.empresa.codigo_cliente_omie}`).trigger('change');
-      selecionar_empresa(ordem.empresa.escritorio, ordem.cd_servico + ' * ' + ordem.servico);
+      $('#id_empresa').val(`${ordem.cd_empresa}`).trigger('change');
+      selecionar_empresa($('#id_empresa').select2('data')[0].title, ordem.cd_servico + ' * ' + ordem.servico);
     }
     $('#id_servico').empty().trigger('change');
     document.getElementById('id_empresa').disabled = false;
-    document.getElementById('div_service_selected').style.display = "block";
     document.getElementById('service_selected').textContent = ordem.servico;
     document.getElementById('service_selected').style.color = "rgb(23, 162, 184)";
-    document.getElementById('modalEditOrdemLabel').textContent = `Editar Esta Ordem da ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa}`
-    document.getElementById('id_ordem_form').value = parseInt(ordem.id)
-    document.getElementById('id_execucao').value = ordem.hora_trabalho
-    document.getElementById('id_data').value = ordem.data_realizado.split('/').reverse().join('-')
-    document.getElementById('id_data_cobranca').value = ordem.data_cobranca.split('/').reverse().join('-')
-    document.getElementById('id_descricao').required = true
-    document.getElementById('id_ordem_form').required = true
-    document.getElementById('id_descricao').value = ordem.ds_servico
-    document.getElementById('id_descricao_servico').value = ordem.observacoes_servico
-    document.getElementById('id_quantidade').value = parseInt(ordem.quantidade)
-    document.getElementById('id_valor').value = ordem.valor.replace("R$ ", '')
-    document.getElementById('id_autorizacao').value = ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO'
-    document.getElementById('id_solicitacaoLocal').value = ordem.type_solicitacao
-    document.getElementById('id_solicitacao').value = ordem.solicitado
-    document.getElementById('id_executado').value = ordem.executado
-    document.getElementById('typecreate_ordem').innerHTML = ''
-    document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
-    myModal.toggle()
+    document.getElementById('id_ordem_form').value = parseInt(ordem.id);
+    document.getElementById('id_execucao').value = ordem.hora_trabalho;
+    document.getElementById('id_data').value = ordem.data_realizado.split('/').reverse().join('-');
+    document.getElementById('id_data_cobranca').value = ordem.data_cobranca.split('/').reverse().join('-');
+    document.getElementById('id_descricao').required = true;
+    document.getElementById('id_ordem_form').required = true;
+    document.getElementById('id_descricao').value = ordem.ds_servico;
+    document.getElementById('id_departamento').value = ordem.departamento;
+    document.getElementById('id_descricao_servico').value = ordem.observacoes_servico;
+    document.getElementById('id_quantidade').value = parseInt(ordem.quantidade);
+    document.getElementById('id_valor').value = ordem.valor.replace("R$ ", '');
+    document.getElementById('id_autorizacao').value = ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO';
+    document.getElementById('id_solicitacaoLocal').value = ordem.type_solicitacao;
+    document.getElementById('id_solicitacao').value = ordem.solicitado;
+    document.getElementById('id_executado').value = ordem.executado;
+    document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`);
+    myModal.toggle();
   }
 
-  function open_modal_baixar_boletos(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalDownloadPdfs'))
-    myModal.toggle()
-  }
-
-  function open_modal_deletar(id_ordem, cd_empresa, razao_social, tr_id, cod_os){
-    var myModal = new bootstrap.Modal(document.getElementById('modalDeleteOrdem'))
-    document.getElementById('modalDeleteOrdemLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa} - ${razao_social}`;
+  function open_modal_deletar(id_ordem, cd_empresa, razao_social, tr_id){
+    var myModal = new bootstrap.Modal(document.getElementById('modalDeleteOrdem'));
+    document.getElementById('modalDeleteOrdemLabel').textContent = `Deletar a Regra esta Ordem de Serviço`;
     document.getElementById('button_delete_ordem').setAttribute('onclick', `deletar_ordem(event, ${id_ordem}, '${tr_id}')`);
-    if (cod_os != '' && cod_os != 'None'){
-      mostrarAlert('error_aviso_delete', 'info', "Esta Ordem Possui uma OS na OMIE !!")
-    }
-    myModal.toggle()
-  }
-
-  function open_modal_auditoria(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalAuditoria'))
-    let filtros_input = document.getElementById('cardOs').getElementsByTagName('input');
-    let campos = []
-    for (input of filtros_input){
-      if (input.value && input.type !== 'search'){
-        campos.push(input)
-      }
-    }
-    document.getElementById('div_inputs_filter').innerHTML = campos.length > 0 ? `
-      <h3 class="mb-5">Escolha os Filtros:</h3>
-      ${campos.map(input => {
-        return `
-          <div class="form-row mt-3">
-            <div class="col-12 col-sm-12">
-              <label class="font-weight-bold" for="cd_empresa">${input.title}:</label>
-              <div class="input-group mb-3">
-                <input type="${input.type}" class="${input.className}" name="${input.name}" placeholder="${input.title}" aria-label="${input.title}" aria-describedby="button-addon2" value="${input.value}" required>
-                <button class="btn btn-outline-danger" type="button" onclick="return this.parentNode.parentNode.parentNode.remove()" id="button-addon2"><i class="fe fe-trash-2 fe-16"></i>Deletar Filtro</button>
-              </div>
-            </div>
-          </div>
-        `
-      }).join("\n")}
-    ` : ''
-    myModal.toggle()
-  }
-
-  function open_modal_add_os(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'), {backdrop: 'static'})
-    $("#form_cadastra_update_os").find('input, textarea, select, button').prop('disabled', true);
-    document.getElementById('id_empresa').disabled = false;
-    $('#id_empresa').val(null).trigger('change');
-    $('#id_servico').empty().trigger('change');
-    document.getElementById('div_service_selected').style.display = "none";
-    document.getElementById('modalEditOrdemLabel').textContent = `Adicionar Ordem de Serviço`
-    document.getElementById('id_ordem_form').value = ''
-    document.getElementById('id_execucao').value = ''
-    document.getElementById('id_data').value = ''
-    document.getElementById('id_data_cobranca').value = ''
-    document.getElementById('id_descricao').value = ''
-    document.getElementById('id_descricao').required = false
-    document.getElementById('id_ordem_form').required = false
-    document.getElementById('id_descricao_servico').value = ''
-    document.getElementById('id_quantidade').value = ''
-    document.getElementById('id_valor').value = ''
-    document.getElementById('id_autorizacao').value = ''
-    document.getElementById('id_solicitacaoLocal').value = ''
-    document.getElementById('id_solicitacao').value = ''
-    document.getElementById('id_executado').value = ''
-    document.getElementById('typecreate_ordem').innerHTML = `
-      <div class="col-12 col-sm-12">
-        <label class="font-weight-bold" for="id_typeCreate">Opções de Cadastro: </label>
-        <select name="typeCreate" class="form-control" required id="id_typeCreate">
-          <option valeu=''></option>
-          <option valeu='DEBITAR'>À DEBITAR</option>
-          <option valeu='ARQUIVADO'>ARQUIVADO</option>
-        </select>
-      </div>
-    `
-    document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event)`)
-    myModal.toggle()
+    myModal.toggle();
   }
 
   function abrir_modal_view_ordem(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
-    let button_debito = document.getElementById('button_debito_view')
+    let button_debito = document.getElementById('button_create_os')
     let button_arquive = document.getElementById('button_arquive_view')
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
-        <li class="list-group-item h5">Empresa: ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa}</li>
+        <li class="list-group-item h5">Empresa: ${ordem.cd_empresa} - ${ordem.nome_empresa}</li>
         <li class="list-group-item h5">Serviço: ${ordem.servico}</li>
         <li class="list-group-item h5">Descrição Serviço: ${ordem.ds_servico}</li>
         <li class="list-group-item h5">Descrição: ${ordem.observacoes_servico}</li>
@@ -538,22 +341,24 @@
       </ul>
     `
     if (ordem.arquivado){
-      button_debito.style.display = 'none'
-      button_arquive.textContent = "Remover do Arquivado"
-      button_arquive.className = 'btn btn-danger text-white'
-      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "False", '${tr_id}')`)
+      button_arquive.textContent = "Remover do Arquivado";
+      button_arquive.className = 'btn btn-danger text-white';
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "${ordem.os_criada ? 'OS CRIADA' : 'ABERTO'}", '${tr_id}')`);
     }else{
-      button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço"
-      button_arquive.className = 'btn btn-success text-white'
-      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True", '${tr_id}')`)
-      if (ordem.cod_os_omie){
-        button_debito.style.display = 'none'
-      }else{
-        button_debito.style.display = 'block'
-        button_debito.textContent = 'Debitar Ordem de Serviço'
-        button_debito.className = 'btn btn-success text-white'
-        button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${tr_id}')`)
-      }
+      button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço";
+      button_arquive.className = 'btn btn-secondary text-white';
+      button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "${ordem.os_criada ? 'ARQUIVADO & OS CRIADA' : 'ARQUIVADO'}", '${tr_id}')`);
+    }
+
+    if (ordem.os_criada){
+      button_debito.style.display = 'none';
+    }else if (!ordem.arquivado){
+      button_debito.style.display = 'block';
+      button_debito.textContent = 'Criar OS Definitiva';
+      button_debito.className = 'btn btn-success text-white';
+      button_debito.setAttribute('onclick', `criar_os(event, ${ordem.id}, '${tr_id}')`);
+    }else{
+      button_debito.style.display = 'none';
     }
     myModal.toggle()
   }
@@ -561,7 +366,7 @@
   function buscar_ordem_for_id(e, id_ordem, type, tr_id){
     e.preventDefault();
     $.ajax({
-      url: `/ordem_servico/buscar_ordem_servico/${id_ordem}`,
+      url: `/ordem_servico/buscar_ordem_servico_provisoria/${id_ordem}`,
       type: 'GET',
       success: function(data){
         if (type === 'view'){
@@ -576,15 +381,15 @@
     })
   }
 
-  function debitar_os(e, id_ordem, tr_id){
+  function arquivar_os(e, id_ordem, status, tr_id){
     e.preventDefault();
     $.ajax({
-      url: `/ordem_servico/debitar_ordem_servico/${id_ordem}`,
+      url: `/ordem_servico/arquivar_ordem_servico_provisoria/${id_ordem}`,
       type: 'GET',
       success: function(data){
         if (Object.values(data).includes('sucesso')){
-          fecharModal('modalViewOrdem')
-          alteraLinhaTable(tr_id, 'DEBITADO')
+          fecharModal('modalViewOrdem');
+          alteraLinhaTable(tr_id, status);
         }else{
           mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
         }
@@ -594,16 +399,16 @@
       },
     })
   }
-
-  function arquivar_os(e, id_ordem, bool, tr_id){
+  
+  function criar_os(e, id_ordem, tr_id){
     e.preventDefault();
     $.ajax({
-      url: `/ordem_servico/arquivar_ordem_servico/${id_ordem}`,
+      url: `/ordem_servico/criar_os_real/${id_ordem}`,
       type: 'GET',
       success: function(data){
-        if (Object.values(data).includes('sucesso')){
-          fecharModal('modalViewOrdem')
-          alteraLinhaTable(tr_id, bool == "True" ? "ARQUIVADO" : "DEBITAR", id_ordem)
+        if (Object.keys(data).includes('message')){
+          fecharModal('modalViewOrdem');
+          alteraLinhaTable(tr_id, "OS CRIADA");
         }else{
           mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
         }
@@ -618,7 +423,7 @@
     e.preventDefault();
 
     $.ajax({
-      url: "{% url 'delete_ordem_servico' %}",
+      url: "{% url 'delete_ordem_servico_provisoria' %}",
       type: 'POST',
       data: {
         id_ordem,
@@ -634,7 +439,7 @@
     })
   }
 
-  function editar_ordem(e, id_ordem='', tr_id=null){
+  function editar_ordem(e, id_ordem, tr_id){
     e.preventDefault();
     data = {
       id_ordem: id_ordem,
@@ -655,25 +460,14 @@
       }
     }
 
+    data['name_empresa'] = $('#id_empresa').select2('data')[0].text.trim();
+
     $.ajax({
-      url: "{% url 'list_ordem_servico' %}",
+      url: "{% url 'list_ordens_provisorias' %}",
       type: 'POST',
       data: data,
       success: function(data){
-        console.log(data)
-        if (tr_id){
-          let linhas = document.getElementById(tr_id).children;
-          linhas[0].innerText = data.empresa;
-          linhas[1].innerText = `${data.servico} - (desc.: ${data.ds_servico})`;
-          linhas[2].innerText = data.cobranca;
-          linhas[3].innerText = `${data.valor} (qtd.: ${data.quantidade})`;
-          fecharModal('modalEditOrdem');
-        }else{
-          mostrarAlert('error_aviso', 'success', "Sucesso !!");
-          setTimeout(() => {
-            window.location.href = "{% url 'list_ordem_servico' %}";
-          }, 900)
-        }
+        window.location.href = "{% url 'list_ordens_provisorias' %}";
       },
       error: function(data){
         mostrarAlert('error_aviso', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
@@ -688,7 +482,7 @@
 
     setTimeout(() => {
       $('.alert').alert('close')
-    }, 6000)
+    }, 5000)
   }
 
   function fecharModal(modalClass){
@@ -697,38 +491,32 @@
     modal.hide()
   }
 
-  function alteraLinhaTable(tr_id, type, id_ordem=null){
+  function alteraLinhaTable(tr_id, type){
     if (type == "DELETAR"){
       deletarRowDataTables(tr_id)
     }else{
       let linha = document.getElementById(tr_id);
       for (child of linha.children){
         if (child.className.includes("h6")){
-          if (type == 'DEBITADO'){
-            child.className = "h6 text-success"
+          if (type == 'ABERTO'){
+            child.className = "h6 text-info"
             if (child.id){
-              child.innerText = "DEBITADO"
+              child.innerText = "ABERTO"
             }
           }else if (type == 'ARQUIVADO'){
-            let input = child.querySelector('input');
-            if (input){
-              child.removeChild(input);
-            }else{
-              child.className = "h6"
-            }
+            child.className = "h6 text-danger"
             if (child.id){
               child.innerText = "ARQUIVADO"
             }
-          }else{
-            if (child.className.includes("justify-content-center")){
-              child.innerHTML=`
-                <input class="form-check-input" type="checkbox" value="" ordemid="${id_ordem}" id="flexCheckDefault">
-              `;
-            }else{
-              child.className = "h6 text-warning"
-            }
+          }else if (type == 'ARQUIVADO & OS CRIADA'){
+            child.className = "h6 text-warning"
             if (child.id){
-              child.innerText = "DEBITAR"
+              child.innerText = "ARQUIVADO & OS CRIADA"
+            }
+          }else{
+            child.className = "h6 text-success"
+            if (child.id){
+              child.innerText = "OS CRIADA"
             }
           }
         }
@@ -830,11 +618,9 @@
                   input.placeholder = title;
                   if (title === 'Valor'){
                     input.className = "form-control input-money"
-                  }else if (title === 'Empresa'){
-                    input.className = "form-control cd_empresa"
                   }else if (title === 'Data da Cobrança'){
                     input.className = "form-control dataMask"
-                  }else if (title === 'Debitar' || title === 'Serviço'){
+                  }else if (title === 'Serviço'){
                     input.className = "form-control funcion_lower"
                   }else{
                     input.className = "form-control"
@@ -850,10 +636,6 @@
               }
           });
     }
-  });
-
-  table.on('click', 'tbody tr td input', function (e) {
-    e.currentTarget.parentNode.parentNode.classList.toggle('selected');
   });
 
   function button_spinner(button, active, html=''){
@@ -879,122 +661,9 @@
     document.getElementById(`${div_class}`).innerHTML = ``
   }
 
-  function list_checks_table(event){
-    let orders = table.rows('.selected').data();
-    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'));
-    document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`;
-    myModal.toggle();
-  }
-
-  function baixar_arquivo(data){
-    try{
-      const byteCharacters = atob(data.file);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = data.filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.location.href = "{% url 'list_ordem_servico' %}";
-    }catch (e) {
-      mostrarAlert('error_aviso_lotes', 'danger', e.message || "Houve Algum Erro no Processo");
-    }
-  }
-
-  async function debitar_ordens_lote(e){
-    e.preventDefault();
-    const formulario_file = document.getElementById("form_for_file");
-    const formData = new FormData(formulario_file);
-
-    table.rows('.selected').data().map(tr => {
-      let result = tr[6].match('[0-9]+')[0] || null
-      if(result){
-        formData.append("orders[]", result);
-      }
-    })
-
-    if (!formData.get("orders[]") && !formData.get("arquivo_os").name){
-      return null;
-    }
-    
-    button_spinner(e.target, true)
-    await fetch("{% url 'debitar_em_lote' %}", {
-        method: "POST",
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => {
-                throw new Error(`${err.message}`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-      baixar_arquivo(data.auditoria);
-    })
-    .catch(error => {
-      mostrarAlert('error_aviso_lotes', 'danger', error);
-      button_spinner(e.target, false, 'Debitar Novamente');
-    });
-  }
-
-  async function baixar_boletos_escritorio(e){
-    e.preventDefault();
-    const formulario_file = document.getElementById("form_for_dow");
-    const formData = new FormData(formulario_file);
-    button_spinner(e.target, true)
-    await fetch("{% url 'download_boletos_escritorio' %}", { method: "POST", body: formData})
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(err => {
-          throw new Error(`${err.message}`);
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (Object.keys(data).includes('files_zip')){
-        const byteCharacters = atob(data.files_zip);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], {
-            type: 'application/zip'
-        });
-        const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
-        link.download = `Boletos das OS ${data.escritorio}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        //window.location.href = "{% url 'list_ordem_servico' %}";
-        fecharModal('modalDownloadPdfs');
-      }else{
-        mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
-      }
-    })
-    .catch(error => {
-      mostrarAlert('error_aviso_dow', 'danger', error);
-    })
-    .finally(() => {
-      button_spinner(e.target, false, 'Baixar Boletos !');
-    });
-  }
-
   function search(event){
-    document.querySelector("#filterDebitar input").value = event.target.value;
-    table.columns(4).search(event.target.value).draw();
+    document.querySelector("#filterStatus input").value = event.target.value;
+    table.columns(3).search(event.target.value).draw();
   }
 
   function deletarRowDataTables(row_id){
@@ -1020,7 +689,7 @@
     reverse: true
   });
 
-  $('.select2').select2( { theme: 'bootstrap4', width: '100%', tags:true } );
+  $('.select2').select2( { theme: 'bootstrap4', width: '100%', dropdownParent: $('#modalEditOrdem') } );
 
   $.fn.dataTableExt.afnFiltering.push(
     function( settings, data, dataIndex ) {
