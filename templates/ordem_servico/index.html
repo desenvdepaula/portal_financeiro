@@ -372,6 +372,16 @@
           <div class="form-group mb-3">
             <form enctype="multipart/form-data" id="form_for_file">
               {% csrf_token %}
+              <div class="mb-4">
+                <label for="select_escritorio_lote" class="font-weight-bold">Selecione o Escritório:</label>
+                <select class="custom-select" id="select_escritorio_lote" name="select_escritorio_lote">
+                  <option value=""></option>
+                  <option value="501">501</option>
+                  <option value="502">502</option>
+                  <option value="505">505</option>
+                  <option value="567">567</option>
+                </select>
+              </div>
               <label for="customFile">Arquivo de Ordens para Débito Em Lote no OMIE</label>
               <div class="custom-file">
                 <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
