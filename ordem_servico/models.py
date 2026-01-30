@@ -25,12 +25,10 @@ class Servico(models.Model):
 
 class OrdemServico(models.Model):
     departamento = models.CharField(max_length=255)
-    cd_servico = models.CharField(max_length=10)
+    cd_servico = models.CharField(max_length=20, blank=True, null=True)
     servico = models.CharField(max_length=255)
     ds_servico = models.CharField(max_length=255)
     observacoes_servico = models.TextField(blank=True, null=True)
-    cd_empresa = models.CharField(max_length=60, blank=True, null=True)
-    nome_empresa = models.CharField(max_length=255, blank=True, null=True)
     data_realizado = models.DateField()
     data_cobranca = models.DateField()
     quantidade = models.IntegerField(default=0)
@@ -41,10 +39,8 @@ class OrdemServico(models.Model):
     solicitado = models.CharField(max_length=255)
     executado = models.CharField(max_length=255)
     criador_os = models.CharField(max_length=255)
-    debitar = models.BooleanField(default=False)
     arquivado = models.BooleanField(default=False)
-    ordem_debitada_id = models.IntegerField(blank=True, null=True)
-    empresa = models.ForeignKey(EmpresasOmie, on_delete=models.CASCADE, blank=True, null=True, default=None)
+    empresa = models.ForeignKey(EmpresasOmie, on_delete=models.CASCADE)
     cod_os_omie = models.CharField(max_length=50, null=True, default=None)
 
 class OrdemServicoProvisoria(models.Model):
