@@ -416,7 +416,7 @@ class Controller():
                                 except Exception as err:
                                     response['errors'].append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
                             else:
-                                response['errors'].append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client}")
+                                response['errors'].append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
                         else:
                             error_text = json_client.get('message') or json_client.get('faultstring')
                             response['errors'].append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
