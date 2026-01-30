@@ -392,7 +392,7 @@ class Controller():
                 result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
                 json_contrato = result_contrato.json()
                 if result_contrato.status_code == 200:
-                    codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro']])
+                    codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro'] if i['cabecalho']['cCodSit'] == '10'])
                     if empresas_list_omie:
                         codigos_client = set([c for c in codigos_client if c in empresas_list_omie])
                     for client in codigos_client:
