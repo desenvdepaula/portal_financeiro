@@ -262,10 +262,10 @@
           <div id="div_body_dow"></div>
           <form enctype="multipart/form-data" id="form_for_dow">
             {% csrf_token %}
-            <label for="customFile">Arquivo com as OS que deram algum erro ! (* Opcional *) </label>
+            <label for="fileBoletos">Arquivo com as OS que deram algum erro ! (* Opcional *) </label>
             <div class="custom-file">
-              <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
-              <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
+              <input type="file" class="custom-file-input" id="fileBoletos" name="arquivo_os" accept=".xlsx">
+              <label class="custom-file-label" for="fileBoletos">Selecione o Arquivo (* Opcional *)</label>
             </div>
             <div class="mt-4">
               <label for="select_escritorio" class="font-weight-bold">Selecione o Escritório:</label>
@@ -373,7 +373,25 @@
             <form enctype="multipart/form-data" id="form_for_file">
               {% csrf_token %}
               <div class="mb-4">
-                <label for="select_escritorio_lote" class="font-weight-bold">Selecione o Escritório:</label>
+                <label for="select_lanc" class="font-weight-bold">Selecione o Tipo de Lançamento:</label>
+                <select class="custom-select" id="select_lanc" name="select_lanc">
+                  <option value="datas">PERÍODOS DE DATAS E ESCRITÓRIO</option>
+                  <option value="files">LANÇAMENTO LIVRE</option>
+                </select>
+              </div>
+              <hr>
+              <div class="form-row mb-4">
+                <div class="col-6 col-sm-6">
+                  <label class="font-weight-bold" for="data_inicio_debito">Data Início de Cobrança: </label>
+                  <input type="date" name="data_inicio_debito" class="form-control" required id="data_inicio_debito">
+                </div>
+                <div class="col-6 col-sm-6">
+                  <label class="font-weight-bold" for="data_final_debito">Data Final de Cobrança: </label>
+                  <input type="date" name="data_final_debito" class="form-control" required id="data_final_debito">
+                </div>
+              </div>
+              <div class="mb-4">
+                <label for="select_escritorio_lote" class="font-weight-bold">Selecione o Escritório (* Opcional - Não selecionar vai lançar de Todos... *):</label>
                 <select class="custom-select" id="select_escritorio_lote" name="select_escritorio_lote">
                   <option value=""></option>
                   <option value="501">501</option>
@@ -382,7 +400,8 @@
                   <option value="567">567</option>
                 </select>
               </div>
-              <label for="customFile">Arquivo de Ordens para Débito Em Lote no OMIE</label>
+              <hr>
+              <label for="customFile">Arquivo de Ordens para Débito Em Lote no OMIE (* Opcional *): </label>
               <div class="custom-file">
                 <input type="file" class="custom-file-input" id="customFile" name="arquivo_os" accept=".xlsx">
                 <label class="custom-file-label" for="customFile">Selecione o Arquivo (* Opcional *)</label>
@@ -409,6 +428,38 @@
       text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
     }else{
       text.textContent = el.target.value.split('\\').pop();
+    }
+  })
+
+  $('#fileBoletos').on("change", (el) => {
+    let text = el.target.nextElementSibling;
+    if (!el.target.value.includes("xlsx")){
+      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
+    }else{
+      text.textContent = el.target.value.split('\\').pop();
+    }
+  })
+
+  $('#select_lanc').on("change", (el) => {
+    if (el.target.value == 'datas'){
+      let date = new Date();
+      document.getElementById("data_inicio_debito").valueAsDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      document.getElementById("data_final_debito").valueAsDate = date;
+      document.getElementById("data_inicio_debito").disabled = false;
+      document.getElementById("data_final_debito").disabled = false;
+      document.getElementById("select_escritorio_lote").disabled = false;
+      document.getElementById("select_escritorio_lote").value = '';
+      document.getElementById('bodyDebitoLote').innerHTML = "";
+      document.getElementById("customFile").value = '';
+      document.getElementById("customFile").disabled = true;
+    }else{
+      document.getElementById("data_inicio_debito").disabled = true;
+      document.getElementById("data_final_debito").disabled = true;
+      document.getElementById("select_escritorio_lote").disabled = true;
+      document.getElementById("customFile").value = '';
+      document.getElementById("customFile").disabled = false;
+      let orders = table.rows('.selected').data();
+      document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`;
     }
   })
 
@@ -447,7 +498,7 @@
   }
 
   function open_modal_baixar_boletos(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalDownloadPdfs'))
+    var myModal = new bootstrap.Modal(document.getElementById('modalDownloadPdfs'), {backdrop: 'static'})
     myModal.toggle()
   }
 
@@ -670,7 +721,6 @@
       type: 'POST',
       data: data,
       success: function(data){
-        console.log(data)
         if (tr_id){
           let linhas = document.getElementById(tr_id).children;
           linhas[0].innerText = data.empresa;
@@ -890,9 +940,15 @@
   }
 
   function list_checks_table(event){
-    let orders = table.rows('.selected').data();
-    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'));
-    document.getElementById('bodyDebitoLote').innerHTML = `${orders.map(tr => `${tr[0]} | ${tr[1]} | ${tr[2]} | ${tr[3]}`).join("<br>")}`;
+    let date = new Date();
+    var myModal = new bootstrap.Modal(document.getElementById('modalDebitoLote'), {backdrop: 'static'});
+    document.getElementById("select_lanc").value = 'datas';
+    document.getElementById("data_inicio_debito").valueAsDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    document.getElementById("data_final_debito").valueAsDate = date;
+    document.getElementById("select_escritorio_lote").value = '';
+    document.getElementById("customFile").value = '';
+    document.getElementById("customFile").disabled = true;
+    document.getElementById('bodyDebitoLote').innerHTML = "";
     myModal.toggle();
   }
 
@@ -924,17 +980,24 @@
     const formulario_file = document.getElementById("form_for_file");
     const formData = new FormData(formulario_file);
 
-    table.rows('.selected').data().map(tr => {
-      let result = tr[6].match('[0-9]+')[0] || null
-      if(result){
-        formData.append("orders[]", result);
+    if (formData.get("select_lanc") === 'datas'){
+      if (!formData.get("data_inicio_debito") || !formData.get("data_final_debito")){
+        mostrarAlert('error_aviso_lotes', 'danger', "Preencha as Duas Datas Obrigatórias !");
+        return null;
       }
-    })
-
-    if (!formData.get("orders[]") && !formData.get("arquivo_os").name){
-      return null;
+    }else{
+      table.rows('.selected').data().map(tr => {
+        let result = tr[6].match('[0-9]+')[0] || null
+        if(result){
+          formData.append("orders[]", result);
+        }
+      })
+      if (!formData.get("orders[]") && !formData.get("arquivo_os").name){
+        mostrarAlert('error_aviso_lotes', 'danger', "Preencha o ARQUIVO ou ALGUMA ORDEM ESPECÍFICA !");
+        return null;
+      }
     }
-    
+
     button_spinner(e.target, true)
     await fetch("{% url 'debitar_em_lote' %}", {
         method: "POST",
@@ -953,6 +1016,9 @@
     })
     .catch(error => {
       mostrarAlert('error_aviso_lotes', 'danger', error);
+      //button_spinner(e.target, false, 'Debitar Novamente');
+    })
+    .finally(() => {
       button_spinner(e.target, false, 'Debitar Novamente');
     });
   }

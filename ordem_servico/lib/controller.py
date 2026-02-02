@@ -66,31 +66,31 @@ class Controller():
                     'servico' : 'Serviço',
                     'ds_servico' : 'Descrição do Serviço',
                     'observacoes_servico' : 'Observações do Serviço',
-                    'cd_empresa' : 'Cd. Empresa',
+                    'cd_empresa' : 'Código Empresa',
                     'nome_empresa' : 'Nome Empresa',
                     'data_realizado' : 'Data Realizado',
                     'data_cobranca' : 'Data de Cobrança',
-                    'quantidade' : 'Qauntidade',
+                    'quantidade' : 'Quantidade',
                     'hora_trabalho' : 'Horas',
                     'valor' : 'Valor',
                     'autorizado_pelo_cliente' : 'Cliente Autorizou?',
                     'type_solicitacao' : 'Tipo da Solicitação',
+                    'arquivado' : 'Arquivado',
                     'solicitado' : 'Solicitado Por:',
                     'executado' : 'Executado por:'
                 }, axis=1)
                 
                 df2.to_excel(writer, sheet_name='Ordens de Serviços', index = False)
                 writer.sheets['Ordens de Serviços'].set_column('A:A', 8, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('B:C', 15, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('D:E', 55, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('F:F', 70, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('G:G', 12, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('H:H', 60, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('I:M', 14, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('N:O', 20, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('P:Q', 60, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('B:C', 16, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('D:E', 60, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('F:F', 75, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('G:M', 14, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('N:O', 35, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('P:Q', 17, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('R:R', 10, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('S:T', 18, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('S:S', 14, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('T:T', 60, alignCenter)
                 
                 writer.close()
                 
@@ -190,157 +190,125 @@ class Controller():
             raise Exception(err)
         # else:
         #     ordem.save()
+        
+    def atualizar_os_omie(self, escritorio, new_os):
+        data_update_os = get_request_to_api_omie(escritorio, "AlterarOS", new_os)
+        result = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_update_os, headers={'content-type': 'application/json'})
+        json_result = result.json()
+        if result.status_code == 200:
+            return True
+        else:
+            error_text = json_result.get('message') or json_result.get('faultstring')
+            raise Exception(f"OS Não Alterada: {error_text}")
             
-    def debitar_em_lote_ordem_servico(self, orders_list, file):
-        self.manager.connect()
+    def debitar_em_lote_ordem_servico(self, type_lanc, list_ordens, file, datas, escritorio_lote):
+        sucessos = []
+        errors = []
+        erros_gerais = []
         try:
-            sucessos = []
-            errors = []
+            validation_clientes_lancamento = set()
             orders_list_set = set()
-            dados_empresa_omie = EmpresasOmie.objects.all()
-            os_list = {}
-            os_list_escritorios = {}
+            os_list_separado_por_escritorios = {}
             
-            # for os in orders_list:
-            #     orders_list_set.add(int(os))
-            
-            # if file:
-            #     df = pd.read_excel(file)
-            #     if 'id' in df.columns:
-            #         for id_os in df.get("id").values.tolist():
-            #             orders_list_set.add(id_os)
-                    
-            # ordens = OrdemServico.objects.filter(id__in=orders_list_set)
-            
-            
-            df = pd.read_excel(file)
-            df.fillna(0, inplace=True)
-            for id_os, cd_servico, servico, ds_servico, observacoes_servico, codigo_escritorio, codigo_servico, cd_empresa, filial, vencimento, nome_empresa, data_realizado, data_cobranca, quantidade, hora_trabalho, valor, autorizado_pelo_cliente, type_solicitacao, solicitado, executado, debitar, arquivado, ordem_debitada_id in df.values.tolist():
-                if codigo_escritorio == 9501:
-                    print(cd_empresa, filial, codigo_servico)
-                    vencimento = vencimento.strftime("%d/%m/%Y")
-                    codigo_servico = int(codigo_servico)
-                    codigo_escritorio = str(codigo_escritorio).replace("9", "")
-                    
-                    try:
-                        empresa_omie = dados_empresa_omie.get(cd_empresa=cd_empresa, estab=filial)
-                        data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "filtrar_por_cliente": empresa_omie.codigo_cliente_omie, "filtrar_por_etapa": "10", "filtrar_por_data_previsao_de": "02/12/2025"})
-                        result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
-                        json_os = result_os.json()
-                        if result_os.status_code == 200:
-                            if json_os['total_de_registros'] == 1:
-                                os = json_os['osCadastro'][0]
-                                cd_os = os['Cabecalho']['nCodOS']
-                                os_list_escritorios[cd_os] = codigo_escritorio
-                                if cd_os in os_list:
-                                    os_exists = os_list[cd_os]
-                                    nSeqItem = max([n['nSeqItem'] for n in os_exists['ServicosPrestados']])+1
-                                    if codigo_servico != 0:
-                                        os_exists['ServicosPrestados'].append({"nCodServico": codigo_servico, "nQtde": quantidade, "nValUnit": valor, "cDescServ": ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I", "impostos": {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}})
-                                    else:
-                                        if 'despesasReembolsaveis' in os_exists:
-                                            os_exists['despesasReembolsaveis']['despesaReembolsavel'].append({"cDescReemb": ds_servico, "dDataReemb": "02/12/2025", "nValorReemb": valor, "cAcaoReemb": "I"})
-                                        else:
-                                            os_exists['despesasReembolsaveis'] = {
-                                                "despesaReembolsavel": [{"cDescReemb": ds_servico, "dDataReemb": "02/12/2025", "nValorReemb": valor, "cAcaoReemb": "I"}]
-                                            }
-                                else:
-                                    nSeqItem = max([n['nSeqItem'] for n in os['ServicosPrestados']])+1
-                                    os['Cabecalho']['cCodParc'] = "999"
-                                    os['Parcelas'][0]['dDtVenc'] = vencimento
-                                    if codigo_servico != 0:
-                                        os['ServicosPrestados'] = [{"nCodServico": codigo_servico, "nQtde": quantidade, "nValUnit": valor, "cDescServ": ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I", "impostos": {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}}]
-                                    else:
-                                        os['despesasReembolsaveis'] = {
-                                            "despesaReembolsavel": [{"cDescReemb": ds_servico, "dDataReemb": "02/12/2025", "nValorReemb": valor, "cAcaoReemb": "I"}]
-                                        }
-                                    os_list[cd_os] = os
-                            else:
-                                errors.append([id_os, cd_empresa, nome_empresa, empresa_omie.cnpj_cpf, codigo_escritorio, f"Nenhuma ou mais de uma OS na Pesquisa, quantidade: {json_os['total_de_registros']} !"])
-                        else:
-                            error_text = json_os.get('message') or json_os.get('faultstring')
-                            errors.append([id_os, cd_empresa, nome_empresa, empresa_omie.cnpj_cpf, codigo_escritorio, f"Nenhuma OS Encontrada na OMIE, Erro:{error_text}"])
-                    except Exception as err:
-                        errors.append([id_os, cd_empresa, nome_empresa, "", "", f"Empresa Não Cadastrada Corretamente no Banco | Erro: {str(err)}"])
-                            
-            print(os_list)
-            
-            for id_os_omie in os_list:
-                print("aaaaaaaaaaa")
-                os = os_list[id_os_omie]
-                escrit = os_list_escritorios[id_os_omie]
-                data_update_os = get_request_to_api_omie(escrit, "AlterarOS", os)
-                result = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_update_os, headers={'content-type': 'application/json'})
-                json_result = result.json()
-                print(json_result)
-                if result.status_code == 200:
-                    sucessos.append([id_os_omie, escrit])
-                else:
-                    error_text = json_result.get('message') or json_result.get('faultstring')
-                    errors.append([id_os_omie, escrit, "", "", "", f"OS Não Alterada: {error_text}"])
+            if type_lanc == 'datas':
+                os_list_db = OrdemServico.objects.filter(data_cobranca__range=datas, empresa__escritorio__in=escritorio_lote, arquivado=False, cod_os_omie__isnull=True)
+                for os_db in os_list_db:
+                    if os_db.cd_servico == '0':
+                        errors.append([os_db.id, os_db.empresa.cd_empresa, os_db.empresa.name_empresa, os_db.empresa.cnpj_cpf, os_db.empresa.escritorio, f"OS Sem Serviço Corretamente ALocado, Veja Novamente !!"])
+                    else:
+                        orders_list_set.add(os_db)
+            else:
+                orders_list_id = set()
+                # for os in list_ordens:
+                #     orders_list_id.add(int(os))
                 
-                    # if not cd_empresa in dados_empresa_omie:
-                    #     if int(cd_empresa) > 99999:
-                    #         codigo_escritorio = 9505
-                    #     else:
-                    #         codigo_escritorio = get_codigo_escritorio(cd_empresa, self.manager.cursor)
+                # if file:
+                #     df = pd.read_excel(file)
+                #     if 'id' in df.columns:
+                #         for id_os in df.get("id").values.tolist():
+                #             orders_list_id.add(id_os)
                         
-                    #     if codigo_escritorio:
-                    #         codigo_escritorio = str(codigo_escritorio).replace("9", "")
-                    #         cnpj = get_cnpj_empresa(cd_empresa, self.manager.cursor)
-                    #         if cnpj:
-                    #             params_client = {
-                    #                 "pagina": 1,
-                    #                 "registros_por_pagina": 10,
-                    #                 "clientesFiltro": {
-                    #                     "cnpj_cpf": cnpj
-                    #                 }
-                    #             }
-                    #             data_get_client_omie = get_request_to_api_omie(codigo_escritorio, "ListarClientes", params_client)
-                    #             result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
-                    #             json_client = result_client.json()
-                    #             if result_client.status_code == 200:
-                    #                 if json_client['total_de_registros'] == 1:
-                    #                     client = json_client['clientes_cadastro'][0]
-                    #                     email = client['email'] if 'email' in client else ""
-                    #                     dados_empresa_omie[cd_empresa] = {
-                    #                         'cnpj': cnpj,
-                    #                         'razao_social': client['razao_social'],
-                    #                         'codigo_cliente_omie': client['codigo_cliente_omie'],
-                    #                         'email': email
-                    #                     }
-                    #                 else:
-                    #                     errors.append([id_os, cd_empresa, nome_empresa, cnpj, codigo_escritorio, f"Nenhum ou Mais de um Código Omie para o mesmo CNPJ: {cnpj}, total: {json_client['total_de_registros']}"])
-                    #                     dados_empresa_omie[cd_empresa] = None
-                    #                     continue
-                    #             else:
-                    #                 error_text = json_client.get('message') or json_client.get('faultstring')
-                    #                 errors.append([id_os, cd_empresa, nome_empresa, cnpj, codigo_escritorio, f"Erro ao Buscar o Código do Cliente: {error_text}"])
-                    #                 dados_empresa_omie[cd_empresa] = None
-                    #                 continue
-                    #         else:
-                    #             errors.append([id_os, cd_empresa, nome_empresa, "", codigo_escritorio, "CNPJ desta Empresa Não Encontrado"])
-                    #             dados_empresa_omie[cd_empresa] = None
-                    #             continue
-                    #     else:
-                    #         errors.append([id_os, cd_empresa, nome_empresa, "", "", "Código do Escritório Não Encontrado"])
-                    #         dados_empresa_omie[cd_empresa] = None
-                    #         continue
+                for os_livres in OrdemServico.objects.filter(id__in=orders_list_id):
+                    orders_list_set.add(os_livres)
+                        
+            for os_to_update in orders_list_set:
+                escritorio_desta_os = os_to_update.empresa.escritorio
+                cliente_desta_os = os_to_update.empresa.codigo_cliente_omie
+                if escritorio_desta_os in os_list_separado_por_escritorios:
+                    if cliente_desta_os in os_list_separado_por_escritorios[escritorio_desta_os]:
+                        os_list_separado_por_escritorios[escritorio_desta_os][cliente_desta_os].append(os_to_update)
+                    else:
+                        os_list_separado_por_escritorios[escritorio_desta_os][cliente_desta_os] = [os_to_update]
+                else:
+                    os_list_separado_por_escritorios[escritorio_desta_os] = {cliente_desta_os: [os_to_update]}
+
+            for codigo_escritorio in os_list_separado_por_escritorios.keys():
+                clientes_escritorio = os_list_separado_por_escritorios[codigo_escritorio].keys()
+                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 1000, "filtrar_por_etapa": "20"})
+                result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
+                json_os = result_os.json()
+                if result_os.status_code == 200:
+                    for os_api_omie in json_os['osCadastro']:
+                        cliente_omie = str(os_api_omie['Cabecalho']['nCodCli'])
+                        if cliente_omie in clientes_escritorio:
+                            if os_api_omie['InfoCadastro']['cCancelada'] == "S":
+                                erros_gerais.append([codigo_escritorio, f"OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} está cancelada !!"])
+                                continue
+                            os_api_omie['Cabecalho']['cCodParc'] = "999"
+                            validation_clientes_lancamento.add(cliente_omie)
+                            try:
+                                list_os_lancadas = []
+                                for os_db_lancamento in os_list_separado_por_escritorios[codigo_escritorio][cliente_omie]:
+                                    try:
+                                        nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
+                                        
+                                        if os_db_lancamento.cd_servico:
+                                            new_service_prested = {"nCodServico": os_db_lancamento.cd_servico, "nQtde": os_db_lancamento.quantidade, "nValUnit": os_db_lancamento.valor, "cDescServ": os_db_lancamento.ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I"}
+                                            if codigo_escritorio == '501':
+                                                new_service_prested["impostos"] = {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}
+                                            os_api_omie['ServicosPrestados'].append(new_service_prested)
+                                        else:
+                                            if 'REEMBOLSO' in os_db_lancamento.servico:
+                                                if 'despesasReembolsaveis' in os_api_omie:
+                                                    os_api_omie['despesasReembolsaveis']['despesaReembolsavel'].append({"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"})
+                                                else:
+                                                    os_api_omie['despesasReembolsaveis'] = {
+                                                        "despesaReembolsavel": [{"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"}]
+                                                    }
+                                            else:
+                                                errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Verificar o Lançamento de REEMBOLSO !!"])
+                                        
+                                        os_db_lancamento.cod_os_omie = str(os_api_omie['Cabecalho']['nCodOS'])
+                                        list_os_lancadas.append(os_db_lancamento)
+                                    except Exception as err:
+                                        errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Lançar Esta OS: {str(err)}"])
+                                
+                                up = self.atualizar_os_omie(codigo_escritorio, os_api_omie)
+                            except Exception as err:
+                                erros_gerais.append([codigo_escritorio, f"Erro ao Atualizar Esta OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} / Erro: {str(err)}"])
+                            else:
+                                if up:
+                                    for order in list_os_lancadas:
+                                        order.save()
+                                    sucessos.append([str(os_api_omie['Cabecalho']['nCodOS']), codigo_escritorio])
+                        else:
+                            continue
+                else:
+                    error_text = json_os.get('message') or json_os.get('faultstring')
+                    erros_gerais.append([codigo_escritorio, f"Erro na API da OMIE ao Buscar as OS, ou Nenhuma OS Encontrada Nesta Etapa / Err: {error_text}"])
                     
-                    # if not dados_empresa_omie[cd_empresa]:
-                    #     errors.append([id_os, cd_empresa, nome_empresa, "", "", "Erro Na Empresa Desta OS !"])
-                    #     continue
-                    
-                # break
+                for codigo_cliente_validation in clientes_escritorio:
+                    if codigo_cliente_validation not in validation_clientes_lancamento:
+                        erros_gerais.append([codigo_escritorio, f"Esta Empresa ({codigo_cliente_validation}) não teve suas OS Lançadas, pois não foi encontrado este Cliente na Etapa 20 da API da OMIE, contate a INOVAÇÃO !"])
+                    else:
+                        continue
                 
         except Exception as err:
             raise Exception(err)
         else:
-            return sucessos, errors
-        finally:
-            self.manager.disconnect()
+            return sucessos, errors, erros_gerais
 
-    def gerar_arquivo_excel_auditoria_debitos(self, dfSucessos, dfErros):
+    def gerar_arquivo_excel_auditoria_debitos(self, dfSucessos, dfErros, dfErrosGerais):
         try:
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
@@ -350,7 +318,8 @@ class Controller():
 
                 if not dfSucessos.empty:
                     dfSucessos.to_excel(writer, sheet_name='Sucesso', index=False)
-                    writer.sheets['Sucesso'].set_column('A:B', 22, alignLeft)
+                    writer.sheets['Sucesso'].set_column('A:A', 20, alignLeft)
+                    writer.sheets['Sucesso'].set_column('B:B', 80, alignLeft)
 
                 if not dfErros.empty:
                     dfErros.to_excel(writer, sheet_name='ERROS', index=False)
@@ -358,6 +327,11 @@ class Controller():
                     writer.sheets['ERROS'].set_column('C:C', 55, alignLeft)
                     writer.sheets['ERROS'].set_column('D:E', 20, alignLeft)
                     writer.sheets['ERROS'].set_column('F:F', 120, alignLeft)
+                    
+                if not dfErrosGerais.empty:
+                    dfErros.to_excel(writer, sheet_name='ERROS GERAIS', index=False)
+                    writer.sheets['ERROS GERAIS'].set_column('A:A', 20, alignLeft)
+                    writer.sheets['ERROS GERAIS'].set_column('B:B', 80, alignLeft)
 
                 writer.close()
                 

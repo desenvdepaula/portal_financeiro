@@ -264,18 +264,22 @@ class OrdemServicoView(View):
         
     def debitar_em_lote(request):
         try:
+            request_project_log(0, "", "ORDEM DE SERVIÇO / DEBITAR ORDEM EM LOTE", request.user.username)
             response_data = {}
+            type_lanc = request.POST.get('select_lanc')
             list_ordens = request.POST.getlist('orders[]')
             file = request.FILES.get("arquivo_os").temporary_file_path() if "arquivo_os" in request.FILES else None
+            datas = [request.POST.get('data_inicio_debito') or None, request.POST.get('data_final_debito') or None]
+            escritorio_lote = request.POST.getlist('select_escritorio_lote') if request.POST.get('select_escritorio_lote') else ['501', '502', '505', '567']
             controller = Controller()
-            sucessos, errors = controller.debitar_em_lote_ordem_servico(list_ordens, file)
+            sucessos, errors, erros_gerais = controller.debitar_em_lote_ordem_servico(type_lanc, list_ordens, file, datas, escritorio_lote)
         except Exception as err:
             return JsonResponse({"message": str(err)}, status=500)
         else:
             dfSucessos = pd.DataFrame(sucessos, columns=['OS', 'ESCRITORIO'])
             dfErros = pd.DataFrame(errors, columns=['ID OS', 'CÓDIGO EMPRESA', 'NOME', 'CNPJ', 'ESCRIT.','DESCRIÇÃO DO ERRO'])
-            request_project_log(0, "", "ORDEM DE SERVIÇO / DEBITAR ORDEM EM LOTE", request.user.username)
-            response_data['auditoria'] = controller.gerar_arquivo_excel_auditoria_debitos(dfSucessos, dfErros)
+            dfErrosGerais = pd.DataFrame(erros_gerais, columns=['ESCRITORIO', 'DESCRIÇÃO DO ERRO'])
+            response_data['auditoria'] = controller.gerar_arquivo_excel_auditoria_debitos(dfSucessos, dfErros, dfErrosGerais)
             return JsonResponse(response_data)
         
     def delete(request):
