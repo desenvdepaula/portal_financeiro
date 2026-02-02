@@ -329,7 +329,7 @@ class Controller():
                     writer.sheets['ERROS'].set_column('F:F', 120, alignLeft)
                     
                 if not dfErrosGerais.empty:
-                    dfErros.to_excel(writer, sheet_name='ERROS GERAIS', index=False)
+                    dfErrosGerais.to_excel(writer, sheet_name='ERROS GERAIS', index=False)
                     writer.sheets['ERROS GERAIS'].set_column('A:A', 20, alignLeft)
                     writer.sheets['ERROS GERAIS'].set_column('B:B', 80, alignLeft)
 
