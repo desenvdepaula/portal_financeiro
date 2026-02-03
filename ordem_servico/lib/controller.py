@@ -258,9 +258,11 @@ class Controller():
                             validation_clientes_lancamento.add(cliente_omie)
                             try:
                                 list_os_lancadas = []
+                                nSeqItemOrigem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
+                                os_api_omie['ServicosPrestados'] = []
                                 for os_db_lancamento in os_list_separado_por_escritorios[codigo_escritorio][cliente_omie]:
                                     try:
-                                        nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
+                                        nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1 if len(os_api_omie['ServicosPrestados']) > 0 else nSeqItemOrigem
                                         
                                         if os_db_lancamento.cd_servico:
                                             new_service_prested = {"nCodServico": os_db_lancamento.cd_servico, "nQtde": os_db_lancamento.quantidade, "nValUnit": os_db_lancamento.valor, "cDescServ": os_db_lancamento.ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I"}
