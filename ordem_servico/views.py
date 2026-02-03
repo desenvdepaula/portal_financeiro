@@ -270,7 +270,7 @@ class OrdemServicoView(View):
             list_ordens = request.POST.getlist('orders[]')
             file = request.FILES.get("arquivo_os").temporary_file_path() if "arquivo_os" in request.FILES else None
             datas = [request.POST.get('data_inicio_debito') or None, request.POST.get('data_final_debito') or None]
-            escritorio_lote = request.POST.getlist('select_escritorio_lote') if request.POST.get('select_escritorio_lote') else ['501', '502', '505', '567']
+            escritorio_lote = request.POST.getlist('select_escritorio_lote') if request.POST.get('select_escritorio_lote') else ['501', '502', '505', '567', '575']
             controller = Controller()
             sucessos, errors, erros_gerais = controller.debitar_em_lote_ordem_servico(type_lanc, list_ordens, file, datas, escritorio_lote)
         except Exception as err:

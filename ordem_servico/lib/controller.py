@@ -279,6 +279,7 @@ class Controller():
                                                     }
                                             else:
                                                 errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Verificar o Lançamento de REEMBOLSO !!"])
+                                                continue
                                         
                                         os_db_lancamento.cod_os_omie = str(os_api_omie['Cabecalho']['nCodOS'])
                                         list_os_lancadas.append(os_db_lancamento)
@@ -361,7 +362,7 @@ class Controller():
                 "pagina": 1,
                 "registros_por_pagina": 1000
             }
-            escritorios = ['501', '502', '505', '567']
+            escritorios = ['501', '502', '505', '567', '575']
             empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas())}
             for escrit in escritorios:
                 data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", params_contrato)
@@ -420,7 +421,8 @@ class Controller():
             json_os = result_os.json()
             if result_os.status_code == 200:
                 for os_request in json_os['osCadastro']:
-                    list_os[os_request['Cabecalho']['nCodOS']] = {}
+                    if not os_request['InfoCadastro']['cCancelada'] == "S":
+                        list_os[os_request['Cabecalho']['nCodOS']] = {}
             else:
                 raise Exception(f"Erro ao Buscar as OS na API: {json_os}")
                     
