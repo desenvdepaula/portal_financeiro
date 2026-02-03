@@ -46,6 +46,7 @@
                     <tr>
                       <th>Empresa</th>
                       <th>Escritório</th>
+                      <th>Código OMIE</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -54,6 +55,7 @@
                       <tr id="tr_{{empresa.codigo_cliente_omie}}">
                         <td class="h6">{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (CNPJ/CPF: {{empresa.cnpj_cpf}})</td>
                         <td class="h6">{{empresa.escritorio}}</td>
+                        <td class="h6">{{empresa.codigo_cliente_omie}}</td>
                         <td class="h6">
                           <button class="btn btn-outline-warning" onclick="open_modal_atualizar_escritorio(`{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}}`, '{{empresa.codigo_cliente_omie}}', '{{empresa.escritorio}}')"><i class="fe fe-edit fe-16"></i></button>
                         </td>
