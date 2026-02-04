@@ -59,7 +59,10 @@ def filter_planilha(filtros):
     else:
         return dados
 
-def get_cnpj_empresas():
+def get_cnpj_empresas(empresas_request=None):
+    if empresas_request:
+        empresas = tuple(empresas_request) if len(empresas_request) > 1 else f"('{empresas_request[0]}')"
+    filter_emp = f"and e.codigoquestor in {empresas}" if empresas_request else ''
     return rf"""
         select 
             regexp_replace(e.codigoquestor, '^(\d+)[-/.]s*.*$', '\1')::int codigoquestor,
@@ -71,4 +74,5 @@ def get_cnpj_empresas():
         where 
             e.codigoquestor not in ('999-000-909', '9999', '999999999')
             and e.situacao not in ('BAIXADA','RESCINDIDA')
+            {filter_emp}
     """

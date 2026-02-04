@@ -61,19 +61,6 @@ class EmpresasOmieView(View):
             return JsonResponse({"message": str(err)}, status=500)
         else:
             return JsonResponse(response)
-        
-    def update_escritorio_for_empresa(request):
-        try:
-            cd_omie = request.POST.get("codigo_empresa_update_escritorio")
-            escritorio = request.POST.get("select_update_escritorio")
-            empresa = EmpresasOmie.objects.get(codigo_cliente_omie=cd_omie)
-            empresa.escritorio = escritorio
-            empresa.save()
-            response = { 'escritorio': escritorio, 'codigo_cliente_omie': cd_omie }
-        except Exception as err:
-            return JsonResponse({"message": str(err)}, status=500)
-        else:
-            return JsonResponse(response)
             
 class ServicosView(View):
     

@@ -244,7 +244,7 @@ class Controller():
 
             for codigo_escritorio in os_list_separado_por_escritorios.keys():
                 clientes_escritorio = os_list_separado_por_escritorios[codigo_escritorio].keys()
-                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 1000, "filtrar_por_etapa": "20"})
+                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 500, "filtrar_por_etapa": "20", "filtrar_por_data_previsao_de": "29/01/2026", "filtrar_por_data_previsao_ate": "31/01/2026"})
                 result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
                 json_os = result_os.json()
                 if result_os.status_code == 200:

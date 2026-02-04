@@ -20,7 +20,6 @@ urlpatterns = [
     path('baixar_planilha_ordens_servico', OrdemServicoView.request_download_planilha, name="baixar_planilha_ordens_servico"),
     
     path('list_empresas_omie', login_required(EmpresasOmieView.as_view()), name="list_empresas_omie"),
-    path('update_escritorio_empresa', EmpresasOmieView.update_escritorio_for_empresa, name="update_escritorio_empresa"),
     
     path('controle_servicos_OS', login_required(ServicosView.as_view()), name="controle_servicos_OS"),
     path('buscar_servico/<int:nr_servico>/', ServicosView.buscar_servico),
