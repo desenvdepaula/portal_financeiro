@@ -47,7 +47,6 @@
                       <th>Empresa</th>
                       <th>Escritório</th>
                       <th>Código OMIE</th>
-                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -56,9 +55,6 @@
                         <td class="h6">{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (CNPJ/CPF: {{empresa.cnpj_cpf}})</td>
                         <td class="h6">{{empresa.escritorio}}</td>
                         <td class="h6">{{empresa.codigo_cliente_omie}}</td>
-                        <td class="h6">
-                          <button class="btn btn-outline-warning" onclick="open_modal_atualizar_escritorio(`{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}}`, '{{empresa.codigo_cliente_omie}}', '{{empresa.escritorio}}')"><i class="fe fe-edit fe-16"></i></button>
-                        </td>
                       </tr>
                     {% endfor %}
                   </tbody>
@@ -102,79 +98,11 @@
   </div>
 </div>
 
-<div class="modal fade" id="modalUpdateEscritorios" tabindex="-1" aria-labelledby="modalUpdateEscritoriosLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalUpdateEscritoriosLabel"></h5>
-        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div id="alert_form_update_escritorio_class" class="mb-4"></div>
-        <form id="form_update_escritorio">
-          {% csrf_token %}
-          <div class="form-row mb-4">
-            <div class="col-12">
-              <input id="codigo_empresa_update_escritorio" name="codigo_empresa_update_escritorio" style="display: none;" required>
-              <label for="input_update_escritorio">Escolha o Escritório:</label>
-              <select class="custom-select" id="select_update_escritorio" name="select_update_escritorio" required>
-                <option value="501">501</option>
-                <option value="502">502</option>
-                <option value="505">505</option>
-                <option value="567">567</option>
-                <option value="575">575</option>
-              </select>
-            </div>
-          </div>
-          <center>
-            <button type="button" class="btn btn-outline-success mb-3" onclick="fetch_update_escritorio(event)">Alterar Escritório desta Empresa</button>
-          </center>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-
-  function open_modal_atualizar_escritorio(empresa, codigo_cliente_omie, escritorio){
-    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEscritorios'));
-    document.getElementById('modalUpdateEscritoriosLabel').textContent = `Alterar Escritório da Empresa: ${empresa}`;
-    document.getElementById('select_update_escritorio').value = escritorio;
-    document.getElementById('codigo_empresa_update_escritorio').value = codigo_cliente_omie;
-    myModal.toggle();
-  }
 
   function open_modal_atualizar_empresas(){
     var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'), {backdrop: 'static'});
     myModal.toggle();
-  }
-
-  async function fetch_update_escritorio(event){
-    event.preventDefault();
-    const formulario = document.getElementById("form_update_escritorio");
-    const formData = new FormData(formulario);
-    await fetch("{% url 'update_escritorio_empresa' %}", {
-      method: "POST",
-      body: formData
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => {
-            throw new Error(`${err.message}`);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        document.getElementById(`tr_${data.codigo_cliente_omie}`).children[1].textContent = data.escritorio;
-        fecharModal("modalUpdateEscritorios");
-      })
-      .catch(error => {
-        mostrarAlert('alert_form_update_escritorio_class', 'danger', error);
-      });
   }
 
   function mostrarAlert(div_id_class, type_alert, mensagem){
