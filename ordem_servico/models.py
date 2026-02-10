@@ -2,7 +2,7 @@ from django.db import models
 from relatorios.models import ClassificacaoServicos
 
 class EmpresasOmie(models.Model):
-    codigo_cliente_omie = models.CharField(max_length=255)
+    codigo_cliente_omie = models.CharField(max_length=255, unique=True)
     escritorio = models.CharField(max_length=10)
     cd_empresa = models.CharField(max_length=6)
     estab = models.CharField(max_length=2)

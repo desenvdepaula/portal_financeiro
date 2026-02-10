@@ -82,8 +82,20 @@
           <form id="form_for_dow">
             {% csrf_token %}
             <h6> Atualizar Empresas Específicas: <h6>
-            <select class="select2" id="select_empresas" name="select_empresas"></select>
-            <small> Se não for passado nenhuma Empresa, Todas vão ser Atualizadas <small>
+            <div class="mt-2">
+              <select class="select2_empresas" id="select_empresas" name="select_empresas"></select>
+              <small> Se não for passado nenhuma Empresa, Todas vão ser Atualizadas <small>
+            </div>
+            <div class="mt-3">
+              <select class="select2_escritorios" id="select_escritorios" name="select_escritorios">
+                <option value="501">501</option>
+                <option value="502">502</option>
+                <option value="505">505</option>
+                <option value="567">567</option>
+                <option value="575">575</option>
+              </select>
+              <small> Se não for passado nenhum Escritório, Todos vão ser Atualizados <small>
+            </div>
             <hr>
           </form>
           <div id="error_aviso_up"></div>
@@ -102,6 +114,8 @@
 
   function open_modal_atualizar_empresas(){
     var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'), {backdrop: 'static'});
+    $('#select_empresas').empty().trigger('change');
+    $('#select_escritorios').val(null).trigger('change');
     myModal.toggle();
   }
 
@@ -135,7 +149,7 @@
 
 <script>
 
-  $('.select2').select2( 
+  $('.select2_empresas').select2( 
     { 
       theme: 'bootstrap4',
       width: '100%',
@@ -150,6 +164,16 @@
         }
         return { id: term, text: term }
       }
+    } 
+  );
+
+  $('.select2_escritorios').select2( 
+    { 
+      theme: 'bootstrap4',
+      width: '100%',
+      multiple: true,
+      allowClear: true,
+      placeholder: "Selecione os Escritórios",
     } 
   );
 

@@ -348,12 +348,12 @@ class Controller():
         except Exception as err:
             raise Exception(err)
         
-    def update_empresas_for_omie(self, empresas_request):
+    def update_empresas_for_omie(self, empresas_request, escrit_list):
         self.manager.default_connect_tareffa()
         self.manager.connect()
         response = {'errors': []}
         try:
-            escritorios = ['501', '502', '505', '567', '575']
+            escritorios = escrit_list if escrit_list else ['501', '502', '505', '567', '575']
             empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas(empresas_request))}
             if empresas_request:
                 for cnpj_empresa_req in empresas:
