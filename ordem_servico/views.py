@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.views import View
+# from django.conf import settings
 import pandas as pd
 from io import BytesIO
 import datetime
 import base64
+import time
 import requests
 
 from .forms import OrdemServicoForm, ServicoForm
@@ -49,6 +51,11 @@ class EmpresasOmieView(View):
 
     def get(self, request, *args, **kwargs):
         context = { 'empresas': EmpresasOmie.objects.all() }
+        # FUUNCAO PARA TROCAR ID DAS OS
+        # for emp in context['empresas']:
+        #     for order in OrdemServico.objects.filter(empresa=emp.codigo_cliente_omie):
+        #         order.empresa = emp.cnpj_cpf
+        #         order.save()
         return render(request, self.template, context)
     
     def post(self, request, *args, **kwargs):
@@ -236,14 +243,21 @@ class OrdemServicoView(View):
         escrit = request.POST.get("escritorio")
         try:
             response = {'servicos': []}
-            data_get_service = get_request_to_api_omie(escrit, "ListarCadastroServico", {"nPagina": 1, "nRegPorPagina": 1000})
-            result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/servico/", json=data_get_service, headers={'content-type': 'application/json'})
-            json_contrato = result_contrato.json()
-            if result_contrato.status_code == 200:
-                for serv in json_contrato.get("cadastros"):
-                    response['servicos'].append([serv['intListar'].get("nCodServ"), serv['descricao'].get("cDescrCompleta")])
-            else:
-                raise Exception(f"{json_contrato}")
+            page = 1
+            while True:
+                data_get_service = get_request_to_api_omie(escrit, "ListarCadastroServico", {"nPagina": page, "nRegPorPagina": 500, "inativo": "N", "cExibirProdutos": "N"})
+                result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/servico/", json=data_get_service, headers={'content-type': 'application/json'})
+                json_contrato = result_contrato.json()
+                if result_contrato.status_code == 200:
+                    for serv in json_contrato.get("cadastros"):
+                        response['servicos'].append([serv['intListar'].get("nCodServ"), serv['descricao'].get("cDescrCompleta")])
+                    if json_contrato.get("nTotPaginas") == page:
+                        break
+                else:
+                    raise Exception(f"Erro ao Buscar os Serviços: {json_contrato}")
+                
+                page += 1
+                time.sleep(0.7)
         except Exception as err:
             return JsonResponse({"message": f"Erro na Operação: {err}"}, status=400)
         else:
@@ -330,12 +344,13 @@ class OrdemServicoView(View):
             filename = request.POST.get("select_filename").replace("/", "").replace("MESANO", compet_atual).replace("mesano", compet_atual)
             
             response = controller.gerar_boletos_por_escritorio(escritorio, file, filename)
-            dfSucessos = pd.DataFrame(response['success'], columns=['OS', 'DESCRIÇÃO DA REQUISIÇÃO'])
-            dfErros = pd.DataFrame(response['errors'], columns=['OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
-            auditoria_file = controller.gerar_arquivo_excel_auditoria_download_boletos(dfSucessos, dfErros)
+            dfErros = pd.DataFrame(response['errors'], columns=['OS', 'NUM OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
+            auditoria_file = controller.gerar_arquivo_excel_auditoria_download_boletos(dfErros)
             response['files']["Auditoria de Boletos.xlsx"] = auditoria_file
             zip_file = zip_view.prepare_zip_file_content(response.get("files"))
             response_data['escritorio'] = escritorio
+            # with open(settings.BASE_DIR / f'temp/files/financeiro/Boletos das OS {escritorio}.zip', 'wb') as f:
+            #     f.write(zip_file)
             response_data['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
         except Exception as err:
             return JsonResponse({"message": str(err)}, status=500)

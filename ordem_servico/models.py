@@ -2,12 +2,12 @@ from django.db import models
 from relatorios.models import ClassificacaoServicos
 
 class EmpresasOmie(models.Model):
-    codigo_cliente_omie = models.CharField(primary_key=True, max_length=255)
+    codigo_cliente_omie = models.CharField(max_length=255)
     escritorio = models.CharField(max_length=10)
     cd_empresa = models.CharField(max_length=6)
     estab = models.CharField(max_length=2)
     name_empresa = models.CharField(max_length=255)
-    cnpj_cpf = models.CharField(max_length=28)
+    cnpj_cpf = models.CharField(primary_key=True, max_length=28)
     email = models.CharField(max_length=255, blank=True, null=True)
     
 class DepartamentosControle(models.Model):

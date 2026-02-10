@@ -844,11 +844,12 @@
         if (selected){
           $('#id_servico').val(`${selected}`).trigger('change');
         }
+        desactive_spinner_div('error_aviso');
       })
       .catch(err => {
         mostrarAlert('error_aviso', 'danger', err);
+        $('#id_servico').empty().trigger('change');
       })
-    desactive_spinner_div('error_aviso');
   }
 
   $('#id_empresa').on('select2:select', function (e) { 

@@ -5,6 +5,7 @@ import requests
 import base64
 import pandas as pd
 import fitz
+import time
 from django.http import HttpResponse, JsonResponse
 from core.views import get_request_to_api_omie
 from ..models import OrdemServico, EmpresasOmie
@@ -244,7 +245,7 @@ class Controller():
 
             for codigo_escritorio in os_list_separado_por_escritorios.keys():
                 clientes_escritorio = os_list_separado_por_escritorios[codigo_escritorio].keys()
-                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 500, "filtrar_por_etapa": "20", "filtrar_por_data_previsao_de": "29/01/2026", "filtrar_por_data_previsao_ate": "31/01/2026"})
+                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 500, "filtrar_por_etapa": "20"})
                 result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
                 json_os = result_os.json()
                 if result_os.status_code == 200:
@@ -350,56 +351,90 @@ class Controller():
     def update_empresas_for_omie(self, empresas_request):
         self.manager.default_connect_tareffa()
         self.manager.connect()
-        empresas_list_omie = []
         response = {'errors': []}
         try:
-            if empresas_request:
-                empresas_list_omie = [int(emp.codigo_cliente_omie) for emp in EmpresasOmie.objects.filter(cd_empresa__in=empresas_request)]
-                if not empresas_list_omie:
-                    raise Exception("Nenhuma destas Empresas estão cadastradas !!")
-
-            params_contrato = {
-                "pagina": 1,
-                "registros_por_pagina": 1000
-            }
             escritorios = ['501', '502', '505', '567', '575']
-            empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas())}
-            for escrit in escritorios:
-                data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", params_contrato)
-                result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
-                json_contrato = result_contrato.json()
-                if result_contrato.status_code == 200:
-                    codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro'] if i['cabecalho']['cCodSit'] == '10'])
-                    if empresas_list_omie:
-                        codigos_client = set([c for c in codigos_client if c in empresas_list_omie])
-                    for client in codigos_client:
-                        data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
-                        result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
-                        json_client = result_client.json()
-                        if result_client.status_code == 200:
-                            email = json_client['email'] if 'email' in json_client else ""
-                            cnpj_cpf = json_client['cnpj_cpf']
-                            if cnpj_cpf in empresas:
-                                try:
-                                    empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
-                                    enterprise, _ = EmpresasOmie.objects.get_or_create( codigo_cliente_omie = client )
-                                    enterprise.escritorio = escrit
-                                    enterprise.cd_empresa = empresa
-                                    enterprise.estab = estab
-                                    enterprise.name_empresa = razaosocial
-                                    enterprise.cnpj_cpf = cnpj
-                                    enterprise.email = email
-                                    enterprise.save()
-                                except Exception as err:
-                                    response['errors'].append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
-                            else:
-                                response['errors'].append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
+            empresas = { i[3]: list(i) for i in self.manager.run_query_for_select(get_cnpj_empresas(empresas_request))}
+            if empresas_request:
+                for cnpj_empresa_req in empresas:
+                    for escrit in escritorios:
+                        data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", { "pagina": 1, "registros_por_pagina": 5, "cExibeObs": "N", "cExibirProdutos": "N", "cExibirInfoCadastro": "N", "filtrar_cnpj_cpf": cnpj_empresa_req })
+                        result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
+                        json_contrato = result_contrato.json()
+                        if result_contrato.status_code == 200:
+                            contrato = json_contrato.get("contratoCadastro")[0]
+                            if contrato['cabecalho']['cCodSit'] == '10':
+                                time.sleep(0.2)
+                                data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": contrato['cabecalho']['nCodCli']})
+                                result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
+                                json_client = result_client.json()
+                                empresa, razaosocial, estab, cnpj = empresas[cnpj_empresa_req]
+                                if result_client.status_code == 200:
+                                    email = json_client['email'] if 'email' in json_client else ""
+                                    cd_omie_empresa = json_client.get("codigo_cliente_omie")
+                                    try:
+                                        enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+                                        enterprise.escritorio = escrit
+                                        enterprise.cd_empresa = empresa
+                                        enterprise.estab = estab
+                                        enterprise.name_empresa = razaosocial
+                                        enterprise.codigo_cliente_omie = cd_omie_empresa
+                                        enterprise.email = email
+                                        enterprise.save()
+                                    except Exception as err:
+                                        response['errors'].append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {cd_omie_empresa} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+                                    finally:
+                                        break
+                                else:
+                                    error_text = json_client.get('message') or json_client.get('faultstring')
+                                    response['errors'].append(f"Erro ao Buscar este Cliente ({empresa} - {estab}) do Escritório: {escrit} | Erro: {error_text}")
+                                    break
+                        time.sleep(0.7)
+            else:
+                for escrit in escritorios:
+                    page = 1
+                    while True:
+                        data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", { "pagina": page, "registros_por_pagina": 500, "cExibeObs": "N", "cExibirProdutos": "N", "cExibirInfoCadastro": "N" })
+                        result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
+                        json_contrato = result_contrato.json()
+                        if result_contrato.status_code == 200:
+                            codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro'] if i['cabecalho']['cCodSit'] == '10'])
+                            for client in codigos_client:
+                                time.sleep(0.2)
+                                data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
+                                result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
+                                json_client = result_client.json()
+                                if result_client.status_code == 200:
+                                    email = json_client['email'] if 'email' in json_client else ""
+                                    cnpj_cpf = json_client['cnpj_cpf']
+                                    if cnpj_cpf in empresas:
+                                        try:
+                                            empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
+                                            enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+                                            enterprise.escritorio = escrit
+                                            enterprise.cd_empresa = empresa
+                                            enterprise.estab = estab
+                                            enterprise.name_empresa = razaosocial
+                                            enterprise.codigo_cliente_omie = client
+                                            enterprise.email = email
+                                            enterprise.save()
+                                        except Exception as err:
+                                            response['errors'].append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+                                    else:
+                                        response['errors'].append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
+                                else:
+                                    error_text = json_client.get('message') or json_client.get('faultstring')
+                                    response['errors'].append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
+                                
+                            if json_contrato.get("total_de_paginas") == page:
+                                break
                         else:
-                            error_text = json_client.get('message') or json_client.get('faultstring')
-                            response['errors'].append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
-                else:
-                    error_text = json_contrato.get('message') or json_contrato.get('faultstring')
-                    response['errors'].append(f"Erro ao Buscar os Contratos deste Escritório: {escrit} | Erro: {error_text}")
+                            error_text = json_contrato.get('message') or json_contrato.get('faultstring')
+                            response['errors'].append(f"Erro ao Buscar os Contratos deste Escritório: {escrit}, Página: {page} | Erro: {error_text}")
+                            break
+                        
+                        page += 1
+                        time.sleep(0.5)
         except Exception as err:
             raise Exception(err)
         else:
@@ -408,25 +443,25 @@ class Controller():
             self.manager.disconnect()
     
     def gerar_boletos_por_escritorio(self, escritorio, file, filename):
-        response_data = {"success": [], "errors": [], "files": {}}
+        response_data = {"errors": [], "files": {}}
         list_os = {}
         list_clients_db = EmpresasOmie.objects.all()
         if file:
             df_os = pd.read_excel(file.temporary_file_path(), sheet_name='ERROS')
-            for os_file in df_os['OS'].values.tolist():
-                list_os[os_file] = {}
+            for row in df_os.values.tolist():
+                list_os[row[0]] = {'numOS': row[1]}
         else:
-            data_get_os = get_request_to_api_omie(escritorio, "ListarOS", {"pagina": 1, "filtrar_por_etapa": "20", "registros_por_pagina": 1000})
+            data_get_os = get_request_to_api_omie(escritorio, "ListarOS", {"pagina": 1, "filtrar_por_etapa": "20", "registros_por_pagina": 500})
             result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
             json_os = result_os.json()
             if result_os.status_code == 200:
                 for os_request in json_os['osCadastro']:
                     if not os_request['InfoCadastro']['cCancelada'] == "S":
-                        list_os[os_request['Cabecalho']['nCodOS']] = {}
+                        list_os[os_request['Cabecalho']['nCodOS']] = {'numOS': os_request['Cabecalho']['cNumOS']}
             else:
                 raise Exception(f"Erro ao Buscar as OS na API: {json_os}")
-                    
-        data_get_contas = get_request_to_api_omie(escritorio, "ListarContasReceber", {"pagina": 1, "registros_por_pagina": 1000, "filtrar_apenas_titulos_em_aberto": "S"})
+
+        data_get_contas = get_request_to_api_omie(escritorio, "ListarContasReceber", {"pagina": 1, "registros_por_pagina": 500, "filtrar_apenas_titulos_em_aberto": "S"})
         result_contas = requests.post("https://app.omie.com.br/api/v1/financas/contareceber/", json=data_get_contas, headers={'content-type': 'application/json'})
         json_contas = result_contas.json()
         if result_contas.status_code == 200:
@@ -441,14 +476,15 @@ class Controller():
         
         for os in list_os:
             obj_os = list_os[os]
-            if not obj_os:
-                response_data['errors'].append([os, "", "", "Não foi Encontrado o Código do Título (Sem Conta a Receber) para Gerar o Boleto"])
+            num_os = obj_os['numOS']
+            if 'cd_titulo' not in obj_os:
+                response_data['errors'].append([os, num_os, "", "", "Não foi Encontrado o Código do Título (Sem Conta a Receber) para Gerar o Boleto"])
                 continue
             cd_titulo = obj_os['cd_titulo']
             cd_cliente = obj_os['cd_cliente']
             cliente = list_clients_db.filter(codigo_cliente_omie=cd_cliente).first()
             if not cliente:
-                response_data['errors'].append([os, cd_titulo, cd_cliente, "Cliente Não Encontrado na nossa Base de Bados, Atualize !!"])
+                response_data['errors'].append([os, num_os, cd_titulo, cd_cliente, "Cliente Não Encontrado na nossa Base de Bados, Atualize !!"])
                 continue
             
             filename_os = str(cliente.cd_empresa).zfill(3) + f"{f'-{cliente.estab}' if int(cliente.estab) > 1 else ''}" + f" - {filename}.pdf"
@@ -527,18 +563,18 @@ class Controller():
                     raise Exception(f"Não Gerou PDF da OS, pois Não gerou o Boleto para")
                 
             except Exception as err:
-                response_data['errors'].append([os, cd_titulo, cd_cliente, f"Erro ao Gerar o PDF: {str(err)}"])
+                response_data['errors'].append([os, num_os, cd_titulo, cd_cliente, f"Erro ao Gerar o PDF: {str(err)}"])
             else:
                 if new_pdf.page_count > 0:
                     response_data['files'][filename_os] = new_pdf.write()
                 else:
-                    response_data['errors'].append([os, cd_titulo, cd_cliente, "PDF VAZIO !!"])
+                    response_data['errors'].append([os, num_os, cd_titulo, cd_cliente, "PDF VAZIO !!"])
             finally:
                 new_pdf.close()
         
         return response_data
     
-    def gerar_arquivo_excel_auditoria_download_boletos(self, dfSucessos, dfErros):
+    def gerar_arquivo_excel_auditoria_download_boletos(self, dfErros):
         try:
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
@@ -546,15 +582,10 @@ class Controller():
                 workbook = writer.book
                 alignLeft = workbook.add_format({'align': 'left'})
 
-                if not dfSucessos.empty:
-                    dfSucessos.to_excel(writer, sheet_name='Sucesso', index=False)
-                    writer.sheets['Sucesso'].set_column('A:A', 20, alignLeft)
-                    writer.sheets['Sucesso'].set_column('B:B', 50, alignLeft)
-
                 if not dfErros.empty:
                     dfErros.to_excel(writer, sheet_name='ERROS', index=False)
-                    writer.sheets['ERROS'].set_column('A:C', 20, alignLeft)
-                    writer.sheets['ERROS'].set_column('D:D', 100, alignLeft)
+                    writer.sheets['ERROS'].set_column('A:D', 20, alignLeft)
+                    writer.sheets['ERROS'].set_column('E:E', 100, alignLeft)
 
                 writer.close()
                 
