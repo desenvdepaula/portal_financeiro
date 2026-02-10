@@ -51,11 +51,6 @@ class EmpresasOmieView(View):
 
     def get(self, request, *args, **kwargs):
         context = { 'empresas': EmpresasOmie.objects.all() }
-        # FUUNCAO PARA TROCAR ID DAS OS
-        # for emp in context['empresas']:
-        #     for order in OrdemServico.objects.filter(empresa=emp.codigo_cliente_omie):
-        #         order.empresa = emp.cnpj_cpf
-        #         order.save()
         return render(request, self.template, context)
     
     def post(self, request, *args, **kwargs):
