@@ -40,6 +40,7 @@
                     <option value="DEBITAR">DEBITAR</option>
                     <option value="DEBITADO">DEBITADO</option>
                     <option value="ARQUIVADO">ARQUIVADO</option>
+                    <option value="SEM SERVIÇO SELECIONADO">SEM SERVIÇO SELECIONADO</option>
                   </select>
                   <div class="d-flex flex-row">
                     <input 
@@ -87,7 +88,13 @@
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
                           <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} - {{ordem.empresa.name_empresa}}</td>
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.servico}} - (desc.: {{ordem.ds_servico}})</td>
+                          {% if ordem.cd_servico == 0 or ordem.cd_servico == '0' %}
+                            <td class="h6 text-danger">
+                              SEM SERVIÇO SELECIONADO - (desc.: {{ordem.servico}}) <b>*PRECISA TRATAR*</b>
+                            </td>
+                          {% else %}
+                            <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}"> {{ordem.servico}} - (desc.: {{ordem.ds_servico}}) </td>
+                          {% endif %}
                           <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
                           <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
 
@@ -127,7 +134,7 @@
                   <tfoot>
                     <tr>
                       <th>Empresa</th>
-                      <th>Serviço</th>
+                      <th id="filterServico">Serviço</th>
                       <th>Data da Cobrança</th>
                       <th>Valor</th>
                       <th id="filterDebitar">Status</th>
@@ -520,7 +527,12 @@
     let campos = []
     for (input of filtros_input){
       if (input.value && input.type !== 'search'){
-        campos.push(input)
+        if (input.title == 'Serviço'){
+          if (input.value == 'SEM SERVIÇO SELECIONADO'){
+            continue;
+          }
+        }
+        campos.push(input);
       }
     }
     document.getElementById('div_inputs_filter').innerHTML = campos.length > 0 ? `
@@ -609,7 +621,7 @@
       button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço"
       button_arquive.className = 'btn btn-success text-white'
       button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True", '${tr_id}')`)
-      if (ordem.cod_os_omie){
+      if (ordem.cod_os_omie || ordem.cd_servico == '0'){
         button_debito.style.display = 'none'
       }else{
         button_debito.style.display = 'block'
@@ -1072,8 +1084,14 @@
   }
 
   function search(event){
-    document.querySelector("#filterDebitar input").value = event.target.value;
-    table.columns(4).search(event.target.value).draw();
+    document.querySelector(`#filterServico input`).value = '';
+    document.querySelector(`#filterDebitar input`).value = '';
+    table.columns(1).search('').draw();
+    table.columns(4).search('').draw();
+    let input_sel = event.target.value == 'SEM SERVIÇO SELECIONADO' ? 'filterServico' : 'filterDebitar';
+    document.querySelector(`#${input_sel} input`).value = event.target.value;
+    let column = event.target.value == 'SEM SERVIÇO SELECIONADO' ? 1 : 4;
+    table.columns(column).search(event.target.value).draw();
   }
 
   function deletarRowDataTables(row_id){
@@ -1099,7 +1117,7 @@
     reverse: true
   });
 
-  $('.select2').select2( { theme: 'bootstrap4', width: '100%', tags:true } );
+  $('.select2').select2( { theme: 'bootstrap4', width: '100%', tags:true, dropdownParent: $('#modalEditOrdem') } );
 
   $.fn.dataTableExt.afnFiltering.push(
     function( settings, data, dataIndex ) {

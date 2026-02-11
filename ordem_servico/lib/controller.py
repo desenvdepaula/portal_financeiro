@@ -217,7 +217,7 @@ class Controller():
                 os_list_db = OrdemServico.objects.filter(data_cobranca__range=datas, empresa__escritorio__in=escritorio_lote, arquivado=False, cod_os_omie__isnull=True)
                 for os_db in os_list_db:
                     if os_db.cd_servico == '0':
-                        errors.append([os_db.id, os_db.empresa.cd_empresa, os_db.empresa.name_empresa, os_db.empresa.cnpj_cpf, os_db.empresa.escritorio, f"OS Sem Serviço Corretamente ALocado, Veja Novamente !!"])
+                        errors.append([os_db.id, os_db.empresa.cd_empresa, os_db.empresa.name_empresa, os_db.empresa.cnpj_cpf, os_db.empresa.escritorio, f"OS Sem Serviço Corretamente ALocado, Veja Novamente e Trate o Serviço !!"])
                     else:
                         orders_list_set.add(os_db)
             else:
@@ -233,7 +233,7 @@ class Controller():
                         
                 for os_livres in OrdemServico.objects.filter(id__in=orders_list_id):
                     orders_list_set.add(os_livres)
-                        
+
             for os_to_update in orders_list_set:
                 escritorio_desta_os = os_to_update.empresa.escritorio
                 cliente_desta_os = os_to_update.empresa.codigo_cliente_omie
