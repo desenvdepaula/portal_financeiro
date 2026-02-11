@@ -42,7 +42,7 @@ class OrdemServicoForm(forms.Form):
     empresa = forms.IntegerField(max_value=9999999, label="Código da Empresa:", required=False)
     data = forms.DateField(label="Data do Serviço Realizado: ", help_text="", widget=forms.DateInput(attrs={'type': 'date'}))
     execucao = forms.CharField(label="Tempo de Execução: ", help_text="Formato: HH:MM.")
-    descricao = forms.CharField(max_length=47, label="Descrição:", help_text="Descrever a Descrição (47 Caracteres)", widget=forms.Textarea(attrs={'rows': 3, 'cols': 40}), required=False)
+    descricao = forms.CharField(label="Descrição:", widget=forms.Textarea(attrs={'rows': 3, 'cols': 40}), required=False)
     descricao_servico = forms.CharField(label="Relatos do Serviço Prestado:", help_text="Descrever a Descrição da Ordem de serviço...", widget=forms.Textarea(attrs={'rows': 6, 'cols': 40}))
     quantidade = forms.IntegerField(label="Quantidade:")
     valor = forms.CharField(label="Valor do Serviço:")

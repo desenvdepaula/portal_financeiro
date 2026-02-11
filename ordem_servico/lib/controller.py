@@ -47,10 +47,12 @@ class Controller():
                     ordem = vars(order)
                     if order.empresa:
                         empresa = vars(order.empresa)
+                        ordem['codigo_cliente_omie'] = empresa.get('codigo_cliente_omie')
                         ordem['cd_empresa'] = empresa.get('cd_empresa')
                         ordem['nome_empresa'] = empresa.get('name_empresa')
                     del ordem['_state']
                     del ordem['criador_os']
+                    del ordem['empresa_id']
                     ordem['data_cobranca'] = ordem['data_cobranca'].strftime('%d/%m/%Y')
                     ordem['data_realizado'] = ordem['data_realizado'].strftime('%d/%m/%Y')
                     ordem['autorizado_pelo_cliente'] = 'SIM' if ordem['autorizado_pelo_cliente'] else 'NÃO'
@@ -89,9 +91,9 @@ class Controller():
                 writer.sheets['Ordens de Serviços'].set_column('G:M', 14, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('N:O', 35, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('P:Q', 17, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('R:R', 10, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('S:S', 14, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('T:T', 60, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('R:R', 18, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('S:S', 15, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('T:T', 65, alignCenter)
                 
                 writer.close()
                 
