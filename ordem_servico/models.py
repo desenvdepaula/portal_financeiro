@@ -40,6 +40,7 @@ class OrdemServico(models.Model):
     executado = models.CharField(max_length=255)
     criador_os = models.CharField(max_length=255)
     arquivado = models.BooleanField(default=False)
+    aprovado = models.BooleanField(default=False)
     empresa = models.ForeignKey(EmpresasOmie, on_delete=models.CASCADE)
     cod_os_omie = models.CharField(max_length=50, null=True, default=None)
 

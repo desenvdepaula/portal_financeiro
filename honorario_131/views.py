@@ -21,10 +21,7 @@ def request_realizar_calculo_honorario_131(request):
         context['form'].clean_log(request.user.username)
         try:
             controller = Controller()
-            return controller.gerarHonorarios(
-                context['form'].cleaned_data['compet'],
-                context['form'].cleaned_data['data'],
-            )
+            return controller.gerarHonorarios( context['form'].cleaned_data['compet'] )
         except Exception as err:
             messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
     else:

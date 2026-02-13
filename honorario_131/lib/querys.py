@@ -74,59 +74,6 @@ class SqlHonorarios131:
         return sql
 
     @staticmethod
-    def getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial):
-        sql = f'''
-            insert into servicovariavel (codigoescrit, codigocliente, codigoservicoescrit, dataservvar, seqservvar, seriens, numerons, seqservnotaitem, qtdadeservvar, valorunitservvar, valortotalservvar, observservvar, sitantecipacao, seqlcto, codigousuario, datahoralcto, origemdado, chavepgtoantecip, valoranteriorunitservvar, sequenciacaixa, chaveorigem) values({cd_escritorio}, {cd_financeiro}, 131, '{data_lancamento}', {codigo_sequencial}, null, null, null, {direfenca_quantidade}, {valor}, {valor_multiplicado}, '{quantidade} - {'FOLHAS' if quantidade > 1 else 'FOLHA'} {data}', 1, null, 492, now(), 3, null, null, null, null);
-        '''
-        return sql
-    
-    @staticmethod
-    def getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data):
-        sql = f"""
-            select
-                max(seqservvar)+ 1
-            from
-                servicovariavel
-            where
-                codigoescrit = {cd_escritorio}
-                and codigocliente = {cd_financeiro}
-                and codigoservicoescrit = 131
-                and observservvar like '%{data}%'
-        """
-        return sql
-
-    @staticmethod
-    def getSqlValidador131(data):
-        sql = f'''
-            select
-                codigocliente,
-                extract(month from dataservvar)||'/'||extract(year from dataservvar) data,
-                qtdadeservvar
-            from
-                servicovariavel
-            where
-                observservvar like '% {data}%'
-                and codigoservicoescrit = 131
-                and codigoescrit >= 9000
-                and codigousuario = 492
-        '''
-        return sql
-
-    @staticmethod
-    def getSqlHonorarios131Find():
-        sql = '''
-            select
-                distinct
-                codigocliente,
-                codigoescrit
-            from
-                servicofixo
-            where 
-                codigoescrit > 9000
-        '''
-        return sql
-
-    @staticmethod
     def getSqlNomeEmpresa(empresa):
         sql = f'''
             select nomeempresa from empresa where codigoempresa = {empresa}

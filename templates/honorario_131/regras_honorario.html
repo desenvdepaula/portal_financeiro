@@ -313,14 +313,10 @@
             <form method="POST" action="{% url 'realizar_calculo_honorario_131' %}">
               {% csrf_token %}
               <div class="form-row mt-4">
-                <div class="col-6 col-sm-6">
+                <div class="col-12 col-sm-12">
                   <label class="font-weight-bold" for="id_compet">Competencia da Folha de Pagamento (Mês e Ano)</label>
                   <input type="text" name="compet" class="form-control" title="Período de Competência (* Exemplo: 07/2022 *)" required id="id_compet" inputmode="text" placeholder="Período de Competência (Mês e Ano)">
                   <small class="form-text text-muted">Período de Competência (* Exemplo: 07/2022 *)</small>
-                </div>
-                <div class="col-6 col-sm-6">
-                  <label class="font-weight-bold" for="id_data">Data de Lançamento</label>
-                  <input type="date" name="data" class="form-control" placeholder="Data de Lançamento" required id="id_data">
                 </div>
               </div>
               <center>
@@ -431,8 +427,10 @@
   }
 
   function open_modal_calculo(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalCalculo'))
-    myModal.toggle()
+    var myModal = new bootstrap.Modal(document.getElementById('modalCalculo'));
+    const date = new Date();
+    document.getElementById('id_compet').value = date.toLocaleDateString('pt-BR').slice(2);
+    myModal.toggle();
   }
 
   function open_modal_auditoria(){

@@ -49,7 +49,6 @@ class RelatorioHonorariosForm(forms.Form):
     empresa = forms.IntegerField(max_value=9999, label="COD. Empresa", required=False)
     
 class RealizarCalculoForm(forms.Form):
-    data = forms.DateField(widget=forms.DateInput(attrs={"type":"date"}))
     compet = forms.CharField(label="Período de Competência (Mês e Ano)", help_text="Período de Competência (* Exemplo: 07/2022 *)")
     
     def clean_compet(self):
@@ -63,7 +62,6 @@ class RealizarCalculoForm(forms.Form):
         return self.cleaned_data['compet']
     
     def clean_log(self, username):
-        data = self.cleaned_data['data']
         compet = self.cleaned_data['compet']
-        dados = f"Competencia: {compet} | data: {data}"
+        dados = f"Competencia: {compet}"
         request_project_log(0, dados, "HONORARIO 131 / REALIZAR CALCULO", username)

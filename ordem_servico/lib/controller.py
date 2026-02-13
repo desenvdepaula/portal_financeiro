@@ -194,6 +194,26 @@ class Controller():
         # else:
         #     ordem.save()
         
+    def buscar_os_list_omie(self, escritorio):
+        list_os = []
+        errors = []
+        page_os = 1
+        while True:
+            data_get_os = get_request_to_api_omie(escritorio, "ListarOS", {"pagina": page_os, "registros_por_pagina": 500, "filtrar_por_etapa": "20"})
+            result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
+            json_os = result_os.json()
+            if result_os.status_code == 200:
+                list_os.extend(json_os.get("osCadastro"))
+                if json_os.get("total_de_paginas") == page_os:
+                    break
+            else:
+                error_text = json_os.get('message') or json_os.get('faultstring')
+                errors.append([escritorio, f"Erro na API da OMIE ao Buscar as OS na Página {page_os}, ou Nenhuma OS Encontrada Nesta Etapa / Err: {error_text}"])
+                break
+            page_os += 1
+            time.sleep(0.7)
+        return list_os, errors
+        
     def atualizar_os_omie(self, escritorio, new_os):
         data_update_os = get_request_to_api_omie(escritorio, "AlterarOS", new_os)
         result = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_update_os, headers={'content-type': 'application/json'})
@@ -208,6 +228,7 @@ class Controller():
         sucessos = []
         errors = []
         erros_gerais = []
+        categoria_reembolsavel = {'501': '1.05.99', '502': '1.05.99', '505': '1.06.99', '567': '1.05.99', '575': '1.05.99'}
         try:
             validation_clientes_lancamento = set()
             orders_list_set = set()
@@ -222,8 +243,8 @@ class Controller():
                         orders_list_set.add(os_db)
             else:
                 orders_list_id = set()
-                # for os in list_ordens:
-                #     orders_list_id.add(int(os))
+                for os in list_ordens:
+                    orders_list_id.add(int(os))
                 
                 # if file:
                 #     df = pd.read_excel(file)
@@ -232,7 +253,10 @@ class Controller():
                 #             orders_list_id.add(id_os)
                         
                 for os_livres in OrdemServico.objects.filter(id__in=orders_list_id):
-                    orders_list_set.add(os_livres)
+                    if os_livres.cd_servico == '0':
+                        errors.append([os_livres.id, os_livres.empresa.cd_empresa, os_livres.empresa.name_empresa, os_livres.empresa.cnpj_cpf, os_livres.empresa.escritorio, f"OS Sem Serviço Corretamente ALocado, Veja Novamente e Trate o Serviço !!"])
+                    else:
+                        orders_list_set.add(os_livres)
 
             for os_to_update in orders_list_set:
                 escritorio_desta_os = os_to_update.empresa.escritorio
@@ -247,61 +271,58 @@ class Controller():
 
             for codigo_escritorio in os_list_separado_por_escritorios.keys():
                 clientes_escritorio = os_list_separado_por_escritorios[codigo_escritorio].keys()
-                data_get_os = get_request_to_api_omie(codigo_escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 500, "filtrar_por_etapa": "20"})
-                result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
-                json_os = result_os.json()
-                if result_os.status_code == 200:
-                    for os_api_omie in json_os['osCadastro']:
-                        cliente_omie = str(os_api_omie['Cabecalho']['nCodCli'])
-                        if cliente_omie in clientes_escritorio:
-                            if os_api_omie['InfoCadastro']['cCancelada'] == "S":
-                                erros_gerais.append([codigo_escritorio, f"OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} está cancelada !!"])
-                                continue
-                            os_api_omie['Cabecalho']['cCodParc'] = "999"
-                            validation_clientes_lancamento.add(cliente_omie)
-                            try:
-                                list_os_lancadas = []
-                                nSeqItemOrigem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
-                                os_api_omie['ServicosPrestados'] = []
-                                for os_db_lancamento in os_list_separado_por_escritorios[codigo_escritorio][cliente_omie]:
-                                    try:
-                                        nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1 if len(os_api_omie['ServicosPrestados']) > 0 else nSeqItemOrigem
-                                        
-                                        if os_db_lancamento.cd_servico:
-                                            new_service_prested = {"nCodServico": os_db_lancamento.cd_servico, "nQtde": os_db_lancamento.quantidade, "nValUnit": os_db_lancamento.valor, "cDescServ": os_db_lancamento.ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I"}
-                                            if codigo_escritorio == '501':
-                                                new_service_prested["impostos"] = {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}
-                                            os_api_omie['ServicosPrestados'].append(new_service_prested)
-                                        else:
-                                            if 'REEMBOLSO' in os_db_lancamento.servico:
-                                                if 'despesasReembolsaveis' in os_api_omie:
-                                                    os_api_omie['despesasReembolsaveis']['despesaReembolsavel'].append({"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"})
-                                                else:
-                                                    os_api_omie['despesasReembolsaveis'] = {
-                                                        "despesaReembolsavel": [{"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"}]
-                                                    }
-                                            else:
-                                                errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Verificar o Lançamento de REEMBOLSO !!"])
-                                                continue
-                                        
-                                        os_db_lancamento.cod_os_omie = str(os_api_omie['Cabecalho']['nCodOS'])
-                                        list_os_lancadas.append(os_db_lancamento)
-                                    except Exception as err:
-                                        errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Lançar Esta OS: {str(err)}"])
-                                
-                                up = self.atualizar_os_omie(codigo_escritorio, os_api_omie)
-                            except Exception as err:
-                                erros_gerais.append([codigo_escritorio, f"Erro ao Atualizar Esta OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} / Erro: {str(err)}"])
-                            else:
-                                if up:
-                                    for order in list_os_lancadas:
-                                        order.save()
-                                    sucessos.append([str(os_api_omie['Cabecalho']['nCodOS']), codigo_escritorio])
-                        else:
+                list_os_omie, errors_api = self.buscar_os_list_omie(codigo_escritorio)
+                erros_gerais.extend(errors_api)
+                for os_api_omie in list_os_omie:
+                    cliente_omie = str(os_api_omie['Cabecalho']['nCodCli'])
+                    if cliente_omie in clientes_escritorio:
+                        if os_api_omie['InfoCadastro']['cCancelada'] == "S":
+                            erros_gerais.append([codigo_escritorio, f"OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} está cancelada !!"])
                             continue
-                else:
-                    error_text = json_os.get('message') or json_os.get('faultstring')
-                    erros_gerais.append([codigo_escritorio, f"Erro na API da OMIE ao Buscar as OS, ou Nenhuma OS Encontrada Nesta Etapa / Err: {error_text}"])
+                        os_api_omie['Cabecalho']['cCodParc'] = "999"
+                        validation_clientes_lancamento.add(cliente_omie)
+                        try:
+                            list_os_lancadas = []
+                            nSeqItemOrigem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
+                            os_api_omie['ServicosPrestados'] = []
+                            for os_db_lancamento in os_list_separado_por_escritorios[codigo_escritorio][cliente_omie]:
+                                try:
+                                    nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1 if len(os_api_omie['ServicosPrestados']) > 0 else nSeqItemOrigem
+                                    
+                                    if os_db_lancamento.cd_servico:
+                                        new_service_prested = {"nCodServico": os_db_lancamento.cd_servico, "nQtde": os_db_lancamento.quantidade, "nValUnit": os_db_lancamento.valor, "cDescServ": os_db_lancamento.ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I"}
+                                        if codigo_escritorio == '501':
+                                            new_service_prested["impostos"] = {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}
+                                        os_api_omie['ServicosPrestados'].append(new_service_prested)
+                                    else:
+                                        if 'REEMBOLSO' in os_db_lancamento.servico:
+                                            if 'despesasReembolsaveis' in os_api_omie:
+                                                os_api_omie['despesasReembolsaveis']['cCodCategReemb'] = categoria_reembolsavel[codigo_escritorio]
+                                                os_api_omie['despesasReembolsaveis']['despesaReembolsavel'].append({"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"})
+                                            else:
+                                                os_api_omie['despesasReembolsaveis'] = {
+                                                    "cCodCategReemb": categoria_reembolsavel[codigo_escritorio],
+                                                    "despesaReembolsavel": [{"cDescReemb": os_db_lancamento.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": os_db_lancamento.valor, "cAcaoReemb": "I"}]
+                                                }
+                                        else:
+                                            errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Verificar o Lançamento de REEMBOLSO !!"])
+                                            continue
+                                    
+                                    os_db_lancamento.cod_os_omie = str(os_api_omie['Cabecalho']['nCodOS'])
+                                    list_os_lancadas.append(os_db_lancamento)
+                                except Exception as err:
+                                    errors.append([os_db_lancamento.id, os_db_lancamento.empresa.cd_empresa, os_db_lancamento.empresa.name_empresa, os_db_lancamento.empresa.cnpj_cpf, codigo_escritorio, f"Erro ao Lançar Esta OS: {str(err)}"])
+                            
+                            up = self.atualizar_os_omie(codigo_escritorio, os_api_omie)
+                        except Exception as err:
+                            erros_gerais.append([codigo_escritorio, f"Erro ao Atualizar Esta OS: {os_api_omie['Cabecalho']['nCodOS']} / N: {os_api_omie['Cabecalho']['cNumOS']}, cliente: {cliente_omie} / Erro: {str(err)}"])
+                        else:
+                            if up:
+                                for order in list_os_lancadas:
+                                    order.save()
+                                sucessos.append([str(os_api_omie['Cabecalho']['nCodOS']), codigo_escritorio])
+                    else:
+                        continue
                     
                 for codigo_cliente_validation in clientes_escritorio:
                     if codigo_cliente_validation not in validation_clientes_lancamento:
