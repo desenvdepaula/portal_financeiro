@@ -19,6 +19,9 @@
   input[type='checkbox']:checked {
       background: #6F46B7;
   }
+  .text-micolor{
+    color: #00FFFF;
+  }
 </style>
 
 <main role="main" class="main-content">
@@ -37,6 +40,7 @@
                 <div class="d-lg-flex justify-content-between">
                   <select class="custom-select ml-2" style="max-width: 50%;" id="find_status" onchange="search(event)">
                     <option value="">Status...</option>
+                    <option value="APROVADO">APROVADO</option>
                     <option value="DEBITAR">DEBITAR</option>
                     <option value="DEBITADO">DEBITADO</option>
                     <option value="ARQUIVADO">ARQUIVADO</option>
@@ -87,22 +91,24 @@
                     {% for ordem in ordens %}
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} - {{ordem.empresa.name_empresa}}</td>
+                          <td title="empresa" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} - {{ordem.empresa.name_empresa}}</td>
                           {% if ordem.cd_servico == 0 or ordem.cd_servico == '0' %}
-                            <td class="h6 text-danger">
+                            <td title="servico" class="h6 text-danger">
                               SEM SERVIÇO SELECIONADO - (desc.: {{ordem.servico}}) <b>*PRECISA TRATAR*</b>
                             </td>
                           {% else %}
-                            <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}"> {{ordem.servico}} - (desc.: {{ordem.ds_servico}}) </td>
+                            <td title="servico" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}"> {{ordem.servico}} - (desc.: {{ordem.ds_servico}}) </td>
                           {% endif %}
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
+                          <td title="cobranca" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
+                          <td title="valor" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
 
-                          <td class="h6 {% if ordem.cod_os_omie %} text-success {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
+                          <td title="status" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
                             {% if ordem.cod_os_omie %} 
                               DEBITADO
                             {% elif ordem.arquivado %} 
                               ARQUIVADO 
+                            {% elif ordem.aprovado %}
+                              APROVADO 
                             {% else %}
                               DEBITAR
                             {% endif %}
@@ -122,7 +128,7 @@
                               <button class="dropdown-item text-danger" onclick="open_modal_deletar({{ordem.id}}, '{{ordem.empresa.cd_empresa}}', '{{ordem.empresa.name_empresa}}', 'tr_{{counter}}', '{{ordem.cod_os_omie}}')"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Ordem</button>
                             </div>
                           </td>
-                          <td class="h6 d-flex justify-content-center">
+                          <td title="check" class="h6 d-flex justify-content-center">
                             {% if not ordem.cod_os_omie and not ordem.arquivado%}
                               <input class="form-check-input" type="checkbox" value="" ordemid="{{ordem.id}}" id="flexCheckDefault">
                             {% endif %}
@@ -334,8 +340,9 @@
             </button>
         </div>
         <div class="modal-body" id="view_ordem"></div>
-        <div class="modal-footer d-flex justify-content-between">
-          <button type="button" class="btn btn-warning" id="button_arquive_view"></button>
+        <div class="modal-footer d-flex justify-content-between" id="modal-footer">
+          <button type="button" id="button_arquive_view"></button>
+          <button type="button" id="button_aprovar_view"></button>
           <button type="button" id="button_debito_view"></button>
         </div>
     </div>
@@ -593,7 +600,11 @@
   function abrir_modal_view_ordem(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
     let button_debito = document.getElementById('button_debito_view')
+    button_debito.style.display = 'block';
     let button_arquive = document.getElementById('button_arquive_view')
+    button_arquive.style.display = 'block';
+    let button_aprova = document.getElementById('button_aprovar_view')
+    button_aprova.style.display = 'block';
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
         <li class="list-group-item h5">Empresa: ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa}</li>
@@ -614,22 +625,37 @@
     `
     if (ordem.arquivado){
       button_debito.style.display = 'none'
+      button_aprova.style.display = 'none'
       button_arquive.textContent = "Remover do Arquivado"
       button_arquive.className = 'btn btn-danger text-white'
       button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "False", '${tr_id}')`)
     }else{
       button_arquive.textContent = "Arquivar / Ignorar Ordem de Serviço"
-      button_arquive.className = 'btn btn-success text-white'
+      button_arquive.className = 'btn btn-warning text-white'
       button_arquive.setAttribute('onclick', `arquivar_os(event, ${ordem.id}, "True", '${tr_id}')`)
-      if (ordem.cod_os_omie || ordem.cd_servico == '0'){
-        button_debito.style.display = 'none'
-      }else{
-        button_debito.style.display = 'block'
-        button_debito.textContent = 'Debitar Ordem de Serviço'
-        button_debito.className = 'btn btn-success text-white'
-        button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${tr_id}')`)
-      }
     }
+
+    if (ordem.aprovado){
+      button_arquive.style.display = 'none'
+      button_aprova.textContent = "DESAPROVAR"
+      button_aprova.className = 'btn btn-danger text-white'
+      button_aprova.setAttribute('onclick', `aprovar_os(event, ${ordem.id}, "False", '${tr_id}')`)
+    }else{
+      button_aprova.textContent = "APROVAR OS"
+      button_aprova.className = 'btn btn-info text-white'
+      button_aprova.setAttribute('onclick', `aprovar_os(event, ${ordem.id}, "True", '${tr_id}')`)
+    }
+
+    if (ordem.cod_os_omie || ordem.cd_servico == '0'){
+      button_debito.style.display = 'none';
+      button_aprova.style.display = 'none';
+      button_arquive.style.display = 'none';
+    }else{
+      button_debito.textContent = 'Debitar Ordem de Serviço'
+      button_debito.className = 'btn btn-success text-white'
+      button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${tr_id}')`)
+    }
+    
     myModal.toggle()
   }
 
@@ -647,6 +673,25 @@
       },
       error: function(data){
         mostrarAlert('error_aviso_delete', 'danger', data.statusText)
+      },
+    })
+  }
+
+  function aprovar_os(e, id_ordem, bool, tr_id){
+    e.preventDefault();
+    $.ajax({
+      url: `/ordem_servico/aprovar_ordem_servico/${id_ordem}`,
+      type: 'GET',
+      success: function(data){
+        if (Object.values(data).includes('sucesso')){
+          fecharModal('modalViewOrdem')
+          alteraLinhaTable(tr_id, bool == "True" ? "APROVADO" : "DEBITAR")
+        }else{
+          mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
+        }
+      },
+      error: function(data){
+        mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
   }
@@ -780,21 +825,27 @@
         if (child.className.includes("h6")){
           if (type == 'DEBITADO'){
             child.className = "h6 text-success"
-            if (child.id){
+            if (child.title == 'status'){
               child.innerText = "DEBITADO"
             }
-          }else if (type == 'ARQUIVADO'){
-            let input = child.querySelector('input');
-            if (input){
-              child.removeChild(input);
-            }else{
-              child.className = "h6"
+            if (child.title == 'check'){
+              child.innerHTML = ""
             }
-            if (child.id){
+          }else if (type == 'APROVADO'){
+            child.className = "h6 text-micolor"
+            if (child.title == 'status'){
+              child.innerText = "APROVADO"
+            }
+          }else if (type == 'ARQUIVADO'){
+            child.className = "h6"
+            if (child.title == 'status'){
               child.innerText = "ARQUIVADO"
             }
+            if (child.title == 'check'){
+              child.innerHTML = ""
+            }
           }else{
-            if (child.className.includes("justify-content-center")){
+            if (child.title == 'check'){
               child.innerHTML=`
                 <input class="form-check-input" type="checkbox" value="" ordemid="${id_ordem}" id="flexCheckDefault">
               `;

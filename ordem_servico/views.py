@@ -319,10 +319,21 @@ class OrdemServicoView(View):
         else:
             return JsonResponse({"msg": 'sucesso'}, status=200)
             
+    def request_aprovar_ordem_servico(request, id_ordem):
+        try:
+            ordem = OrdemServico.objects.get(id=int(id_ordem))
+            ordem.aprovado = not ordem.aprovado
+            ordem.save()
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        else:
+            return JsonResponse({"msg": 'sucesso'}, status=200)
+        
     def request_arquivar_ordem_servico(request, id_ordem):
         try:
             ordem = OrdemServico.objects.get(id=int(id_ordem))
             ordem.arquivado = not ordem.arquivado
+            ordem.aprovado = False
             ordem.save()
         except Exception as err:
             return JsonResponse({"error": str(err)}, status=500)

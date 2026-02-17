@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from ..models import RegrasHonorario
 from .querys import SqlHonorarios131
 from .database import Manager, ManagerTareffa
+from calendar import monthrange
+from ordem_servico.models import EmpresasOmie, OrdemServico
 
 class Controller():
 
@@ -104,75 +106,77 @@ class Controller():
             raise Exception(err)
     
     #------------------ HONORARIO 131 ------------------#
+    
+    def create_os_folhas(self, cd_servico, data_fim, valor, quantidade, empresa_omie):
+        OrdemServico.objects.create(
+            departamento = 'INTERNO',
+            cd_servico = cd_servico,
+            servico = 'HONORÁRIO Nº FOLHAS PROCESSADAS',
+            ds_servico = 'HONORÁRIO Nº FOLHAS PROCESSADAS',
+            observacoes_servico = '',
+            data_realizado = data_fim,
+            data_cobranca = data_fim,
+            quantidade = quantidade,
+            hora_trabalho = '0:00',
+            valor = valor,
+            autorizado_pelo_cliente = True,
+            type_solicitacao = 'INTERNO',
+            solicitado = 'INTERNO',
+            executado = 'INOVACAO',
+            criador_os = 'INOVACAO',
+            aprovado = True,
+            empresa = empresa_omie,
+        )
 
     def responseEmpresas(self, alignCenter, writer, compet, dataValidation, datadb):
-        listEscritoriosEmpresas = self.retornaListadeEmpresas()
         dataContabit = self.retornaEmpresasContabit(dataValidation)
-        dicio = {}
         lista = []
-        empresasSemEscritorio = []
         empresasSemCategoria = []
 
         empresas = [regra.cd_empresa for regra in RegrasHonorario.objects.filter(calcular=True)]
         empresas = set(empresas)
         response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorarios131(tuple(empresas), compet))
-        
-        for cd_empresa, escritorio in listEscritoriosEmpresas:
-            dicio[cd_empresa] = escritorio
 
         for item in response:
-            if item[0] in dicio.keys():
-                item = item + (dicio[item[0]],)
-                lista.append(item)
-            else:
-                empresasSemEscritorio.append([item[0], item[2], "Esta Empresa não tem Escritório, por algum motivo que eu não sei =|"])
-                
+            lista.append(item)
+
         for objEmpresa in dataContabit:
             if str(objEmpresa) in empresas:
                 id_empresa = dataContabit[objEmpresa].get('idEmpresa')
                 estab = dataContabit[objEmpresa].get('idEstabelecimento')
                 estab = estab if estab < 5 else 1
-                if objEmpresa in dicio.keys():
-                    for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
-                        cd_categoria = categoria.get('cdCategoria')
-                        qtd = categoria.get('qtdTrabalhador')
-                        if cd_categoria in self.categorias.keys():
-                            item = (
-                                id_empresa,
-                                qtd,
-                                estab,
-                                datadb,
-                                self.categorias.get(cd_categoria),
-                                dicio[id_empresa],
-                            )
-                            lista.append(item)
-                        else:
-                            empresasSemCategoria.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}"])
-                else:
-                    empresasSemEscritorio.append([id_empresa, estab, "Esta Empresa não tem Escritório, por algum motivo que eu não sei =|"])
+                for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
+                    cd_categoria = categoria.get('cdCategoria')
+                    qtd = categoria.get('qtdTrabalhador')
+                    if cd_categoria in self.categorias.keys():
+                        item = (
+                            id_empresa,
+                            qtd,
+                            estab,
+                            datadb,
+                            self.categorias.get(cd_categoria)
+                        )
+                        lista.append(item)
+                    else:
+                        empresasSemCategoria.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}, Contate a Inovação !"])
 
-        df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO","ESCRITORIO"])
+        df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO"])
         
         dfResponse = pd.pivot_table(
             df,
             columns='TIPO CONTRATO',
-            index=['EMPRESA','FILIAL','DATA', "ESCRITORIO"],
+            index=['EMPRESA','FILIAL','DATA'],
             values='QUANTIDADE'
         ).reset_index()
         dfResponse.fillna(0, inplace=True)
             
         df = df.drop(columns=['TIPO CONTRATO'])
-        df = df.groupby(by=['EMPRESA', 'FILIAL', 'DATA', 'ESCRITORIO'], as_index=False).sum(numeric_only=True)
+        df = df.groupby(by=['EMPRESA', 'FILIAL', 'DATA'], as_index=False).sum(numeric_only=True)
         
         dfResponse.to_excel(writer, sheet_name='Auditoria Geral', index = False)
         writer.sheets['Auditoria Geral'].set_column('A:E', 15, alignCenter)
         writer.sheets['Auditoria Geral'].set_column('F:F', 22, alignCenter)
         writer.sheets['Auditoria Geral'].set_column('G:I', 15, alignCenter)
-        
-        dfEmpresas = pd.DataFrame(empresasSemEscritorio, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
-        dfEmpresas.to_excel(writer, sheet_name='Sem Escritório', index = False)
-        writer.sheets['Sem Escritório'].set_column('A:B', 30, alignCenter)
-        writer.sheets['Sem Escritório'].set_column('C:C', 80, alignCenter)
         
         dfSemCategoria = pd.DataFrame(empresasSemCategoria, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
         dfSemCategoria.to_excel(writer, sheet_name='Sem Categorias de Funcionário', index = False)
@@ -181,7 +185,8 @@ class Controller():
         
         return df
 
-    def honorarioEmpresasNaoSomaFilial(self, dataFrame, dictValidationQteLancado, alignCenter, writer, data_lancamento):
+    def honorarioEmpresasNaoSomaFilial(self, dataFrame, alignCenter, writer, data_fim):
+        codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         dicionaosomafiliais = [ {
             'empresa': regra.cd_empresa, 
             'filial': regra.cd_filial,
@@ -204,92 +209,45 @@ class Controller():
         df['valorCobrado'] = df['valorCobrado'].map('{:.2f}'.format)
         df['valorCobrado'] = df.apply(lambda x : x['valorCobrado'] if float(x['valorCobrado']) >= 0 else 0, axis=1)
         
-        for empresa, filial, cd_financeiro, valor, limite, data, escritorio, quantidade, valorCobrado in df.values.tolist():
+        for empresa, filial, cd_financeiro, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
             diferenca = int(int(quantidade) - int(limite))
             if float(valorCobrado) > 0:
-                # VALIDAÇÕES
-                if int(cd_financeiro) in dictValidationQteLancado.keys():
-                    quantidadeLancada = dictValidationQteLancado[int(cd_financeiro)]
+                try:
+                    emp = EmpresasOmie.objects.get(cd_empresa=empresa, estab=filial)
+                except:
+                    auditoriaGeralNaoSomaFilial.append([ f"Empresa com esta Filial Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
+                    continue
+                servico_desta_empresa = codigos_servico[emp.escritorio]
+                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado=data_fim, cd_servico=servico_desta_empresa, criador_os='INOVACAO')
+                if orders_ja_feitas.count() > 0:
+                    quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
-                        auditoriaGeralNaoSomaFilial.append([
-                                "Não Realizou o insert, já tem lançamento para esta Empresa e Filial", 
-                                empresa,
-                                filial,
-                                cd_financeiro, 
-                                "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                limite, 
-                                data, 
-                                escritorio, 
-                                quantidade, 
-                                "R$ Nenhum Valor Cobrado,99", 
-                                0
-                            ])
+                        auditoriaGeralNaoSomaFilial.append([ "Lançamentos Corretos nesta Filial !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
                     else:
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
-                            codigo_sequencial = self.retornaSequencialInsert(int(escritorio), int(cd_financeiro), data)
-                            
-                            if codigo_sequencial:
-                                auditoriaGeralNaoSomaFilial.append([
-                                    f"Feito novo insert com as diferenças, já tinham lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                    empresa,
-                                    filial,
-                                    cd_financeiro, 
-                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                    limite, 
-                                    data, 
-                                    escritorio, 
-                                    quantidade, 
-                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                    novaDiferenca 
-                                ])
-                                
-                                self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento, int(codigo_sequencial))
+                            try:
+                                order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
+                                if not order_aberta:
+                                    self.create_os_folhas(servico_desta_empresa, data_fim, newValorCobradoFinal, novaDiferenca, emp)
+                                else:
+                                    order_aberta.quantidade = diferenca
+                                    order_aberta.valor = valorCobrado
+                                    order_aberta.save()
+                            except Exception as err:
+                                auditoriaGeralNaoSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                             else:
-                                auditoriaGeralNaoSomaFilial.append([
-                                    "Não foi feito o insert por não ter codigo Sequencial",
-                                    empresa,
-                                    filial,
-                                    cd_financeiro, 
-                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                    limite, 
-                                    data, 
-                                    escritorio, 
-                                    quantidade, 
-                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                    novaDiferenca 
-                                ])
-                                
+                                auditoriaGeralNaoSomaFilial.append([ f"Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                         else:
-                            auditoriaGeralNaoSomaFilial.append([
-                                f"Não foi realizado Insert, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                empresa,
-                                filial,
-                                cd_financeiro, 
-                                "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                limite, 
-                                data,
-                                escritorio,
-                                quantidade,
-                                "R$ Nenhum Valor Cobrado,99",
-                                novaDiferenca
-                            ])
+                            auditoriaGeralNaoSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
-                    auditoriaGeralNaoSomaFilial.append([
-                        "Foi realizado o lançamento com sucesso !", 
-                        empresa, 
-                        filial, 
-                        cd_financeiro, 
-                        "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'),
-                        limite,
-                        data,
-                        escritorio,
-                        quantidade,
-                        "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), 
-                        diferenca
-                    ])
-                    self.insertNaBase(int(escritorio), int(cd_financeiro), diferenca, valor, valorCobrado, int(quantidade), data, data_lancamento)
+                    try:
+                        self.create_os_folhas(servico_desta_empresa, data_fim, valorCobrado, diferenca, emp)
+                    except Exception as err:
+                        auditoriaGeralNaoSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                    else:
+                        auditoriaGeralNaoSomaFilial.append(["Foi realizado a OS Corretamente !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     
         dfAuditoria = pd.DataFrame(auditoriaGeralNaoSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','FILIAL','CD-FINANCEIRO', 'VALOR', 'LIMITE', 'DATA', "ESCRITORIO", 'QUANTIDADE','VALOR-COBRADO-FINAL', 'DIFERENCA'])
         dfAuditoria.to_excel(writer, sheet_name='Auditoria Não Soma Filiais', index = False)
@@ -298,7 +256,8 @@ class Controller():
         writer.sheets['Auditoria Não Soma Filiais'].set_column('J:J', 26, alignCenter)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('K:K', 17, alignCenter)
 
-    def honorarioEmpresasSomaFilial(self, dataFrame, dictValidationQteLancado, alignCenter, writer, data_lancamento):
+    def honorarioEmpresasSomaFilial(self, dataFrame, alignCenter, writer, data_fim):
+        codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         diciosomafiliais = [ {
             'empresa': regra.cd_empresa, 
             'cd-financeiro': regra.cd_financeiro, 
@@ -309,117 +268,65 @@ class Controller():
         auditoriaGeralSomaFilial = []
         
         dataFrameTratamento = dataFrame.drop(columns=['FILIAL'])
-        dataFrameTratamento = dataFrameTratamento.groupby(by=['EMPRESA','DATA', 'ESCRITORIO'], as_index=False).sum(numeric_only=True)
+        dataFrameTratamento = dataFrameTratamento.groupby(by=['EMPRESA','DATA'], as_index=False).sum(numeric_only=True)
         dataFrameTratamento = dataFrameTratamento.rename(columns={'EMPRESA':'empresa'})
         dataFrameTratamento['empresa'] = dataFrameTratamento['empresa'].astype(str)
         df = pd.DataFrame(diciosomafiliais)
         df = pd.merge(df,dataFrameTratamento, on=['empresa'], how='left')
         df = df[~df.isna().any(axis=1)]
         df['QUANTIDADE'] = df['QUANTIDADE'].astype(int)
-        df['ESCRITORIO'] = df['ESCRITORIO'].astype(int)
         df['valorCobrado'] = (df['QUANTIDADE'] - df['limite']) * df['valor']
         df['valorCobrado'] = df['valorCobrado'].map('{:.2f}'.format)
         df['valorCobrado'] = df.apply(lambda x : x['valorCobrado'] if float(x['valorCobrado']) >= 0 else 0, axis=1)
 
-        for empresa,cd_financeiro, valor, limite, data, escritorio, quantidade, valorCobrado in df.values.tolist():
+        for empresa,cd_financeiro, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
             if float(valorCobrado) > 0:
                 diferenca = int(quantidade - limite)
-                if int(cd_financeiro) in dictValidationQteLancado.keys():
-                    quantidadeLancada = dictValidationQteLancado[int(cd_financeiro)]
+                try:
+                    emp = EmpresasOmie.objects.filter(cd_empresa=empresa).order_by('estab').first()
+                    if not emp:
+                        raise Exception("")
+                except:
+                    auditoriaGeralSomaFilial.append([ f"Empresa Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
+                    continue
+                servico_desta_empresa = codigos_servico[emp.escritorio]
+                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado=data_fim, cd_servico=servico_desta_empresa, criador_os='INOVACAO')
+                if orders_ja_feitas.count() > 0:
+                    quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
-                        auditoriaGeralSomaFilial.append([
-                            "Não Realizou o insert, já possui lançamentos em todas as Filiais", 
-                            empresa,
-                            cd_financeiro, 
-                            "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                            limite, 
-                            data, 
-                            int(escritorio), 
-                            int(quantidade), 
-                            "R$ Nenhum Valor Cobrado,99", 
-                            0
-                        ])
+                        auditoriaGeralSomaFilial.append([ "Lançamentos Corretos em todas as Filiais !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
                     else:
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
-                            codigo_sequencial = self.retornaSequencialInsert(int(escritorio), int(cd_financeiro), data)
-                            
-                            if codigo_sequencial:
-                                auditoriaGeralSomaFilial.append([
-                                    f"Feito novo insert com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                    empresa,
-                                    cd_financeiro, 
-                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                    limite, 
-                                    data, 
-                                    int(escritorio), 
-                                    int(quantidade), 
-                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                    novaDiferenca 
-                                ])
-                                self.insertNaBase(int(escritorio), int(cd_financeiro), novaDiferenca, valor, newValorCobradoFinal, int(quantidade), data, data_lancamento, int(codigo_sequencial))
+                            try:
+                                order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
+                                if not order_aberta:
+                                    self.create_os_folhas(servico_desta_empresa, data_fim, newValorCobradoFinal, novaDiferenca, emp)
+                                else:
+                                    order_aberta.quantidade = diferenca
+                                    order_aberta.valor = valorCobrado
+                                    order_aberta.save()
+                            except Exception as err:
+                                auditoriaGeralSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                             else:
-                                auditoriaGeralSomaFilial.append([
-                                    "Não foi feito o insert por não ter codigo Sequencial",
-                                    empresa,
-                                    cd_financeiro, 
-                                    "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                    limite, 
-                                    data, 
-                                    escritorio, 
-                                    quantidade, 
-                                    "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), 
-                                    novaDiferenca 
-                                ])
-                                
+                                auditoriaGeralSomaFilial.append([ f"Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                         else:
-                            auditoriaGeralSomaFilial.append([
-                                f"Não foi realizado Insert, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}",
-                                empresa,
-                                cd_financeiro, 
-                                "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                                limite, 
-                                data, 
-                                int(escritorio), 
-                                int(quantidade), 
-                                "R$ Nenhum Valor Cobrado,99", 
-                                novaDiferenca
-                            ])
-                            
+                            auditoriaGeralSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
-                    auditoriaGeralSomaFilial.append([
-                        "Foi realizado o lançamento Normalmente !!",
-                        empresa, 
-                        cd_financeiro, 
-                        "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), 
-                        limite, 
-                        data, 
-                        int(escritorio), 
-                        int(quantidade), 
-                        "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), 
-                        diferenca
-                    ])
-                    self.insertNaBase(int(escritorio), int(cd_financeiro), diferenca, valor, valorCobrado, int(quantidade), data, data_lancamento)
+                    try:
+                        self.create_os_folhas(servico_desta_empresa, data_fim, valorCobrado, diferenca, emp)
+                    except Exception as err:
+                        auditoriaGeralSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                    else:
+                        auditoriaGeralSomaFilial.append(["Foi realizado o lançamento Normalmente !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+        
         dfAuditoria = pd.DataFrame(auditoriaGeralSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','CD-FINANCEIRO','VALOR','LIMITE','DATA', "ESCRITORIO", 'QUANTIDADE', 'VALOR-COBRADO-FINAL', 'DIFERENCA'])
         dfAuditoria.to_excel(writer, sheet_name='Auditoria Soma Filiais', index = False)
         writer.sheets['Auditoria Soma Filiais'].set_column('A:A', 90, alignCenter)
         writer.sheets['Auditoria Soma Filiais'].set_column('B:H', 17, alignCenter)
         writer.sheets['Auditoria Soma Filiais'].set_column('I:I', 26, alignCenter)
         writer.sheets['Auditoria Soma Filiais'].set_column('J:J', 17, alignCenter)
-
-    def retornaListadeEmpresas(self):
-        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorarios131Find())
-        return response
-    
-    def retornaSequencialInsert(self, cd_escritorio, cd_financeiro, data):
-        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorariosSequencialInsert(cd_escritorio, cd_financeiro, data), True)
-        response = response[0]
-        return response
-
-    def retornaListadeEmpresasValidation(self, data):
-        response = self.manager.run_query_for_select(SqlHonorarios131.getSqlValidador131(data))
-        return response
     
     def retornaEmpresasContabit(self, data):
         retorno = {}
@@ -434,15 +341,14 @@ class Controller():
             return retorno
         else:
             raise Exception(f"{response.status_code}: Erro na Chamada da API")
-        
-    def insertNaBase(self, cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial=1):
-        self.manager.execute_and_commit(SqlHonorarios131.getSqlHonorarios131Insert(cd_escritorio, cd_financeiro, direfenca_quantidade, valor, valor_multiplicado, quantidade, data, data_lancamento, codigo_sequencial))
 
     def returnCompetToValidation(self, compet):
         _, mes, ano = compet.split('.')
-        return f"{int(mes)}/{ano}", f"{mes}/{ano}"
+        last_day_month = monthrange(int(ano), int(mes))[1]
+        data_fim = date(int(ano), int(mes), last_day_month)
+        return f"{int(mes)}/{ano}", f"{mes}/{ano}", data_fim
     
-    def gerarHonorarios(self, compet, data_lancamento):
+    def gerarHonorarios(self, compet):
         self.manager.connect()
         try:
             with BytesIO() as b:
@@ -451,20 +357,14 @@ class Controller():
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 
-                datadb, dataValidation = self.returnCompetToValidation(compet)
-                validation = self.retornaListadeEmpresasValidation(datadb)
-                dictValidation = {}
-                
-                for cd_financeiro, _, quantidade in validation:
-                    dictValidation[cd_financeiro] = int(quantidade)
-                    
+                datadb, dataValidation, data_fim = self.returnCompetToValidation(compet)
                 dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation, datadb)
-                self.honorarioEmpresasSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
-                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, dictValidation, alignCenter, writer, data_lancamento.strftime('%d.%m.%Y'))
+                self.honorarioEmpresasSomaFilial(dataFrameSql, alignCenter, writer, data_fim)
+                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, alignCenter, writer, data_fim)
                 
                 writer.close()
                 
-                filename = 'ConferenciaHonorario.xlsx'
+                filename = f'Conferência dos Honorários {dataValidation}.xlsx'
                 response = HttpResponse(
                     b.getvalue(),
                     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

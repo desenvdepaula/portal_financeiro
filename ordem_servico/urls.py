@@ -15,6 +15,7 @@ urlpatterns = [
     path('delete_ordem_servico', OrdemServicoView.delete, name="delete_ordem_servico"),
     path('buscar_ordem_servico/<int:id_ordem>/', OrdemServicoView.buscar_ordem_servico),
     path('debitar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_debitar_ordem_servico),
+    path('aprovar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_aprovar_ordem_servico),
     path('arquivar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_arquivar_ordem_servico),
     path('download_boletos_escritorio/', OrdemServicoView.request_download_boletos_escritorio, name="download_boletos_escritorio"),
     path('baixar_planilha_ordens_servico', OrdemServicoView.request_download_planilha, name="baixar_planilha_ordens_servico"),
