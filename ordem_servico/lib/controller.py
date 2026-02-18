@@ -504,6 +504,26 @@ class Controller():
             return response
         finally:
             self.manager.disconnect()
+            
+    def buscar_contas_receber_omie(self, escritorio):
+        list_contas = []
+        errors = []
+        page = 1
+        while True:
+            data_get_contas = get_request_to_api_omie(escritorio, "ListarContasReceber", {"pagina": page, "registros_por_pagina": 500, "filtrar_apenas_titulos_em_aberto": "S"})
+            result_contas = requests.post("https://app.omie.com.br/api/v1/financas/contareceber/", json=data_get_contas, headers={'content-type': 'application/json'})
+            json_contas = result_contas.json()
+            if result_contas.status_code == 200:
+                list_contas.extend(json_contas.get("conta_receber_cadastro"))
+                if json_contas.get("total_de_paginas") == page:
+                    break
+            else:
+                error_text = json_contas.get('message') or json_contas.get('faultstring')
+                errors.append([escritorio, f"Erro na API para BUSCAR AS CONTAS na Página {page} / Err: {error_text}"])
+                break
+            page += 1
+            time.sleep(0.7)
+        return list_contas, errors
     
     def gerar_boletos_por_escritorio(self, escritorio, file, filename):
         response_data = {"errors": [], "files": {}}
@@ -514,29 +534,24 @@ class Controller():
             for row in df_os.values.tolist():
                 list_os[row[0]] = {'numOS': row[1]}
         else:
-            data_get_os = get_request_to_api_omie(escritorio, "ListarOS", {"pagina": 1, "filtrar_por_etapa": "20", "registros_por_pagina": 500})
-            result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
-            json_os = result_os.json()
-            if result_os.status_code == 200:
-                for os_request in json_os['osCadastro']:
-                    if not os_request['InfoCadastro']['cCancelada'] == "S":
-                        list_os[os_request['Cabecalho']['nCodOS']] = {'numOS': os_request['Cabecalho']['cNumOS']}
-            else:
-                raise Exception(f"Erro ao Buscar as OS na API: {json_os}")
-
-        data_get_contas = get_request_to_api_omie(escritorio, "ListarContasReceber", {"pagina": 1, "registros_por_pagina": 500, "filtrar_apenas_titulos_em_aberto": "S"})
-        result_contas = requests.post("https://app.omie.com.br/api/v1/financas/contareceber/", json=data_get_contas, headers={'content-type': 'application/json'})
-        json_contas = result_contas.json()
-        if result_contas.status_code == 200:
-            for conta_request in json_contas['conta_receber_cadastro']:
-                if 'nCodOS' in conta_request:
-                    cod_os = conta_request['nCodOS']
-                    if cod_os in list_os:
-                        list_os[cod_os]['cd_titulo'] = conta_request['codigo_lancamento_omie']
-                        list_os[cod_os]['cd_cliente'] = conta_request['codigo_cliente_fornecedor']
-        else:
-            raise Exception(f"Erro ao Buscar as Contas a Receber na API: {json_contas}")
-        
+            list_os_omie, errors_api = self.buscar_os_list_omie(escritorio)
+            if len(errors_api) > 0:
+                raise Exception(f"Erro ao Buscar as OS {str(errors_api)}")
+            
+            for os_request in list_os_omie:
+                if not os_request['InfoCadastro']['cCancelada'] == "S":
+                    list_os[os_request['Cabecalho']['nCodOS']] = {'numOS': os_request['Cabecalho']['cNumOS']}
+                    
+        list_contas, errors_api_contas = self.buscar_contas_receber_omie(escritorio)
+        if len(errors_api_contas) > 0:
+            raise Exception(f"CONTAS {str(errors_api_contas)}")
+        for conta_request in list_contas:
+            if 'nCodOS' in conta_request:
+                cod_os = conta_request['nCodOS']
+                if cod_os in list_os:
+                    list_os[cod_os]['cd_titulo'] = conta_request['codigo_lancamento_omie']
+                    list_os[cod_os]['cd_cliente'] = conta_request['codigo_cliente_fornecedor']
+                    
         for os in list_os:
             obj_os = list_os[os]
             num_os = obj_os['numOS']
