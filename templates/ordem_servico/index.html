@@ -129,7 +129,7 @@
                             </div>
                           </td>
                           <td title="check" class="h6 d-flex justify-content-center">
-                            {% if not ordem.cod_os_omie and not ordem.arquivado%}
+                            {% if not ordem.cod_os_omie and not ordem.arquivado and not ordem.cd_servico == '0'%}
                               <input class="form-check-input" type="checkbox" value="" ordemid="{{ordem.id}}" id="flexCheckDefault">
                             {% endif %}
                           </td>
@@ -607,7 +607,7 @@
     button_aprova.style.display = 'block';
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
-        <li class="list-group-item h5">Empresa: ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa}</li>
+        <li class="list-group-item h5">Empresa: ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa} (Escrit. ${ordem.empresa?.escritorio})</li>
         <li class="list-group-item h5">Serviço: ${ordem.servico}</li>
         <li class="list-group-item h5">Descrição Serviço: ${ordem.ds_servico}</li>
         <li class="list-group-item h5">Descrição: ${ordem.observacoes_servico}</li>
@@ -621,6 +621,7 @@
         <li class="list-group-item h5">Autorizado: ${ordem.autorizado_pelo_cliente ? 'SIM' : 'NÃO'} </li>
         <li class="list-group-item h5">Tipo: ${ordem.type_solicitacao}</li>
         <li class="list-group-item h5">Quem Criou a OS: ${ordem.criador_os}</li>
+        <li class="list-group-item h5" id="li_spinner"></li>
       </ul>
     `
     if (ordem.arquivado){
@@ -649,9 +650,8 @@
     if (ordem.cod_os_omie || ordem.cd_servico == '0'){
       button_debito.style.display = 'none';
       button_aprova.style.display = 'none';
-      button_arquive.style.display = 'none';
     }else{
-      button_debito.textContent = 'Debitar Ordem de Serviço'
+      button_debito.textContent = 'Lançar OS na OMIE'
       button_debito.className = 'btn btn-success text-white'
       button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${tr_id}')`)
     }
@@ -698,10 +698,12 @@
 
   function debitar_os(e, id_ordem, tr_id){
     e.preventDefault();
+    active_spinner_div('li_spinner');
     $.ajax({
       url: `/ordem_servico/debitar_ordem_servico/${id_ordem}`,
       type: 'GET',
       success: function(data){
+        desactive_spinner_div('li_spinner');
         if (Object.values(data).includes('sucesso')){
           fecharModal('modalViewOrdem')
           alteraLinhaTable(tr_id, 'DEBITADO')
@@ -710,6 +712,7 @@
         }
       },
       error: function(data){
+        desactive_spinner_div('li_spinner');
         mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
@@ -807,7 +810,7 @@
 
     setTimeout(() => {
       $('.alert').alert('close')
-    }, 6000)
+    }, 6500)
   }
 
   function fecharModal(modalClass){

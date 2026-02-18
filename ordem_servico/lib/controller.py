@@ -177,22 +177,62 @@ class Controller():
             return hora.zfill(2)+':'+minuto.zfill(2)
     
     def debitar_omie_ordem_servico(self, id_ordem):
+        categoria_reembolsavel = {'501': '1.05.99', '502': '1.05.99', '505': '1.06.99', '567': '1.05.99', '575': '1.05.99'}
         try:
-            pass
-            # ordem = OrdemServico.objects.get(id=id_ordem)
-            # if debitar:
-            #     pass
-            # elif not ordem.arquivado and ordem.ordem_debitada_id:
-            #     ordem.ordem_debitada_id = None
-            # elif ordem.debitar and not ordem.ordem_debitada_id:
-            #     raise Exception("Esta Ordem não pode ser Excluida, Cancelada e nem Arquivada")
-            # else:
-            #     pass
-                
+            ordem = OrdemServico.objects.get(id=id_ordem)
+            if ordem.arquivado or ordem.cod_os_omie:
+                raise Exception("Esta Ordem não pode ser Lançada, pois já tem lançamento ou está Arquivada !!")
+            
+            data_get_os = get_request_to_api_omie(ordem.empresa.escritorio, "ListarOS", {"pagina": 1, "registros_por_pagina": 3, "filtrar_por_etapa": "20", "filtrar_por_cliente": ordem.empresa.codigo_cliente_omie})
+            result_os = requests.post("https://app.omie.com.br/api/v1/servicos/os/", json=data_get_os, headers={'content-type': 'application/json'})
+            json_os = result_os.json()
+            if result_os.status_code == 200:
+                if json_os.get("total_de_registros") > 1 or json_os.get("total_de_registros") == 0:
+                    raise Exception("Nenhuma ou Mais de Uma OS registrada nesta Etapa !!")
+                os_api_omie = json_os.get("osCadastro")[0]
+                if not os_api_omie['InfoCadastro']['cCancelada'] == "S":
+                    os_api_omie['Cabecalho']['cCodParc'] = "999"
+                    try:
+                        nSeqItemOrigem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1
+                        os_api_omie['ServicosPrestados'] = []
+                        nSeqItem = max([n['nSeqItem'] for n in os_api_omie['ServicosPrestados']])+1 if len(os_api_omie['ServicosPrestados']) > 0 else nSeqItemOrigem
+
+                        if ordem.cd_servico == 0:
+                            raise Exception("Serviço desta OS está Zerado, ou seja, sem Serviço Adicionado !!")
+
+                        if ordem.cd_servico:
+                            new_service_prested = {"nCodServico": ordem.cd_servico, "nQtde": ordem.quantidade, "nValUnit": ordem.valor, "cDescServ": ordem.ds_servico, "nSeqItem": nSeqItem, "cAcaoItem": "I"}
+                            if ordem.empresa.escritorio == '501':
+                                new_service_prested["impostos"] = {'cRetemCOFINS': 'S', 'cRetemCSLL': 'S', 'cRetemIRRF': 'S', 'cRetemPIS': 'S'}
+                            os_api_omie['ServicosPrestados'].append(new_service_prested)
+                        else:
+                            if 'REEMBOLSO' in ordem.servico:
+                                if 'despesasReembolsaveis' in os_api_omie:
+                                    os_api_omie['despesasReembolsaveis']['cCodCategReemb'] = categoria_reembolsavel[ordem.empresa.escritorio]
+                                    os_api_omie['despesasReembolsaveis']['despesaReembolsavel'].append({"cDescReemb": ordem.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": ordem.valor, "cAcaoReemb": "I"})
+                                else:
+                                    os_api_omie['despesasReembolsaveis'] = {
+                                        "cCodCategReemb": categoria_reembolsavel[ordem.empresa.escritorio],
+                                        "despesaReembolsavel": [{"cDescReemb": ordem.ds_servico, "dDataReemb": os_api_omie['Cabecalho']['dDtPrevisao'], "nValorReemb": ordem.valor, "cAcaoReemb": "I"}]
+                                    }
+                            else:
+                                raise Exception("Erro ao Verificar o Lançamento de REEMBOLSO !!")
+                        
+                        ordem.cod_os_omie = str(os_api_omie['Cabecalho']['nCodOS'])
+                        up = self.atualizar_os_omie(ordem.empresa.escritorio, os_api_omie)
+                    except Exception as err:
+                        raise Exception(f"Erro ao Atualizar Esta OS: N: {os_api_omie['Cabecalho']['cNumOS']} / Erro: {str(err)}")
+                    else:
+                        if up:
+                            ordem.save()
+                else:
+                    raise Exception(f"OS Num. {os_api_omie['Cabecalho']['cNumOS']} Cancelada !")
+            else:
+                error_text = json_os.get('message') or json_os.get('faultstring')
+                raise Exception(f"Erro na API da OMIE ao Buscar esta OS, Err: {error_text}")
+            
         except Exception as err:
             raise Exception(err)
-        # else:
-        #     ordem.save()
         
     def buscar_os_list_omie(self, escritorio):
         list_os = []
