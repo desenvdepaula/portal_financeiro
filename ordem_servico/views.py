@@ -2,13 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.views import View
-# from django.conf import settings
 import pandas as pd
 from io import BytesIO
 import datetime
 import base64
 import time
 import requests
+from celery.result import AsyncResult
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
@@ -341,28 +341,17 @@ class OrdemServicoView(View):
             return JsonResponse({"msg": 'sucesso'}, status=200)
         
     def request_download_boletos_escritorio(request):
-        zip_view = PDFFileView()
-        response_data = {}
         try:
             compet_atual = datetime.date.today().strftime("%m%Y")
-            controller = Controller()
             escritorio = request.POST.get("select_escritorio")
             file = request.FILES.get("arquivo_os")
             filename = request.POST.get("select_filename").replace("/", "").replace("MESANO", compet_atual).replace("mesano", compet_atual)
-            
+            controller = Controller()
             response = controller.gerar_boletos_por_escritorio(escritorio, file, filename)
-            dfErros = pd.DataFrame(response['errors'], columns=['OS', 'NUM OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
-            auditoria_file = controller.gerar_arquivo_excel_auditoria_download_boletos(dfErros)
-            response['files']["Auditoria de Boletos.xlsx"] = auditoria_file
-            zip_file = zip_view.prepare_zip_file_content(response.get("files"))
-            response_data['escritorio'] = escritorio
-            # with open(settings.BASE_DIR / f'temp/files/financeiro/Boletos das OS {escritorio}.zip', 'wb') as f:
-            #     f.write(zip_file)
-            response_data['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
         except Exception as err:
             return JsonResponse({"message": str(err)}, status=500)
         else:
-            return JsonResponse(response_data, status=200)
+            return JsonResponse(response, status=200)
 
     def request_download_planilha(request):
         try:
@@ -372,6 +361,25 @@ class OrdemServicoView(View):
             messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
         return redirect('list_ordem_servico')
     
+    def request_download_pdfs_boletos(request):
+        zip_view = PDFFileView()
+        try:
+            response = {}
+            # controller = Controller()
+            # zip_file = zip_view.prepare_zip_file_content(response.get("files"))
+            # response_data['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        else:
+            return JsonResponse(response, status=200)
+    
+    def status_task(request, task_id):
+        result = AsyncResult(task_id)
+        return JsonResponse({
+            "state": result.state,
+            "info": result.info
+        })
+
 class OrdensProvisoriasView(View):
     
     template = "ordem_servico/provisorias.html"

@@ -273,6 +273,11 @@
         <div class="modal-body">
           <div id="error_aviso_dow"></div>
           <div id="div_body_dow"></div>
+          <div class="card border-info mb-3 w-100">
+            <div class="card-body text-info">
+              <p class="card-text">ESTA FUNCIONALIDADE PODE SER DEMORADA, DEPOIS DE RODAR, NÃO ATUALIZE E NEM SAIA DA PAGINA ATÉ FINALIZAR !!</p>
+            </div>
+          </div>
           <form enctype="multipart/form-data" id="form_for_dow">
             {% csrf_token %}
             <label for="fileBoletos">Arquivo com as OS que deram algum erro ! (* Opcional *) </label>
@@ -296,11 +301,14 @@
                 <option value="HONORARIO CONTABIL MESANO">HONORARIO CONTABIL MESANO</option>
               </select>
             </div>
-            <center>
-                <button class="btn btn-outline-success mt-5" onclick="baixar_boletos_escritorio(event)">
-                  <strong>Baixar Boletos !</strong>
-                </button>
-            </center>
+            <div class="d-flex justify-content-between mt-5">
+              <button class="btn btn-primary" onclick="baixar_boletos_escritorio(event)">
+                <strong>Buscar Boletos deste Escritório !</strong>
+              </button>
+              <button class="btn btn-outline-success" style="display: none;" id="btn_down_bol">
+                <strong>Baixar Boletos !</strong>
+              </button>
+            </div>
           </form>
         </div>
     </div>
@@ -1093,6 +1101,7 @@
 
   async function baixar_boletos_escritorio(e){
     e.preventDefault();
+    $("#modalDownloadPdfs").find('button.close').prop('disabled', true);
     const formulario_file = document.getElementById("form_for_dow");
     const formData = new FormData(formulario_file);
     button_spinner(e.target, true)
@@ -1106,34 +1115,79 @@
       return response.json();
     })
     .then(data => {
-      if (Object.keys(data).includes('files_zip')){
-        const byteCharacters = atob(data.files_zip);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], {
-            type: 'application/zip'
-        });
-        const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
-        link.download = `Boletos das OS ${data.escritorio}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        //window.location.href = "{% url 'list_ordem_servico' %}";
-        fecharModal('modalDownloadPdfs');
+      if (Object.keys(data).includes('task_id')){
+        verificarStatus(data.task_id, data.escritorio);
       }else{
-        mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
+        mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API (ID DA TASK)");
       }
     })
     .catch(error => {
       mostrarAlert('error_aviso_dow', 'danger', error);
-    })
-    .finally(() => {
       button_spinner(e.target, false, 'Baixar Boletos !');
-    });
+      $("#modalDownloadPdfs").find('button.close').prop('disabled', false);
+    })
+  }
+
+  async function verificarStatus(taskId, escritorio) {
+    const interval = setInterval(async () => {
+      const response = await fetch(`/ordem_servico/status_task_os/${taskId}/`);
+      const data = await response.json();
+      console.log("Status:", data);
+      
+      if (data.state === "SUCCESS") {
+        clearInterval(interval);
+        document.getElementById("btn_down_bol").style.display = "";
+        document.getElementById('btn_down_bol').setAttribute('onclick', `btn_download_boletos(event, '${data.escritorio}')`)
+      }
+
+      if (data.state === "FAILURE") {
+        clearInterval(interval);
+        alert("Erro no processamento");
+      }
+
+    }, 10000);
+  }
+
+  async function btn_download_boletos(e, escritorio){
+    e.preventDefault();
+    button_spinner(e.target, true)
+    await fetch("{% url 'baixar_boletos_os' %}", { method: "GET" })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          throw new Error(`${err.message}`);
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data)
+      console.log(escritorio)
+      //if (Object.keys(data).includes('files_zip')){
+      //  const byteCharacters = atob(data.files_zip);
+      //  const byteNumbers = new Array(byteCharacters.length);
+      //  for (let i = 0; i < byteCharacters.length; i++) {
+      //      byteNumbers[i] = byteCharacters.charCodeAt(i);
+      //  }
+      //  const byteArray = new Uint8Array(byteNumbers);
+      //  const blob = new Blob([byteArray], {
+      //      type: 'application/zip'
+      //  });
+      //  const link = document.createElement('a');
+      //  link.href = window.URL.createObjectURL(blob);
+      //  link.download = `Boletos das OS ${escritorio}.zip`;
+      //  document.body.appendChild(link);
+      //  link.click();
+      //  link.remove();
+      //  //window.location.href = "{% url 'list_ordem_servico' %}";
+      //  fecharModal('modalDownloadPdfs');
+      //}else{
+      //  mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
+      //}
+    })
+    .catch(error => {
+      mostrarAlert('error_aviso_dow', 'danger', error);
+    })
   }
 
   function search(event){
@@ -1171,6 +1225,7 @@
   });
 
   $('.select2').select2( { theme: 'bootstrap4', width: '100%', tags:true, dropdownParent: $('#modalEditOrdem') } );
+  $('#select_filename').select2( { theme: 'bootstrap4', width: '100%', tags:true, dropdownParent: $('#modalDownloadPdfs') } );
 
   $.fn.dataTableExt.afnFiltering.push(
     function( settings, data, dataIndex ) {
