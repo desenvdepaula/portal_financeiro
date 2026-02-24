@@ -9,6 +9,9 @@ import base64
 import time
 import requests
 from celery.result import AsyncResult
+import os
+from django.conf import settings
+from pathlib import Path
 
 from .forms import OrdemServicoForm, ServicoForm
 from .lib.controller import Controller
@@ -347,6 +350,7 @@ class OrdemServicoView(View):
             file = request.FILES.get("arquivo_os")
             filename = request.POST.get("select_filename").replace("/", "").replace("MESANO", compet_atual).replace("mesano", compet_atual)
             controller = Controller()
+            controller.delete_pdf_os(escritorio)
             response = controller.gerar_boletos_por_escritorio(escritorio, file, filename)
         except Exception as err:
             return JsonResponse({"message": str(err)}, status=500)
@@ -361,13 +365,22 @@ class OrdemServicoView(View):
             messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
         return redirect('list_ordem_servico')
     
-    def request_download_pdfs_boletos(request):
+    def request_download_pdfs_boletos(request, escritorio):
         zip_view = PDFFileView()
         try:
             response = {}
-            # controller = Controller()
-            # zip_file = zip_view.prepare_zip_file_content(response.get("files"))
-            # response_data['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
+            tmpdir = settings.BASE_DIR / f'temp/files/financeiro/boletos/{escritorio}'
+            files = os.listdir(tmpdir)
+            if not files:
+                raise Exception(f"Nenhum PDF foi gerado no Escritório: {escritorio}")
+            else:
+                list_files = {}
+                for file in files:
+                    product_file = Path(os.path.join(tmpdir, file))
+                    with open(product_file, 'rb') as f:
+                        list_files[file] = f.read()
+                zip_file = zip_view.prepare_zip_file_content(list_files)
+                response['files_zip'] = base64.b64encode(zip_file).decode('utf-8')
         except Exception as err:
             return JsonResponse({"message": str(err)}, status=500)
         else:
@@ -379,7 +392,15 @@ class OrdemServicoView(View):
             "state": result.state,
             "info": result.info
         })
-
+    
+    def verify_pdf_os(request, escritorio):
+        try:
+            tmpdir = settings.BASE_DIR / f'temp/files/financeiro/boletos/{escritorio}'
+            files = os.listdir(tmpdir)
+            return JsonResponse({'files': len(files)}, status=200)
+        except Exception as err:
+            return JsonResponse({"message": str(err)}, status=500)
+        
 class OrdensProvisoriasView(View):
     
     template = "ordem_servico/provisorias.html"

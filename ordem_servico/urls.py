@@ -19,8 +19,9 @@ urlpatterns = [
     path('arquivar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_arquivar_ordem_servico),
     path('download_boletos_escritorio/', OrdemServicoView.request_download_boletos_escritorio, name="download_boletos_escritorio"),
     path('baixar_planilha_ordens_servico', OrdemServicoView.request_download_planilha, name="baixar_planilha_ordens_servico"),
-    path('baixar_boletos_os', OrdemServicoView.request_download_pdfs_boletos, name="baixar_boletos_os"),
-    path('status_task_os/<str:task_id>/', OrdemServicoView.status_task, name="status_task_os"),
+    path('baixar_boletos_os/<str:escritorio>/', OrdemServicoView.request_download_pdfs_boletos),
+    path('verificar_boletos_escrit/<str:escritorio>/', OrdemServicoView.verify_pdf_os),
+    path('status_task_os/<str:task_id>/', OrdemServicoView.status_task),
     
     path('list_empresas_omie', login_required(EmpresasOmieView.as_view()), name="list_empresas_omie"),
     

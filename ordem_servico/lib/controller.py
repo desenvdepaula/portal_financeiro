@@ -4,8 +4,10 @@ import csv
 import requests
 import base64
 import pandas as pd
-import fitz
 import time
+import os
+from django.conf import settings
+from pathlib import Path
 from django.http import HttpResponse, JsonResponse
 from core.views import get_request_to_api_omie
 from ..models import OrdemServico, EmpresasOmie
@@ -553,9 +555,21 @@ class Controller():
 
         task = baixar_pdfs_e_processar.delay(list_os, escritorio, filename)
         return {"task_id": task.id, "escritorio": escritorio}
-    
-    def gerar_arquivo_excel_auditoria_download_boletos(self, dfErros):
+
+    def delete_pdf_os(self, escritorio):
         try:
+            tmpdir = settings.BASE_DIR / f'temp/files/financeiro/boletos/{escritorio}'
+            files = os.listdir(tmpdir)
+            if files:
+                for file in files:
+                    product_file = Path(os.path.join(tmpdir, file))
+                    os.remove(product_file)
+        except Exception as err:
+            raise Exception(err)
+        
+    def gerar_arquivo_excel_auditoria_download_boletos(self, errors, escritorio):
+        try:
+            dfErros = pd.DataFrame(errors, columns=['OS', 'NUM OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
@@ -564,12 +578,13 @@ class Controller():
 
                 if not dfErros.empty:
                     dfErros.to_excel(writer, sheet_name='ERROS', index=False)
-                    writer.sheets['ERROS'].set_column('A:D', 20, alignLeft)
+                    writer.sheets['ERROS'].set_column('A:D', 30, alignLeft)
                     writer.sheets['ERROS'].set_column('E:E', 100, alignLeft)
 
                 writer.close()
                 
                 b.seek(0)
-                return b.getvalue()
+                with open(settings.BASE_DIR / f'temp/files/financeiro/boletos/{escritorio}/Auditoria de Boletos.xlsx', 'wb') as f:
+                    f.write(b.getbuffer())
         except Exception as err:
             raise Exception(err)

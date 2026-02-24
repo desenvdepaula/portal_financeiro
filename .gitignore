@@ -5,3 +5,4 @@ __pycache__/
 !**/migrations/__init__.py
 media/**
 venv/**
+temp/files/financeiro/boletos/**

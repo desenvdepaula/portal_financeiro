@@ -275,7 +275,10 @@
           <div id="div_body_dow"></div>
           <div class="card border-info mb-3 w-100">
             <div class="card-body text-info">
-              <p class="card-text">ESTA FUNCIONALIDADE PODE SER DEMORADA, DEPOIS DE RODAR, NÃO ATUALIZE E NEM SAIA DA PAGINA ATÉ FINALIZAR !!</p>
+              <p class="card-text">
+                ESTA FUNCIONALIDADE PODE SER DEMORADA, DEPOIS DE RODAR, NÃO ATUALIZE E NEM SAIA DA PAGINA ATÉ FINALIZAR !! <br>
+                <span class="text-danger" id="text_info_paste"></span>
+              </p>
             </div>
           </div>
           <form enctype="multipart/form-data" id="form_for_dow">
@@ -287,7 +290,7 @@
             </div>
             <div class="mt-4">
               <label for="select_escritorio" class="font-weight-bold">Selecione o Escritório:</label>
-              <select class="custom-select" id="select_escritorio" name="select_escritorio">
+              <select class="custom-select" id="select_escritorio" name="select_escritorio" onchange="verify_paste_os(event.target.value)">
                 <option value="501">501</option>
                 <option value="502">502</option>
                 <option value="505">505</option>
@@ -301,13 +304,13 @@
                 <option value="HONORARIO CONTABIL MESANO">HONORARIO CONTABIL MESANO</option>
               </select>
             </div>
-            <div class="d-flex justify-content-between mt-5">
-              <button class="btn btn-primary" onclick="baixar_boletos_escritorio(event)">
-                <strong>Buscar Boletos deste Escritório !</strong>
+            <center>
+              <button class="btn btn-primary mt-4" onclick="baixar_boletos_escritorio(event)" id="btn_down_bol">
+                <strong>Gerar Boletos OMIE <i class="fe fe-upload fe-16 ml-2"></i></strong>
               </button>
-              <button class="btn btn-outline-success" style="display: none;" id="btn_down_bol">
-                <strong>Baixar Boletos !</strong>
-              </button>
+            </center>
+            <div class="progress mt-4" id="div_progress_boletos">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress_boletos"></div>
             </div>
           </form>
         </div>
@@ -523,6 +526,9 @@
 
   function open_modal_baixar_boletos(){
     var myModal = new bootstrap.Modal(document.getElementById('modalDownloadPdfs'), {backdrop: 'static'})
+    $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
+    document.getElementById('div_progress_boletos').style.display = 'none';
+    verify_paste_os(document.getElementById('select_escritorio').value);
     myModal.toggle()
   }
 
@@ -1099,12 +1105,53 @@
     });
   }
 
+  async function verify_paste_os(escritorio){
+    await fetch(`/ordem_servico/verificar_boletos_escrit/${escritorio}/`)
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (Object.keys(data).includes('files')){
+          let btn = document.getElementById('btn_down_bol');
+          if (data.files > 0){
+            document.getElementById("text_info_paste").innerHTML = `
+              <b class="mt-2">Existem ${data.files} Arquivo(s) já gerados neste esritórios, Gerar Novamente irá apagar estes arquivos, *BAIXE OS ARQUIVOS SE NECESSÁRIO*</b><br>
+              <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="btn_download_boletos(event, '${escritorio}')">BAIXAR BOLETOS <i class="fe fe-download fe-16 ml-2"></i></button>
+            `;
+          }else{
+            document.getElementById("text_info_paste").innerHTML = ``;
+          }
+          document.getElementById('div_progress_boletos').style.display = 'none';
+          btn.setAttribute('onclick', `baixar_boletos_escritorio(event)`);
+          btn.className = btn.className.replace("success", "primary").replace("danger", "primary");
+          btn.innerHTML = `<strong>Gerar Boletos OMIE <i class="fe fe-upload fe-16 ml-2"></i></strong>`;
+        }else{
+          mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API (ARQUIVOS NA PASTA DE BOLETOS)");
+          setTimeout(() => {
+            window.location.href = "{% url 'list_ordem_servico' %}";
+          }, 1000)
+        }
+      })
+      .catch(error => {
+        mostrarAlert('error_aviso_dow', 'danger', error);
+        $("#modalDownloadPdfs").find('button.close').prop('disabled', false);
+        setTimeout(() => {
+          window.location.href = "{% url 'list_ordem_servico' %}";
+        }, 1000)
+      })
+  }
+
   async function baixar_boletos_escritorio(e){
     e.preventDefault();
-    $("#modalDownloadPdfs").find('button.close').prop('disabled', true);
     const formulario_file = document.getElementById("form_for_dow");
     const formData = new FormData(formulario_file);
     button_spinner(e.target, true)
+    $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', true);
     await fetch("{% url 'download_boletos_escritorio' %}", { method: "POST", body: formData})
     .then(response => {
       if (!response.ok) {
@@ -1117,14 +1164,17 @@
     .then(data => {
       if (Object.keys(data).includes('task_id')){
         verificarStatus(data.task_id, data.escritorio);
+        document.getElementById('div_progress_boletos').style.display = '';
+        document.getElementById('progress_boletos').style.width = '0%';
+        document.getElementById('progress_boletos').textContent = '0%';
       }else{
         mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API (ID DA TASK)");
       }
     })
     .catch(error => {
       mostrarAlert('error_aviso_dow', 'danger', error);
-      button_spinner(e.target, false, 'Baixar Boletos !');
-      $("#modalDownloadPdfs").find('button.close').prop('disabled', false);
+      button_spinner(e.target, false, '<strong>Gerar Boletos OMIE <i class="fe fe-upload fe-16 ml-2"></i></strong>');
+      $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
     })
   }
 
@@ -1132,17 +1182,32 @@
     const interval = setInterval(async () => {
       const response = await fetch(`/ordem_servico/status_task_os/${taskId}/`);
       const data = await response.json();
+      let pros = document.getElementById('progress_boletos');
+      let btn = document.getElementById('btn_down_bol');
       console.log("Status:", data);
       
+      if (data.state === "PENDING") {
+        pros.style.width = `${(data.info.current / data.info.total) * 100}%`;
+        pros.textContent = `${data.info.current} de ${data.info.total}`;
+      }
+
       if (data.state === "SUCCESS") {
         clearInterval(interval);
-        document.getElementById("btn_down_bol").style.display = "";
-        document.getElementById('btn_down_bol').setAttribute('onclick', `btn_download_boletos(event, '${data.escritorio}')`)
+        btn.setAttribute('onclick', `btn_download_boletos(event, '${escritorio}')`);
+        button_spinner(btn, false, '<strong>BAIXAR BOLETOS <i class="fe fe-download fe-16 ml-2"></i></strong>');
+        btn.className = btn.className.replace("primary", "success").replace("danger", "success");
+        pros.style.width = `100%`;
+        pros.textContent = `Finalizado o Processo, Faça o Download 👆`;
+        pros.className = pros.className.replace("primary", "success");
       }
 
       if (data.state === "FAILURE") {
         clearInterval(interval);
-        alert("Erro no processamento");
+        mostrarAlert('error_aviso_dow', 'danger', "Erro na Geração dos PDFs do CELERY");
+        button_spinner(btn, false, '<strong>ERRO AO BUSCAR, GERE NOVAMENTE</strong>');
+        btn.className = btn.className.replace("primary", "danger");
+        $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
+        pros.style.width = `0%`;
       }
 
     }, 10000);
@@ -1151,7 +1216,7 @@
   async function btn_download_boletos(e, escritorio){
     e.preventDefault();
     button_spinner(e.target, true)
-    await fetch("{% url 'baixar_boletos_os' %}", { method: "GET" })
+    await fetch(`/ordem_servico/baixar_boletos_os/${escritorio}/`, { method: "GET" })
     .then(response => {
       if (!response.ok) {
         return response.json().then(err => {
@@ -1161,29 +1226,27 @@
       return response.json();
     })
     .then(data => {
-      console.log(data)
-      console.log(escritorio)
-      //if (Object.keys(data).includes('files_zip')){
-      //  const byteCharacters = atob(data.files_zip);
-      //  const byteNumbers = new Array(byteCharacters.length);
-      //  for (let i = 0; i < byteCharacters.length; i++) {
-      //      byteNumbers[i] = byteCharacters.charCodeAt(i);
-      //  }
-      //  const byteArray = new Uint8Array(byteNumbers);
-      //  const blob = new Blob([byteArray], {
-      //      type: 'application/zip'
-      //  });
-      //  const link = document.createElement('a');
-      //  link.href = window.URL.createObjectURL(blob);
-      //  link.download = `Boletos das OS ${escritorio}.zip`;
-      //  document.body.appendChild(link);
-      //  link.click();
-      //  link.remove();
-      //  //window.location.href = "{% url 'list_ordem_servico' %}";
-      //  fecharModal('modalDownloadPdfs');
-      //}else{
-      //  mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
-      //}
+      if (Object.keys(data).includes('files_zip')){
+        const byteCharacters = atob(data.files_zip);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {
+          type: 'application/zip'
+        });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `Boletos das OS ${escritorio}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        button_spinner(e.target, false, '<strong>BAIXAR BOLETOS <i class="fe fe-download fe-16 ml-2"></i></strong>');
+        $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
+      }else{
+        mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
+      }
     })
     .catch(error => {
       mostrarAlert('error_aviso_dow', 'danger', error);
