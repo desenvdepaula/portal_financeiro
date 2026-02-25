@@ -388,6 +388,18 @@ class OrdemServicoView(View):
     
     def status_task(request, task_id):
         result = AsyncResult(task_id)
+        if result.state == 'FAILURE' or (result.state == 'SUCCESS' and result.get() == 'FAILURE'):
+            result.revoke(terminate=True)
+            return JsonResponse({
+                "state": "FAILURE",
+                "info": result.info
+            })
+        if not result.info:
+            result.revoke(terminate=True)
+            return JsonResponse({
+                "state": "FAILURE",
+                "info": result.info
+            })
         return JsonResponse({
             "state": result.state,
             "info": result.info

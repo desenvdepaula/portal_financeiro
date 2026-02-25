@@ -566,25 +566,3 @@ class Controller():
                     os.remove(product_file)
         except Exception as err:
             raise Exception(err)
-        
-    def gerar_arquivo_excel_auditoria_download_boletos(self, errors, escritorio):
-        try:
-            dfErros = pd.DataFrame(errors, columns=['OS', 'NUM OS', 'TITULO', 'CLIENTE', 'DESCRIÇÃO DO ERRO'])
-            with BytesIO() as b:
-                writer = pd.ExcelWriter(b, engine='xlsxwriter')
-                pd.set_option('max_colwidth', None)
-                workbook = writer.book
-                alignLeft = workbook.add_format({'align': 'left'})
-
-                if not dfErros.empty:
-                    dfErros.to_excel(writer, sheet_name='ERROS', index=False)
-                    writer.sheets['ERROS'].set_column('A:D', 30, alignLeft)
-                    writer.sheets['ERROS'].set_column('E:E', 100, alignLeft)
-
-                writer.close()
-                
-                b.seek(0)
-                with open(settings.BASE_DIR / f'temp/files/financeiro/boletos/{escritorio}/Auditoria de Boletos.xlsx', 'wb') as f:
-                    f.write(b.getbuffer())
-        except Exception as err:
-            raise Exception(err)

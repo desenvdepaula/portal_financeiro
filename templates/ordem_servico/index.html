@@ -1250,6 +1250,8 @@
     })
     .catch(error => {
       mostrarAlert('error_aviso_dow', 'danger', error);
+      verify_paste_os(escritorio);
+      $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
     })
   }
 
