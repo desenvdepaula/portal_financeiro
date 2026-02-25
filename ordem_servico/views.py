@@ -387,23 +387,24 @@ class OrdemServicoView(View):
             return JsonResponse(response, status=200)
     
     def status_task(request, task_id):
-        result = AsyncResult(task_id)
-        if result.state == 'FAILURE' or (result.state == 'SUCCESS' and result.get() == 'FAILURE'):
-            result.revoke(terminate=True)
+        try:
+            result = AsyncResult(task_id)
+            if result.state == 'FAILURE' or (result.state == 'SUCCESS' and result.get() == 'FAILURE'):
+                text_error = str(result.info)
+                result.revoke(terminate=True)
+                return JsonResponse({
+                    "state": "FAILURE",
+                    "info": {"message": text_error}
+                })
+            if not result.info:
+                result.revoke(terminate=True)
+                raise Exception("Sem INFOMAÇÔES NO RETORNO")
             return JsonResponse({
-                "state": "FAILURE",
+                "state": result.state,
                 "info": result.info
             })
-        if not result.info:
-            result.revoke(terminate=True)
-            return JsonResponse({
-                "state": "FAILURE",
-                "info": result.info
-            })
-        return JsonResponse({
-            "state": result.state,
-            "info": result.info
-        })
+        except Exception as err:
+            return JsonResponse({"state": "FAILURE", "info": {"message": str(err)}}, status=500) 
     
     def verify_pdf_os(request, escritorio):
         try:

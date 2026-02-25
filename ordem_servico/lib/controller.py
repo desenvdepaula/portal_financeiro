@@ -278,7 +278,7 @@ class Controller():
             os_list_separado_por_escritorios = {}
             
             if type_lanc == 'datas':
-                os_list_db = OrdemServico.objects.filter(data_cobranca__range=datas, empresa__escritorio__in=escritorio_lote, arquivado=False, cod_os_omie__isnull=True)
+                os_list_db = OrdemServico.objects.filter(data_cobranca__range=datas, empresa__escritorio__in=escritorio_lote, arquivado=False, cod_os_omie__isnull=True, aprovado=True)
                 for os_db in os_list_db:
                     if os_db.cd_servico == '0':
                         errors.append([os_db.id, os_db.empresa.cd_empresa, os_db.empresa.name_empresa, os_db.empresa.cnpj_cpf, os_db.empresa.escritorio, f"OS Sem Serviço Corretamente ALocado, Veja Novamente e Trate o Serviço !!"])

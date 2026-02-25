@@ -14,7 +14,8 @@ def gerar_arquivo_excel_auditoria_download_boletos(errors, escritorio):
 
             if not dfErros.empty:
                 dfErros.to_excel(writer, sheet_name='ERROS', index=False)
-                writer.sheets['ERROS'].set_column('A:D', 30, alignLeft)
+                writer.sheets['ERROS'].set_column('A:C', 18, alignLeft)
+                writer.sheets['ERROS'].set_column('D:D', 50, alignLeft)
                 writer.sheets['ERROS'].set_column('E:E', 100, alignLeft)
 
             writer.close()

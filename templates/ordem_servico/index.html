@@ -129,7 +129,7 @@
                             </div>
                           </td>
                           <td title="check" class="h6 d-flex justify-content-center">
-                            {% if not ordem.cod_os_omie and not ordem.arquivado and not ordem.cd_servico == '0'%}
+                            {% if not ordem.cod_os_omie and not ordem.arquivado and not ordem.cd_servico == '0' and ordem.aprovado%}
                               <input class="form-check-input" type="checkbox" value="" ordemid="{{ordem.id}}" id="flexCheckDefault">
                             {% endif %}
                           </td>
@@ -849,9 +849,15 @@
               child.innerHTML = ""
             }
           }else if (type == 'APROVADO'){
-            child.className = "h6 text-micolor"
             if (child.title == 'status'){
               child.innerText = "APROVADO"
+            }
+            if (child.title == 'check'){
+              child.innerHTML=`
+                <input class="form-check-input" type="checkbox" value="" ordemid="${id_ordem}" id="flexCheckDefault">
+              `;
+            }else{
+              child.className = "h6 text-micolor"
             }
           }else if (type == 'ARQUIVADO'){
             child.className = "h6"
@@ -862,15 +868,12 @@
               child.innerHTML = ""
             }
           }else{
-            if (child.title == 'check'){
-              child.innerHTML=`
-                <input class="form-check-input" type="checkbox" value="" ordemid="${id_ordem}" id="flexCheckDefault">
-              `;
-            }else{
-              child.className = "h6 text-warning"
-            }
+            child.className = "h6 text-warning"
             if (child.id){
               child.innerText = "DEBITAR"
+            }
+            if (child.title == 'check'){
+              child.innerHTML = ""
             }
           }
         }
@@ -1203,7 +1206,7 @@
 
       if (data.state === "FAILURE") {
         clearInterval(interval);
-        mostrarAlert('error_aviso_dow', 'danger', "Erro na Geração dos PDFs do CELERY");
+        mostrarAlert('error_aviso_dow', 'danger', `Erro do CELERY: ${data.info?.message}`);
         button_spinner(btn, false, '<strong>ERRO AO BUSCAR, GERE NOVAMENTE</strong>');
         btn.className = btn.className.replace("primary", "danger");
         $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);

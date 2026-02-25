@@ -119,10 +119,7 @@ def baixar_pdfs_e_processar(self, list_os, escritorio, filename):
                 meta={'current': i + 1, 'total': total}
             )
         gerar_arquivo_excel_auditoria_download_boletos(response_data['errors'], escritorio)
-    except Exception as err:
-        self.update_state(
-            state = "FAILURE",
-            meta = {"message": f"{str(err)}"}
-        )
+    except Exception as e:
+        raise Exception(str(e))
     else:
         return {"status": "concluido"}
