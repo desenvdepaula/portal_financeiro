@@ -1247,6 +1247,7 @@
         link.remove();
         button_spinner(e.target, false, '<strong>BAIXAR BOLETOS <i class="fe fe-download fe-16 ml-2"></i></strong>');
         $("#modalDownloadPdfs").find('button.close, input, select').prop('disabled', false);
+        verify_paste_os(escritorio);
       }else{
         mostrarAlert('error_aviso_dow', 'danger', "Não retornou Corretamente a Resposta da API");
       }
