@@ -622,9 +622,9 @@
     document.getElementById('view_ordem').innerHTML = `
       <ul class="list-group list-group-flush">
         <li class="list-group-item h5">Empresa: ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa} (Escrit. ${ordem.empresa?.escritorio})</li>
-        <li class="list-group-item h5">Serviço: ${ordem.servico}</li>
-        <li class="list-group-item h5">Descrição Serviço: ${ordem.ds_servico}</li>
-        <li class="list-group-item h5">Descrição: ${ordem.observacoes_servico}</li>
+        <li class="list-group-item h5">Serviço Realizado: ${ordem.servico}</li>
+        <li class="list-group-item h5">Descrição Serviço (Vai para BOLETO OMIE): ${ordem.ds_servico}</li>
+        <li class="list-group-item h5">Observações da OS: ${ordem.observacoes_servico}</li>
         <li class="list-group-item h5">Quantidade: ${ordem.quantidade}</li>
         <li class="list-group-item h5">Valor: ${ordem.valor}</li>
         <li class="list-group-item h5">Horas: ${ordem.hora_trabalho}</li>
