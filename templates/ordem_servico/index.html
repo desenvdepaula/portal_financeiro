@@ -1189,7 +1189,7 @@
       let btn = document.getElementById('btn_down_bol');
       console.log("Status:", data);
       
-      if (data.state === "PENDING") {
+      if (data.state === "PROGRESS") {
         pros.style.width = `${(data.info.current / data.info.total) * 100}%`;
         pros.textContent = `${data.info.current} de ${data.info.total}`;
       }
