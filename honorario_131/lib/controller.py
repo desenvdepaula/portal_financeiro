@@ -17,7 +17,7 @@ class Controller():
         self.manager = Manager(*args, **kwargs).default_connect()
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
-        self.categorias = {'701': 'AUTÔNOMO', '101': 'EMPREGADO', '741': 'AUTÔNOMO', '723': 'SÓCIO', '722': 'SÓCIO', '901': 'ESTAGIÁRIO'}
+        self.categorias = {'701': 'AUTÔNOMO', '101': 'EMPREGADO', '741': 'AUTÔNOMO', '723': 'SÓCIO', '722': 'SÓCIO', '901': 'ESTAGIÁRIO', '761': 'SÍNDICO'}
         self.writer = csv.writer(self.response)
         if active_database_tareffa:
             self.managerTareffa = ManagerTareffa(*args, **kwargs)
@@ -107,15 +107,15 @@ class Controller():
     
     #------------------ HONORARIO 131 ------------------#
     
-    def create_os_folhas(self, cd_servico, data_fim, valor, quantidade, empresa_omie):
+    def create_os_folhas(self, cd_servico, hoje, valor, quantidade, empresa_omie):
         OrdemServico.objects.create(
             departamento = 'INTERNO',
             cd_servico = cd_servico,
             servico = 'HONORÁRIO Nº FOLHAS PROCESSADAS',
             ds_servico = 'HONORÁRIO Nº FOLHAS PROCESSADAS',
             observacoes_servico = '',
-            data_realizado = data_fim,
-            data_cobranca = data_fim,
+            data_realizado = hoje,
+            data_cobranca = hoje,
             quantidade = quantidade,
             hora_trabalho = '0:00',
             valor = valor,
@@ -185,7 +185,8 @@ class Controller():
         
         return df
 
-    def honorarioEmpresasNaoSomaFilial(self, dataFrame, alignCenter, writer, data_fim):
+    def honorarioEmpresasNaoSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim):
+        hoje = date.today()
         codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         dicionaosomafiliais = [ {
             'empresa': regra.cd_empresa, 
@@ -218,7 +219,7 @@ class Controller():
                     auditoriaGeralNaoSomaFilial.append([ f"Empresa com esta Filial Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
                     continue
                 servico_desta_empresa = codigos_servico[emp.escritorio]
-                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado=data_fim, cd_servico=servico_desta_empresa, criador_os='INOVACAO')
+                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado__range=[data_ini, data_fim], cd_servico=servico_desta_empresa, criador_os='INOVACAO')
                 if orders_ja_feitas.count() > 0:
                     quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
@@ -230,10 +231,10 @@ class Controller():
                             try:
                                 order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
                                 if not order_aberta:
-                                    self.create_os_folhas(servico_desta_empresa, data_fim, newValorCobradoFinal, novaDiferenca, emp)
+                                    self.create_os_folhas(servico_desta_empresa, hoje, float(valor), novaDiferenca, emp)
                                 else:
                                     order_aberta.quantidade = diferenca
-                                    order_aberta.valor = valorCobrado
+                                    order_aberta.valor = float(valor)
                                     order_aberta.save()
                             except Exception as err:
                                 auditoriaGeralNaoSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
@@ -243,7 +244,7 @@ class Controller():
                             auditoriaGeralNaoSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
                     try:
-                        self.create_os_folhas(servico_desta_empresa, data_fim, valorCobrado, diferenca, emp)
+                        self.create_os_folhas(servico_desta_empresa, hoje, float(valor), diferenca, emp)
                     except Exception as err:
                         auditoriaGeralNaoSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     else:
@@ -256,7 +257,8 @@ class Controller():
         writer.sheets['Auditoria Não Soma Filiais'].set_column('J:J', 26, alignCenter)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('K:K', 17, alignCenter)
 
-    def honorarioEmpresasSomaFilial(self, dataFrame, alignCenter, writer, data_fim):
+    def honorarioEmpresasSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim):
+        hoje = date.today()
         codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         diciosomafiliais = [ {
             'empresa': regra.cd_empresa, 
@@ -290,7 +292,7 @@ class Controller():
                     auditoriaGeralSomaFilial.append([ f"Empresa Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
                     continue
                 servico_desta_empresa = codigos_servico[emp.escritorio]
-                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado=data_fim, cd_servico=servico_desta_empresa, criador_os='INOVACAO')
+                orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado__range=[data_ini, data_fim], cd_servico=servico_desta_empresa, criador_os='INOVACAO')
                 if orders_ja_feitas.count() > 0:
                     quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
@@ -302,10 +304,10 @@ class Controller():
                             try:
                                 order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
                                 if not order_aberta:
-                                    self.create_os_folhas(servico_desta_empresa, data_fim, newValorCobradoFinal, novaDiferenca, emp)
+                                    self.create_os_folhas(servico_desta_empresa, hoje, float(valor), novaDiferenca, emp)
                                 else:
                                     order_aberta.quantidade = diferenca
-                                    order_aberta.valor = valorCobrado
+                                    order_aberta.valor = float(valor)
                                     order_aberta.save()
                             except Exception as err:
                                 auditoriaGeralSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
@@ -315,7 +317,7 @@ class Controller():
                             auditoriaGeralSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
                     try:
-                        self.create_os_folhas(servico_desta_empresa, data_fim, valorCobrado, diferenca, emp)
+                        self.create_os_folhas(servico_desta_empresa, hoje, float(valor), diferenca, emp)
                     except Exception as err:
                         auditoriaGeralSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     else:
@@ -344,9 +346,11 @@ class Controller():
 
     def returnCompetToValidation(self, compet):
         _, mes, ano = compet.split('.')
-        last_day_month = monthrange(int(ano), int(mes))[1]
-        data_fim = date(int(ano), int(mes), last_day_month)
-        return f"{int(mes)}/{ano}", f"{mes}/{ano}", data_fim
+        now = datetime.now()
+        last_day_month = monthrange(int(now.year), int(now.month))[1]
+        data_ini = date(int(now.year), int(now.month), 1)
+        data_fim = date(int(now.year), int(now.month), last_day_month)
+        return f"{int(mes)}/{ano}", f"{mes}/{ano}", data_ini, data_fim
     
     def gerarHonorarios(self, compet):
         self.manager.connect()
@@ -357,10 +361,10 @@ class Controller():
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 
-                datadb, dataValidation, data_fim = self.returnCompetToValidation(compet)
+                datadb, dataValidation, data_ini, data_fim = self.returnCompetToValidation(compet)
                 dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation, datadb)
-                self.honorarioEmpresasSomaFilial(dataFrameSql, alignCenter, writer, data_fim)
-                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, alignCenter, writer, data_fim)
+                self.honorarioEmpresasSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim)
+                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim)
                 
                 writer.close()
                 
