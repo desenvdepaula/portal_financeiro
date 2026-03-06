@@ -17,11 +17,19 @@ class Controller():
         self.manager = Manager(*args, **kwargs).default_connect()
         self.dados = {}
         self.response = HttpResponse(content_type='text/csv')
-        self.categorias = {'701': 'AUTÔNOMO', '101': 'EMPREGADO', '741': 'AUTÔNOMO', '723': 'SÓCIO', '722': 'SÓCIO', '901': 'ESTAGIÁRIO', '761': 'SÍNDICO'}
+        self.categorias = {'701': 'AUTÔNOMO', '101': 'EMPREGADO', '741': 'AUTONOMO', '723': 'SÓCIO', '722': 'SÓCIO', '901': 'ESTAGIÁRIO', '761': 'SÍNDICO'}
         self.writer = csv.writer(self.response)
         if active_database_tareffa:
             self.managerTareffa = ManagerTareffa(*args, **kwargs)
-
+            
+    def format_cpf_cnpj(self, documento):
+        if len(documento) == 11:
+            return f"{documento[:3]}.{documento[3:6]}.{documento[6:9]}-{documento[9:]}"
+        elif len(documento) == 14:
+            return f"{documento[:2]}.{documento[2:5]}.{documento[5:8]}/{documento[8:12]}-{documento[12:]}"
+        else:
+            return "000"
+        
     #------------------ AUDITORIA 131 ------------------#
     
     def gerarAuditoria(self):
@@ -37,19 +45,29 @@ class Controller():
                 
                 empresas = self.managerTareffa.get_empresa_ativas()
                 codigos = [empresa[0] for empresa in empresas]
+                full_regras = RegrasHonorario.objects.all()
                 
-                regrasGeral = RegrasHonorario.objects.filter(calcular=True)
+                regrasGeral = full_regras.filter(calcular=True)
                 regrasGeralSomadas = [regra.cd_empresa for regra in regrasGeral if regra.somar_filiais]
-                regrasGeralNaoSomadas = [f'{regra.cd_empresa}/{regra.cd_filial}' for regra in regrasGeral if not regra.somar_filiais]
                 
                 for empresa in empresas:
-                    if str(empresa[0]) not in regrasGeralSomadas and f"{empresa[0]}/{empresa[1]}" not in regrasGeralNaoSomadas:
-                        empresasForaDasRegras.append(empresa)
-                
+                    try:
+                        rul = full_regras.get(cnpj_cpf=empresa[4])
+                        if not rul.calcular:
+                            empresa.insert(0, "EMPRESA SEM REGRAS")
+                            empresasForaDasRegras.append(empresa)
+                    except:
+                        if str(empresa[0]) not in regrasGeralSomadas:
+                            empresa.insert(0, "EMPRESA NÃO CADASTRADA")
+                            empresasForaDasRegras.append(empresa)
+                        else:
+                            empresa.insert(0, "NÃO CADASTRADA, PORÉM, FILIAIS SOMADAS")
+                            empresasForaDasRegras.append(empresa)
+                                
                 for regra in regrasGeral:
                     if int(regra.cd_empresa) not in codigos:
                         RegrasInvalidas.append([
-                            regra.cd_financeiro, 
+                            regra.cnpj_cpf, 
                             regra.cd_empresa, 
                             regra.cd_filial, 
                             regra.razao_social, 
@@ -57,34 +75,34 @@ class Controller():
                             "SOMA FILIAIS" if regra.somar_filiais else "NÃO SOMA FILIAIS",
                             "Esta Regra se Refere a uma Empresa Não Ativa no Tareffa"
                         ])
+                    else:
+                        RegrasGerais.append([
+                            regra.cnpj_cpf,
+                            regra.cd_empresa,
+                            regra.cd_filial,
+                            regra.razao_social,
+                            "CALCULA",
+                            "SOMA FILIAIS" if regra.somar_filiais else "NÃO SOMA FILIAIS",
+                            regra.limite,
+                            regra.valor,
+                            regra.observacoes,
+                        ])
                         
-                for enterprise in regrasGeral:
-                    RegrasGerais.append([
-                        enterprise.cd_financeiro,
-                        enterprise.cd_empresa,
-                        enterprise.cd_filial,
-                        enterprise.razao_social,
-                        "CALCULA",
-                        "SOMA FILIAIS" if enterprise.somar_filiais else "NÃO SOMA FILIAIS",
-                        enterprise.limite,
-                        enterprise.valor,
-                        enterprise.observacoes,
-                    ])
-                        
-                dfEmpresasSemRegras = pd.DataFrame(empresasForaDasRegras, columns=['CD_EMPRESA', 'CD_ESTAB', 'NOME', "CARACTERISTICA"])
+                dfEmpresasSemRegras = pd.DataFrame(empresasForaDasRegras, columns=["STATUS", 'CD_EMPRESA', 'CD_ESTAB', 'NOME', "CARACTERISTICA", "CNPJ_CPF"])
                 dfEmpresasSemRegras.to_excel(writer, sheet_name='Empresa Sem Regras', index = False)
-                writer.sheets['Empresa Sem Regras'].set_column('A:B', 20, alignCenter)
-                writer.sheets['Empresa Sem Regras'].set_column('C:C', 80, alignCenter)
-                writer.sheets['Empresa Sem Regras'].set_column('D:D', 25, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('A:A', 40, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('B:C', 18, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('D:D', 80, alignCenter)
+                writer.sheets['Empresa Sem Regras'].set_column('E:F', 25, alignCenter)
                 
-                dfRegrasInvalidadas = pd.DataFrame(RegrasInvalidas, columns=['CD_FIANANCEIRO', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA ?", "SOMA FILIAIS", "DESCRIÇÃO"])
+                dfRegrasInvalidadas = pd.DataFrame(RegrasInvalidas, columns=['CNPJ_CPF', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA ?", "SOMA FILIAIS", "DESCRIÇÃO"])
                 dfRegrasInvalidadas.to_excel(writer, sheet_name='Regras Inválidas', index = False)
                 writer.sheets['Regras Inválidas'].set_column('A:C', 20, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('D:D', 80, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('E:F', 20, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('G:G', 60, alignCenter)
                 
-                dfRegrasGerais = pd.DataFrame(RegrasGerais, columns=['CD_FIANANCEIRO', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA", "SOMA FILIAIS ?", "LIMITE", "VALOR", "OBSERVAÇÕES"])
+                dfRegrasGerais = pd.DataFrame(RegrasGerais, columns=['CNPJ_CPF', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA", "SOMA FILIAIS ?", "LIMITE", "VALOR", "OBSERVAÇÕES"])
                 dfRegrasGerais.to_excel(writer, sheet_name='Regras Ativas', index = False)
                 writer.sheets['Regras Ativas'].set_column('A:C', 20, alignCenter)
                 writer.sheets['Regras Ativas'].set_column('D:D', 80, alignCenter)
@@ -107,7 +125,8 @@ class Controller():
     
     #------------------ HONORARIO 131 ------------------#
     
-    def create_os_folhas(self, cd_servico, hoje, valor, quantidade, empresa_omie):
+    def create_os_folhas(self, cd_servico, valor, quantidade, empresa_omie):
+        hoje = date.today()
         OrdemServico.objects.create(
             departamento = 'INTERNO',
             cd_servico = cd_servico,
@@ -143,6 +162,7 @@ class Controller():
         for objEmpresa in dataContabit:
             if str(objEmpresa) in empresas:
                 id_empresa = dataContabit[objEmpresa].get('idEmpresa')
+                cnpj_cpf = self.format_cpf_cnpj(dataContabit[objEmpresa].get('nrCNPJCPF'))
                 estab = dataContabit[objEmpresa].get('idEstabelecimento')
                 estab = estab if estab < 5 else 1
                 for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
@@ -154,13 +174,14 @@ class Controller():
                             qtd,
                             estab,
                             datadb,
-                            self.categorias.get(cd_categoria)
+                            self.categorias.get(cd_categoria),
+                            cnpj_cpf
                         )
                         lista.append(item)
                     else:
                         empresasSemCategoria.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}, Contate a Inovação !"])
 
-        df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO"])
+        df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO", "CPFCNPJ"])
         
         dfResponse = pd.pivot_table(
             df,
@@ -171,27 +192,34 @@ class Controller():
         dfResponse.fillna(0, inplace=True)
             
         df = df.drop(columns=['TIPO CONTRATO'])
-        df = df.groupby(by=['EMPRESA', 'FILIAL', 'DATA'], as_index=False).sum(numeric_only=True)
+        df = df.groupby(by=['EMPRESA', 'FILIAL', 'DATA', 'CPFCNPJ'], as_index=False).sum(numeric_only=True)
         
+        dfResponse['AUTÔNOMOS'] = dfResponse[['AUTONOMO', 'AUTÔNOMO']].sum(axis=1)
+        dfResponse['ESTAGIÁRIOS'] = dfResponse[['ESTAGIARIO', 'ESTAGIÁRIO']].sum(axis=1)
+        dfResponse.drop(columns=['ESTAGIARIO', 'ESTAGIÁRIO', 'AUTONOMO', 'AUTÔNOMO'], inplace=True)
         dfResponse.to_excel(writer, sheet_name='Auditoria Geral', index = False)
-        writer.sheets['Auditoria Geral'].set_column('A:E', 15, alignCenter)
-        writer.sheets['Auditoria Geral'].set_column('F:F', 22, alignCenter)
-        writer.sheets['Auditoria Geral'].set_column('G:I', 15, alignCenter)
+        writer.sheets['Auditoria Geral'].set_column('A:C', 15, alignCenter)
+        writer.sheets['Auditoria Geral'].set_column('D:L', 19, alignCenter)
         
         dfSemCategoria = pd.DataFrame(empresasSemCategoria, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
         dfSemCategoria.to_excel(writer, sheet_name='Sem Categorias de Funcionário', index = False)
         writer.sheets['Sem Categorias de Funcionário'].set_column('A:B', 30, alignCenter)
         writer.sheets['Sem Categorias de Funcionário'].set_column('C:C', 80, alignCenter)
         
+        observacoes = RegrasHonorario.objects.exclude(observacoes__isnull=True).exclude(observacoes='').values('cd_empresa', 'cd_filial', 'cnpj_cpf', 'razao_social', 'observacoes')
+        dfObservacoes = pd.DataFrame(list(observacoes))
+        dfObservacoes = dfObservacoes.rename(columns={'cnpj_cpf':'CNPJ_CPF', 'cd_empresa': 'CD_EMPRESA', 'cd_filial': 'CD_FILIAL', 'razao_social': 'NOME', 'observacoes': 'OBSERVAÇÕES'})
+        dfObservacoes.to_excel(writer, sheet_name='OBSERVAÇÕES', index = False)
+        writer.sheets['OBSERVAÇÕES'].set_column('A:C', 20, alignCenter)
+        writer.sheets['OBSERVAÇÕES'].set_column('D:D', 80, alignCenter)
+        writer.sheets['OBSERVAÇÕES'].set_column('E:E', 150, alignCenter)
+        
         return df
 
-    def honorarioEmpresasNaoSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim):
-        hoje = date.today()
+    def honorarioEmpresasNaoSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim, auth_lancamentos):
         codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         dicionaosomafiliais = [ {
-            'empresa': regra.cd_empresa, 
-            'filial': regra.cd_filial,
-            'cd-financeiro': regra.cd_financeiro, 
+            'cnpj_cpf': regra.cnpj_cpf, 
             'valor': float(regra.valor), 
             'limite': regra.limite 
         } for regra in RegrasHonorario.objects.filter(calcular=True, somar_filiais=False)]
@@ -200,76 +228,76 @@ class Controller():
         
         dfRegras = pd.DataFrame(dicionaosomafiliais)
         
-        dataFrame = dataFrame.rename(columns={'EMPRESA':'empresa', 'FILIAL': 'filial'})
-        dataFrame['empresa'] = dataFrame['empresa'].astype(str)
-        dataFrame['filial'] = dataFrame['filial'].astype(str)
-        df = pd.merge(dfRegras,dataFrame, on=['empresa', 'filial'], how='left')
+        dataFrame = dataFrame.rename(columns={'CPFCNPJ':'cnpj_cpf'})
+        dataFrame['EMPRESA'] = dataFrame['EMPRESA'].astype(str)
+        dataFrame['FILIAL'] = dataFrame['FILIAL'].astype(str)
+        df = pd.merge(dfRegras,dataFrame, on=['cnpj_cpf'], how='left')
         df = df[~df['QUANTIDADE'].isna()]
         
         df['valorCobrado'] = (df['QUANTIDADE'] - df['limite']) * df['valor']
         df['valorCobrado'] = df['valorCobrado'].map('{:.2f}'.format)
         df['valorCobrado'] = df.apply(lambda x : x['valorCobrado'] if float(x['valorCobrado']) >= 0 else 0, axis=1)
-        
-        for empresa, filial, cd_financeiro, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
+        df = df.reindex(columns=['EMPRESA', 'FILIAL', 'cnpj_cpf', 'valor', 'limite', 'DATA', 'QUANTIDADE', 'valorCobrado'])
+        for empresa, filial, cnpj_cpf, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
             diferenca = int(int(quantidade) - int(limite))
             if float(valorCobrado) > 0:
                 try:
-                    emp = EmpresasOmie.objects.get(cd_empresa=empresa, estab=filial)
+                    emp = EmpresasOmie.objects.get(cnpj_cpf=cnpj_cpf)
                 except:
-                    auditoriaGeralNaoSomaFilial.append([ f"Empresa com esta Filial Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
+                    auditoriaGeralNaoSomaFilial.append([ f"Empresa com esta Filial Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
                     continue
                 servico_desta_empresa = codigos_servico[emp.escritorio]
                 orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado__range=[data_ini, data_fim], cd_servico=servico_desta_empresa, criador_os='INOVACAO')
                 if orders_ja_feitas.count() > 0:
                     quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
-                        auditoriaGeralNaoSomaFilial.append([ "Lançamentos Corretos nesta Filial !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
+                        auditoriaGeralNaoSomaFilial.append([ "Lançamentos Corretos nesta Filial !!", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
                     else:
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
                             try:
-                                order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
-                                if not order_aberta:
-                                    self.create_os_folhas(servico_desta_empresa, hoje, float(valor), novaDiferenca, emp)
-                                else:
-                                    order_aberta.quantidade = diferenca
-                                    order_aberta.valor = float(valor)
-                                    order_aberta.save()
+                                if auth_lancamentos:
+                                    order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
+                                    if not order_aberta:
+                                        self.create_os_folhas(servico_desta_empresa, float(valor), novaDiferenca, emp)
+                                    else:
+                                        order_aberta.quantidade = diferenca
+                                        order_aberta.valor = float(valor)
+                                        order_aberta.save()
                             except Exception as err:
-                                auditoriaGeralNaoSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
+                                auditoriaGeralNaoSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                             else:
-                                auditoriaGeralNaoSomaFilial.append([ f"Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
+                                auditoriaGeralNaoSomaFilial.append([ f"{'' if auth_lancamentos else 'SERIA '}Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                         else:
-                            auditoriaGeralNaoSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
+                            auditoriaGeralNaoSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
                     try:
-                        self.create_os_folhas(servico_desta_empresa, hoje, float(valor), diferenca, emp)
+                        if auth_lancamentos:
+                            self.create_os_folhas(servico_desta_empresa, float(valor), diferenca, emp)
                     except Exception as err:
-                        auditoriaGeralNaoSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                        auditoriaGeralNaoSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     else:
-                        auditoriaGeralNaoSomaFilial.append(["Foi realizado a OS Corretamente !!", empresa, filial, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                        auditoriaGeralNaoSomaFilial.append([f"{'Foi' if auth_lancamentos else 'SERIA'} Cadastrado a OS Corretamente !!", empresa, filial, cnpj_cpf, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     
-        dfAuditoria = pd.DataFrame(auditoriaGeralNaoSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','FILIAL','CD-FINANCEIRO', 'VALOR', 'LIMITE', 'DATA', "ESCRITORIO", 'QUANTIDADE','VALOR-COBRADO-FINAL', 'DIFERENCA'])
+        dfAuditoria = pd.DataFrame(auditoriaGeralNaoSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','FILIAL','CPFCNPJ', 'VALOR', 'LIMITE', 'DATA', "ESCRITORIO", 'QUANTIDADE','VALOR-COBRADO-FINAL', 'DIFERENCA'])
         dfAuditoria.to_excel(writer, sheet_name='Auditoria Não Soma Filiais', index = False)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('A:A', 90, alignCenter)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('B:I', 17, alignCenter)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('J:J', 26, alignCenter)
         writer.sheets['Auditoria Não Soma Filiais'].set_column('K:K', 17, alignCenter)
 
-    def honorarioEmpresasSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim):
-        hoje = date.today()
+    def honorarioEmpresasSomaFilial(self, dataFrame, alignCenter, writer, data_ini, data_fim, auth_lancamentos):
         codigos_servico = { '501': '11019827132', '502': '4423461989', '505': '8601960848', '567': '2641525890', '575': '3838357651' }
         diciosomafiliais = [ {
-            'empresa': regra.cd_empresa, 
-            'cd-financeiro': regra.cd_financeiro, 
+            'empresa': regra.cd_empresa,
             'valor': float(regra.valor), 
             'limite': regra.limite 
         } for regra in RegrasHonorario.objects.filter(calcular=True, somar_filiais=True)]
         
         auditoriaGeralSomaFilial = []
         
-        dataFrameTratamento = dataFrame.drop(columns=['FILIAL'])
+        dataFrameTratamento = dataFrame.drop(columns=['FILIAL', 'CPFCNPJ'])
         dataFrameTratamento = dataFrameTratamento.groupby(by=['EMPRESA','DATA'], as_index=False).sum(numeric_only=True)
         dataFrameTratamento = dataFrameTratamento.rename(columns={'EMPRESA':'empresa'})
         dataFrameTratamento['empresa'] = dataFrameTratamento['empresa'].astype(str)
@@ -281,7 +309,7 @@ class Controller():
         df['valorCobrado'] = df['valorCobrado'].map('{:.2f}'.format)
         df['valorCobrado'] = df.apply(lambda x : x['valorCobrado'] if float(x['valorCobrado']) >= 0 else 0, axis=1)
 
-        for empresa,cd_financeiro, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
+        for empresa, valor, limite, data, quantidade, valorCobrado in df.values.tolist():
             if float(valorCobrado) > 0:
                 diferenca = int(quantidade - limite)
                 try:
@@ -289,46 +317,48 @@ class Controller():
                     if not emp:
                         raise Exception("")
                 except:
-                    auditoriaGeralSomaFilial.append([ f"Empresa Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
+                    auditoriaGeralSomaFilial.append([ f"Empresa Não Consta na Base da OMIE, verifique ou Atualize esta Empresa !!", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, 0, int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca ])
                     continue
                 servico_desta_empresa = codigos_servico[emp.escritorio]
                 orders_ja_feitas = OrdemServico.objects.filter(empresa=emp, data_realizado__range=[data_ini, data_fim], cd_servico=servico_desta_empresa, criador_os='INOVACAO')
                 if orders_ja_feitas.count() > 0:
                     quantidadeLancada = sum([ord.quantidade for ord in orders_ja_feitas])
                     if diferenca == quantidadeLancada:
-                        auditoriaGeralSomaFilial.append([ "Lançamentos Corretos em todas as Filiais !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
+                        auditoriaGeralSomaFilial.append([ "Lançamentos Corretos em todas as Filiais !!", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", 0 ])
                     else:
                         novaDiferenca = int(diferenca) - int(quantidadeLancada)
                         if novaDiferenca > 0:
                             newValorCobradoFinal = novaDiferenca * float(valor)
                             try:
-                                order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
-                                if not order_aberta:
-                                    self.create_os_folhas(servico_desta_empresa, hoje, float(valor), novaDiferenca, emp)
-                                else:
-                                    order_aberta.quantidade = diferenca
-                                    order_aberta.valor = float(valor)
-                                    order_aberta.save()
+                                if auth_lancamentos:
+                                    order_aberta = orders_ja_feitas.filter(cod_os_omie__isnull=True).first()
+                                    if not order_aberta:
+                                        self.create_os_folhas(servico_desta_empresa, float(valor), novaDiferenca, emp)
+                                    else:
+                                        order_aberta.quantidade = diferenca
+                                        order_aberta.valor = float(valor)
+                                        order_aberta.save()
                             except Exception as err:
-                                auditoriaGeralSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
+                                auditoriaGeralSomaFilial.append([ f"Erro na Criação ou Alteração da OS: {err}", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                             else:
-                                auditoriaGeralSomaFilial.append([ f"Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
+                                auditoriaGeralSomaFilial.append([ f"{'' if auth_lancamentos else 'SERIA '}Feito nova OS ou Alterado com as diferenças, já tinham Lançamentos, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(newValorCobradoFinal)).replace('.', ',').replace('_', '.'), novaDiferenca ])
                         else:
-                            auditoriaGeralSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
+                            auditoriaGeralSomaFilial.append([ f"Precisa ser Tratado, a Diferença é negativa ou nula, Diferença atual: {diferenca}, Valor lançado: {quantidadeLancada}", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ Nenhum Valor Cobrado,99", novaDiferenca ])
                 else:
                     try:
-                        self.create_os_folhas(servico_desta_empresa, hoje, float(valor), diferenca, emp)
+                        if auth_lancamentos:
+                            self.create_os_folhas(servico_desta_empresa, float(valor), diferenca, emp)
                     except Exception as err:
-                        auditoriaGeralSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                        auditoriaGeralSomaFilial.append([f"Erro na Criação da OS: {err}", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
                     else:
-                        auditoriaGeralSomaFilial.append(["Foi realizado o lançamento Normalmente !!", empresa, cd_financeiro, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
+                        auditoriaGeralSomaFilial.append([f"{'Foi' if auth_lancamentos else 'SERIA'} realizado o lançamento Normalmente !!", empresa, "R$ {:_.2f}".format(float(valor)).replace('.', ',').replace('_', '.'), limite, data, int(emp.escritorio), int(quantidade), "R$ {:_.2f}".format(float(valorCobrado)).replace('.', ',').replace('_', '.'), diferenca])
         
-        dfAuditoria = pd.DataFrame(auditoriaGeralSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','CD-FINANCEIRO','VALOR','LIMITE','DATA', "ESCRITORIO", 'QUANTIDADE', 'VALOR-COBRADO-FINAL', 'DIFERENCA'])
+        dfAuditoria = pd.DataFrame(auditoriaGeralSomaFilial, columns=['DESCRIÇÂO DA VALIDAÇÃO', 'EMPRESA','VALOR','LIMITE','DATA', "ESCRITORIO", 'QUANTIDADE', 'VALOR-COBRADO-FINAL', 'DIFERENCA'])
         dfAuditoria.to_excel(writer, sheet_name='Auditoria Soma Filiais', index = False)
         writer.sheets['Auditoria Soma Filiais'].set_column('A:A', 90, alignCenter)
-        writer.sheets['Auditoria Soma Filiais'].set_column('B:H', 17, alignCenter)
-        writer.sheets['Auditoria Soma Filiais'].set_column('I:I', 26, alignCenter)
-        writer.sheets['Auditoria Soma Filiais'].set_column('J:J', 17, alignCenter)
+        writer.sheets['Auditoria Soma Filiais'].set_column('B:G', 17, alignCenter)
+        writer.sheets['Auditoria Soma Filiais'].set_column('H:H', 26, alignCenter)
+        writer.sheets['Auditoria Soma Filiais'].set_column('I:I', 17, alignCenter)
     
     def retornaEmpresasContabit(self, data):
         retorno = {}
@@ -352,7 +382,7 @@ class Controller():
         data_fim = date(int(now.year), int(now.month), last_day_month)
         return f"{int(mes)}/{ano}", f"{mes}/{ano}", data_ini, data_fim
     
-    def gerarHonorarios(self, compet):
+    def gerarHonorarios(self, compet, auth_lancamentos):
         self.manager.connect()
         try:
             with BytesIO() as b:
@@ -363,8 +393,8 @@ class Controller():
                 
                 datadb, dataValidation, data_ini, data_fim = self.returnCompetToValidation(compet)
                 dataFrameSql = self.responseEmpresas(alignCenter, writer, compet, dataValidation, datadb)
-                self.honorarioEmpresasSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim)
-                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim)
+                self.honorarioEmpresasSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim, auth_lancamentos)
+                self.honorarioEmpresasNaoSomaFilial(dataFrameSql, alignCenter, writer, data_ini, data_fim, auth_lancamentos)
                 
                 writer.close()
                 

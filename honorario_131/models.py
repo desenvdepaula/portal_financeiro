@@ -2,7 +2,7 @@ from django.db import models
 
 class RegrasHonorario(models.Model):
     # Dados Da Empresa
-    cd_financeiro = models.CharField(max_length=100, primary_key=True, unique=True)
+    cnpj_cpf = models.CharField(primary_key=True, max_length=28, unique=True)
     cd_empresa = models.CharField(max_length=6)
     cd_filial = models.CharField(max_length=2)
     razao_social = models.CharField(max_length=255)

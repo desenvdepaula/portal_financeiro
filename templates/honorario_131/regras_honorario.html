@@ -8,7 +8,7 @@
   .btn-orange{
     background-color: #FD7E14;
   }
-  input[type='checkbox'] {
+  .check-personalizado {
     -webkit-appearance:none;
     width:25px;
     height:25px;
@@ -16,7 +16,7 @@
     border-radius:5px;
     border:2px solid #555;
   }
-  input[type='checkbox']:checked {
+  .check-personalizado:checked {
       background: #6F46B7;
   }
   [hidden] { 
@@ -54,7 +54,6 @@
                 <table class="table datatables table-hover" id="dataTable-1">
                   <thead>
                     <tr>
-                      <th>Financeiro</th>
                       <th>Empresa</th>
                       <th>Filial</th>
                       <th>Razão Social</th>
@@ -68,10 +67,9 @@
                   <tbody>
                     {% for regra in regras %}
                       <tr>
-                        <td class="h6">{{regra.cd_financeiro}}</td>
                         <td class="h6">{{regra.cd_empresa}}</td>
                         <td class="h6">{{regra.cd_filial}}</td>
-                        <td class="h6">{{regra.razao_social}}</td>
+                        <td class="h6">{{regra.razao_social}} ( {{regra.cnpj_cpf}} )</td>
 
                         {% if regra.calcular == 'CALCULAR' %}
                           <td class="h6 text-success">{{regra.calcular}}</td>
@@ -93,12 +91,12 @@
                           </button>
                           <div class="dropdown-menu dropdown-menu-right">
                             {% if regra.have_rule  %}
-                              <button class="dropdown-item text-primary" onclick="open_modal_update({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}', `{{regra.observacoes}}`)"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
+                              <button class="dropdown-item text-primary" onclick="open_modal_update('{{regra.cnpj_cpf}}', '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}', `{{regra.observacoes}}`)"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
                             {% else %}
                               <button class="dropdown-item text-primary" onclick="open_modal_visualizer('{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, `{{regra.observacoes}}`)"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar </button>
                             {% endif %}
 
-                            <button class="dropdown-item text-danger" onclick="open_modal_deletar({{regra.cd_financeiro}}, '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`)"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Regra</button>
+                            <button class="dropdown-item text-danger" onclick="open_modal_deletar('{{regra.cnpj_cpf}}', '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`)"><i class="fe fe-trash-2 fe-16 mr-2"></i> Deletar Regra</button>
                           </div>
                         </td>
                       </tr>
@@ -161,8 +159,8 @@
                     </select>
                   </div>
                   <div class="col-6 col-sm-6">
-                    <label class="font-weight-bold" for="cd_financeiro">Código Financeiro</label>
-                    <input type="number" id="cd_financeiro" name="cd_financeiro" class="form-control" placeholder="Código Financeiro:" required>
+                    <label class="font-weight-bold" for="cpf_cnpj">CPF / CNPJ:</label>
+                    <input type="text" id="cpf_cnpj" name="cpf_cnpj" class="form-control" placeholder="CPF / CNPJ:" readonly required>
                   </div>
                 </div>
 
@@ -172,13 +170,13 @@
                   <div class="form-row mt-5">
                     <div class="col-6 col-sm-6">
                       <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="somar_filiais" name="somar_filiais">
+                        <input class="check-personalizado form-check-input" type="checkbox" role="switch" id="somar_filiais" name="somar_filiais">
                         <label class="form-check-label ml-3 h5" for="somar_filiais">Somar Filiais ?</label>
                       </div>
                     </div>
                     <div class="col-6 col-sm-6">
                       <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="calcular" name="calcular" checked>
+                        <input class="check-personalizado form-check-input" type="checkbox" role="switch" id="calcular" name="calcular" checked>
                         <label class="form-check-label ml-3 h5" for="calcular">Calcular Honorário s/Folha ?</label>
                       </div>
                     </div>
@@ -233,21 +231,21 @@
                 <div class="form-row mt-4">
                   <div class="col-6 col-sm-6">
                     <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="somar_filiais_update" name="somar_filiais_update">
+                      <input class="check-personalizado form-check-input" type="checkbox" id="somar_filiais_update" name="somar_filiais_update">
                       <label class="form-check-label ml-3 h5" for="somar_filiais_update">Somar Filiais ?</label>
                     </div>
                   </div>
                   <div class="col-6 col-sm-6">
                     <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="calcular_update" name="calcular_update" checked>
+                      <input class="check-personalizado form-check-input" type="checkbox" id="calcular_update" name="calcular_update" checked>
                       <label class="form-check-label  ml-3 h5" for="calcular_update">Calcular Honorário s/Folha ?</label>
                     </div>
                   </div>
                 </div>
                 <div class="form-row mt-5">
                   <div class="col-4 col-sm-4">
-                      <label class="font-weight-bold" for="cd_financeiro_update">Código Financeiro</label>
-                      <input type="number" id="cd_financeiro_update" name="cd_financeiro_update" class="form-control" placeholder="Código Financeiro:" readonly>
+                      <label class="font-weight-bold" for="cpf_cnpj_update">CPF / CNPJ: </label>
+                      <input type="text" id="cpf_cnpj_update" name="cpf_cnpj_update" class="form-control" placeholder="CPF / CNPJ:" readonly>
                   </div>
                   <div class="col-4 col-sm-4">
                       <label class="font-weight-bold" for="limite_update">Limite de Empregados</label>
@@ -319,6 +317,10 @@
                   <small class="form-text text-muted">Período de Competência (* Exemplo: 07/2022 *)</small>
                 </div>
               </div>
+              <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="check_lancamento" name="check_lancamento">
+                <label class="form-check-label" for="check_lancamento">Realizar Lançamentos das OS !!</label>
+              </div>
               <center>
                 <button class="btn btn-outline-success btn-lg mt-5">
                   <strong>Realizar Cálculo</strong>
@@ -374,6 +376,10 @@
   let campo_have_rule = document.getElementById('have_rule');
   let div_rules = document.getElementById('div_inputs_rules');
 
+  $('#cd_filial').on('change', (event) => {
+    document.getElementById('cpf_cnpj').value = event.target.selectedOptions[0].title;
+  })
+
   campo_have_rule.addEventListener('change', (event) => {
     if (event.target.value === "true"){
       div_rules.hidden = false
@@ -394,18 +400,18 @@
     document.getElementById('cd_filial').value = ''
     document.getElementById('somar_filiais').checked = false
     document.getElementById('calcular').checked = true
-    document.getElementById('cd_financeiro').value = ''
+    document.getElementById('cpf_cnpj').value = ''
     document.getElementById('limite').value = ''
     document.getElementById('valor').value = ''
     myModal.toggle()
   }
 
-  function open_modal_update(cd_financeiro, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor, observacoes){
+  function open_modal_update(cpf_cnpj, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor, observacoes){
       var myModal = new bootstrap.Modal(document.getElementById('modalEditRegra'))
       document.getElementById('modalEditRegraLabel').textContent = `Editar Regra de Honorário da ${cd_empresa}/${cd_filial} - ${razao_social}`
       document.getElementById('somar_filiais_update').checked = somar_filiais === 'SOMAR FILIAIS'
       document.getElementById('calcular_update').checked = calcular === 'CALCULAR'
-      document.getElementById('cd_financeiro_update').value = cd_financeiro
+      document.getElementById('cpf_cnpj_update').value = cpf_cnpj
       document.getElementById('limite_update').value = limite
       document.getElementById('valor_update').value = valor
       document.getElementById('observacoes_update').value = observacoes !== 'None' ? observacoes : ''
@@ -419,17 +425,19 @@
       myModal.toggle()
   }
 
-  function open_modal_deletar(cd_financeiro, cd_empresa, cd_filial, razao_social){
+  function open_modal_deletar(cpf_cnpj, cd_empresa, cd_filial, razao_social){
     var myModal = new bootstrap.Modal(document.getElementById('modalDeleteRegra'))
     document.getElementById('modalDeleteRegraLabel').textContent = `Deletar a Regra para a Empresa: ${cd_empresa}/${cd_filial}: ${razao_social}`
-    document.getElementById('button_delete_regra').setAttribute('onclick', `deletar_regra(event, ${cd_financeiro})`)
+    document.getElementById('button_delete_regra').setAttribute('onclick', `deletar_regra(event, '${cpf_cnpj}')`)
     myModal.toggle()
   }
 
   function open_modal_calculo(){
     var myModal = new bootstrap.Modal(document.getElementById('modalCalculo'));
     const date = new Date();
-    document.getElementById('id_compet').value = date.toLocaleDateString('pt-BR').slice(2);
+    const lastMonth = new Date(date.getFullYear(), date.getMonth(), 0);
+    document.getElementById('id_compet').value = lastMonth.toLocaleDateString('pt-BR').slice(2);
+    document.getElementById('check_lancamento').checked = false;
     myModal.toggle();
   }
 
@@ -453,11 +461,12 @@
             input.style = 'border: 1px solid red;'
             document.getElementById('error_aviso').innerHTML = `<p class='text-danger'>${data.msg}<p>`
           }else{
-            document.getElementById('razao_social').value = data.response.nome_empresa
+            document.getElementById('razao_social').value = data.response.nome_empresa;
             let lista = data.response.filiais.map((el) => {
-              return `<option value="${el}">${el}</option>`
+              return `<option value="${el[0]}" title="${el[2]}">${el[0]}</option>`
             })
-            document.getElementById('cd_filial').innerHTML = lista.join("\n")
+            document.getElementById('cd_filial').innerHTML = lista.join("\n");
+            document.getElementById('cpf_cnpj').value = document.getElementById('cd_filial').selectedOptions[0].title;
           }
         })
         .catch(error => {
@@ -473,29 +482,31 @@
 
   function validar_regra_honorario(e){
     e.preventDefault();
-    cd_financeiro = document.getElementById('cd_financeiro').value
-    cd_empresa = document.getElementById('cd_empresa').value
-    cd_filial = document.getElementById('cd_filial').value
+    let input = document.getElementById('cd_empresa')
+    cpf_cnpj = document.getElementById('cpf_cnpj').value
+    cd_empresa = input.value
     somar_filiais = document.getElementById('somar_filiais').checked
     
-    if (!cd_empresa || !cd_financeiro || !cd_filial){
+    if (!cd_empresa || !cpf_cnpj){
       mostrarAlert('error_aviso', 'danger', "Preencha Todos os Campos Corretamente")
       return false
     }
+
+    input.style = 'border: 1px solid red;'
 
     $.ajax({
       url: "{% url 'validar_regra_honorario' %}",
       type: 'POST',
       data: {
-        cd_financeiro,
+        cpf_cnpj,
         cd_empresa,
-        cd_filial,
         somar_filiais,
         csrfmiddlewaretoken: '{{ csrf_token }}'
       },
       success: function(data){
         mostrarAlert('error_aviso', 'success', "Esta Regra está válida, pode Cadastrar !!")
         document.getElementById('id_button_regra').disabled = false
+        input.style = 'border: 1px solid green;'
       },
       error: function(data){
         if (Object.keys(data).includes('responseJSON')){
@@ -503,18 +514,19 @@
         }else{
           mostrarAlert('error_aviso', 'danger', "Erro no Servidor")
         }
+        input.style = 'border: 1px solid red;'
       },
     })
   }
 
-  function deletar_regra(e, cd_financeiro){
+  function deletar_regra(e, cpf_cnpj){
     e.preventDefault();
 
     $.ajax({
       url: "{% url 'deletar_regra_honorario' %}",
       type: 'POST',
       data: {
-        cd_financeiro,
+        cpf_cnpj,
         csrfmiddlewaretoken: '{{ csrf_token }}'
       },
       success: function(data){

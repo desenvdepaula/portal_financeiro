@@ -91,7 +91,7 @@
                     {% for ordem in ordens %}
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
-                          <td title="empresa" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} - {{ordem.empresa.name_empresa}}</td>
+                          <td title="empresa" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} / {{ordem.empresa.estab}} - {{ordem.empresa.name_empresa}}</td>
                           {% if ordem.cd_servico == 0 or ordem.cd_servico == '0' %}
                             <td title="servico" class="h6 text-danger">
                               SEM SERVIÇO SELECIONADO - (desc.: {{ordem.servico}}) <b>*PRECISA TRATAR*</b>
@@ -1129,6 +1129,7 @@
           }else{
             document.getElementById("text_info_paste").innerHTML = ``;
           }
+          // QUESTAO DE BOTAO NÃO FICAR  DESABILITADO
           document.getElementById('div_progress_boletos').style.display = 'none';
           btn.setAttribute('onclick', `baixar_boletos_escritorio(event)`);
           btn.className = btn.className.replace("success", "primary").replace("danger", "primary");
@@ -1284,10 +1285,6 @@
     reverse: true
   });
 
-  $('.cd_empresa').mask("000000",
-  {
-    reverse: true
-  });
   $('.dataMask').mask("00/00/0000",
   {
     reverse: true

@@ -18,6 +18,37 @@ class ManagerTareffa(PostgreSQLConnection):
         self.codigo_empresa = codigo_empresa
         self.default_connect_tareffa()
 
+    def get_data_empresa(self, codigo_empresa):
+        self.connect()
+        try:
+            sql = f"""
+                select
+                    cast(
+                        case
+                            when position('/' in codigoquestor) = 0 then '1'
+                            else right(codigoquestor, position('/' in reverse(codigoquestor))-1)
+                        end as int) filial,	
+                    e.razaosocial,
+                    e.cnpj
+                from 
+                    ottimizza_clientes.depaula_view_empresas e
+                where
+                    cast(
+                        case
+                            when position('/' in e.codigoquestor) <> 0 then left(e.codigoquestor, (position('/' in e.codigoquestor))-1)
+                            when position('-' in e.codigoquestor) <> 0 then left(e.codigoquestor, (position('-' in e.codigoquestor))-1)
+                            else e.codigoquestor
+                        end as int) = {codigo_empresa} and
+                        estaativa = true
+            """
+            result = [list(i) for i in self.run_query_for_select(sql)]
+        except Exception as err:
+            raise Exception(err)
+        else:
+            return result
+        finally:
+            self.disconnect()
+            
     def get_empresa(self):
         self.connect()
         try:
@@ -64,7 +95,8 @@ class ManagerTareffa(PostgreSQLConnection):
                         when position('-' in e.codigoquestor) = 0 and position('/' in e.codigoquestor) = 0 then '1' 
                     end as int) filial,	
                     razaosocial, 
-                    regimetributario 
+                    regimetributario,
+                    cnpj
                 from
                     ottimizza_clientes.depaula_view_empresas e
                 where

@@ -2,7 +2,7 @@ from django import forms
 from core.views import request_project_log
 
 class RegrasHonorariosForm(forms.Form):
-    cd_financeiro = forms.CharField(max_length=100)
+    cpf_cnpj = forms.CharField(max_length=100)
     cd_empresa = forms.CharField(max_length=6)
     cd_filial = forms.CharField(max_length=2)
     razao_social = forms.CharField(max_length=255)
@@ -14,7 +14,7 @@ class RegrasHonorariosForm(forms.Form):
     observacoes = forms.CharField(required=False, widget=forms.TextInput( attrs={'autofocus':'true', 'class':'input'} ))
     
     def clean_log(self, username):
-        cd_financeiro = self.cleaned_data['cd_financeiro']
+        cpf_cnpj = self.cleaned_data['cpf_cnpj']
         cd_empresa = self.cleaned_data['cd_empresa']
         cd_filial = self.cleaned_data['cd_filial']
         razao_social = self.cleaned_data['razao_social']
@@ -24,26 +24,26 @@ class RegrasHonorariosForm(forms.Form):
         limite = self.cleaned_data['limite']
         valor = self.cleaned_data['valor']
         observacoes = self.cleaned_data['observacoes']
-        dados = f"cd-financeiro: {cd_financeiro} | cd-empresa: {cd_empresa} / {cd_filial} - {razao_social} | Calcular: {calcular}, Somar: {somar_filiais}, limite: {limite}, valor: {valor}, observações: {observacoes}, tem regras? {have_rule}"
+        dados = f"CNPJ / CPF: {cpf_cnpj} | cd-empresa: {cd_empresa} / {cd_filial} - {razao_social} | Calcular: {calcular}, Somar: {somar_filiais}, limite: {limite}, valor: {valor}, observações: {observacoes}, tem regras? {have_rule}"
         request_project_log(int(cd_empresa), dados, "HONORARIO 131 / CRIAR REGRA", username)
     
 class RegrasHonorariosUpdateForm(forms.Form):
-    cd_financeiro_update = forms.CharField(max_length=100)
+    cpf_cnpj_update = forms.CharField(max_length=100)
     calcular_update = forms.BooleanField(required=False)
     somar_filiais_update = forms.BooleanField(required=False)
     limite_update = forms.IntegerField()
     valor_update = forms.CharField(max_length=10)
     observacoes = forms.CharField(required=False, widget=forms.TextInput( attrs={'autofocus':'true', 'class':'input'} ))
     
-    def clean_log(self, username):
-        cd_financeiro = self.cleaned_data['cd_financeiro_update']
+    def clean_log(self, username, cd_empresa):
+        cpf_cnpj = self.cleaned_data['cpf_cnpj_update']
         calcular = self.cleaned_data['calcular_update']
         somar_filiais = self.cleaned_data['somar_filiais_update']
         limite = self.cleaned_data['limite_update']
         valor = self.cleaned_data['valor_update']
         observacoes = self.cleaned_data['observacoes']
-        dados = f"cd-financeiro: {cd_financeiro} | Calcular: {calcular}, Somar: {somar_filiais}, limite: {limite}, valor: {valor}, observações: {observacoes}"
-        request_project_log(int(cd_financeiro), dados, "HONORARIO 131 / EDITAR REGRA", username)
+        dados = f"CNPJ / CPF: {cpf_cnpj} | Calcular: {calcular}, Somar: {somar_filiais}, limite: {limite}, valor: {valor}, observações: {observacoes}"
+        request_project_log(int(cd_empresa), dados, "HONORARIO 131 / EDITAR REGRA", username)
 
 class RelatorioHonorariosForm(forms.Form):
     empresa = forms.IntegerField(max_value=9999, label="COD. Empresa", required=False)

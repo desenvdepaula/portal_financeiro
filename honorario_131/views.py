@@ -21,7 +21,8 @@ def request_realizar_calculo_honorario_131(request):
         context['form'].clean_log(request.user.username)
         try:
             controller = Controller()
-            return controller.gerarHonorarios( context['form'].cleaned_data['compet'] )
+            auth_lancamentos = "check_lancamento" in request.POST
+            return controller.gerarHonorarios( context['form'].cleaned_data['compet'], auth_lancamentos )
         except Exception as err:
             messages.error(request, f"Ocorreu um erro: {err}, Verifique Novamente")
     else:
@@ -71,7 +72,7 @@ class RegrasHonorarioView(View):
             try:
                 tem_regras = True if context['form'].cleaned_data['have_rule'] == "true" else False
                 regra = RegrasHonorario(
-                    cd_financeiro = context['form'].cleaned_data['cd_financeiro'],
+                    cnpj_cpf = context['form'].cleaned_data['cpf_cnpj'],
                     cd_empresa = context['form'].cleaned_data['cd_empresa'],
                     cd_filial = context['form'].cleaned_data['cd_filial'],
                     razao_social = context['form'].cleaned_data['razao_social'],
@@ -99,32 +100,25 @@ class RegrasHonorarioView(View):
     
     def validarCreateRegraHonorario(request):
         try:
-            cd_financeiro = request.POST.get('cd_financeiro')
+            cpf_cnpj = request.POST.get('cpf_cnpj')
             cd_empresa = request.POST.get('cd_empresa')
-            cd_filial = request.POST.get('cd_filial')
             somar_filiais = True if request.POST.get('somar_filiais') == 'true' else False
             
-            listFilterCodFinanceiro = RegrasHonorario.objects.filter(cd_financeiro=cd_financeiro)
+            listFilterCNPJ = RegrasHonorario.objects.filter(cnpj_cpf=cpf_cnpj)
             listFilterCodEmpresa = RegrasHonorario.objects.filter(cd_empresa=cd_empresa)
             
-            if len(listFilterCodFinanceiro) > 0:
-                return JsonResponse({'msg': f'Já existe uma Regra com o Número Financeiro: {cd_financeiro}, Tente Novamente'}, status=400)
+            if len(listFilterCNPJ) > 0:
+                return JsonResponse({'msg': f'Já existe uma Regra com Este CNPJ ou CPF: {cpf_cnpj}, Tente Novamente'}, status=400)
             
             if len(listFilterCodEmpresa) > 0:
-                regrasFiliaisIguais = []
                 regrasSomaFiliais = []
                 regrasNaoSomaFiliais = []
                 for regra in listFilterCodEmpresa:
-                    if regra.cd_filial == cd_filial:
-                        regrasFiliaisIguais.append(regra)
                     if regra.somar_filiais:
                         regrasSomaFiliais.append(regra)
                     if not regra.somar_filiais:
                         regrasNaoSomaFiliais.append(regra)
-                
-                if regrasFiliaisIguais:
-                    return JsonResponse({'msg': f'Já existe uma Regra com Esta Filial: {cd_filial}'}, status=400)
-                
+                                
                 if regrasSomaFiliais:
                     return JsonResponse({'msg': f'Existe uma Regra que Soma todas as Filiais desta Empresa'}, status=400)
                 
@@ -140,8 +134,9 @@ class RegrasHonorarioView(View):
     
     def delete(request):
         try:
-            request_project_log(int(request.POST.get('cd_financeiro')), "Deletar Regra", "HONORARIO 131 / DELETAR REGRA", request.user.username)
-            RegrasHonorario.objects.get(cd_financeiro=int(request.POST.get('cd_financeiro'))).delete()
+            regra = RegrasHonorario.objects.get(cnpj_cpf=request.POST.get('cpf_cnpj'))
+            request_project_log(int(regra.cd_empresa), f"Deletar Regra, Filial: {regra.cd_filial}", "HONORARIO 131 / DELETAR REGRA", request.user.username)
+            regra.delete()
             return JsonResponse({'msg': 'correto'})
         except Exception as err:
             raise Exception(err)
@@ -149,12 +144,12 @@ class RegrasHonorarioView(View):
     def update(request):
         context = { 'form': RegrasHonorariosUpdateForm(request.POST or None) }
         if context['form'].is_valid():
-            context['form'].clean_log(request.user.username)
             try:
                 regrasCalculadas = []
-                regra = RegrasHonorario.objects.get(cd_financeiro=int(context['form'].cleaned_data['cd_financeiro_update']))
+                regra = RegrasHonorario.objects.get(cnpj_cpf=context['form'].cleaned_data['cpf_cnpj_update'])
+                context['form'].clean_log(request.user.username, regra.cd_empresa)
                 if 'somar_filiais_update' in request.POST: 
-                    for rule in RegrasHonorario.objects.filter(cd_empresa=regra.cd_empresa).exclude(cd_financeiro=regra.cd_financeiro):
+                    for rule in RegrasHonorario.objects.filter(cd_empresa=regra.cd_empresa).exclude(cnpj_cpf=regra.cnpj_cpf):
                         if rule.calcular:
                             regrasCalculadas.append(rule)
                             
@@ -181,11 +176,11 @@ class RegrasHonorarioView(View):
     def buscar_empresa(request, cd_empresa):
         try:
             manager = ManagerTareffa(cd_empresa)
-            list_empresa = manager.get_empresa()
+            list_empresa = manager.get_data_empresa(cd_empresa)
             if isinstance(list_empresa, list):
                 response = {
                     'nome_empresa': list_empresa[0][1],
-                    'filiais': [empresa[0] for empresa in list_empresa],
+                    'filiais': list_empresa
                 }
                 return JsonResponse({'response': response, 'status': 200})
             else:
