@@ -269,18 +269,25 @@
       
       if (data.state === "PROGRESS") {
         pros.style.width = `${(data.info.current / data.info.total) * 100}%`;
-        pros.textContent = `${data.info.current} de ${data.info.total}`;
+        if (Object.keys(data.info).includes('pag')){
+          pros.textContent = `${data.info.current} de ${data.info.total} - Escritório: ${data.info.escritorio} (Pag. ${data.info.pag})`;
+        }else{
+          pros.textContent = `${data.info.current} de ${data.info.total}`;
+        }
       }
 
       if (data.state === "SUCCESS") {
+        await get_status_update_anterior(btn);
         clearInterval(interval);
         pros.style.width = `100%`;
         pros.textContent = `Finalizado o Processo, Reinicie a Página ✅🔄`;
         pros.className = pros.className.replace("primary", "success");
-        button_spinner(btn, true, "REINICIE 👍");
+        btn.innerHTML = "REINICIE A PÁGINA 👍";
+        btn.disabled = true;
       }
 
       if (data.state === "FAILURE") {
+        await get_status_update_anterior(btn);
         clearInterval(interval);
         mostrarAlert('error_aviso_up', 'danger', `Erro do CELERY: ${data.info?.message}`);
         button_spinner(btn, false, '<strong>ERRO AO ATUALIZAR, RODE NOVAMENTE</strong>');

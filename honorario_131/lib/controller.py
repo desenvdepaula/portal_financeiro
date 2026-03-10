@@ -150,13 +150,16 @@ class Controller():
     def responseEmpresas(self, alignCenter, writer, compet, dataValidation, datadb):
         dataContabit = self.retornaEmpresasContabit(dataValidation)
         lista = []
-        empresasSemCategoria = []
+        auditoriaErros = []
+        empresasDuplicadas = set()
+        empresasValidation = set()
 
         empresas = [regra.cd_empresa for regra in RegrasHonorario.objects.filter(calcular=True)]
         empresas = set(empresas)
         response = self.manager.run_query_for_select(SqlHonorarios131.getSqlHonorarios131(tuple(empresas), compet))
 
         for item in response:
+            empresasValidation.add(f"{item[0]}/{item[2]}")
             lista.append(item)
 
         for objEmpresa in dataContabit:
@@ -165,23 +168,29 @@ class Controller():
                 cnpj_cpf = self.format_cpf_cnpj(dataContabit[objEmpresa].get('nrCNPJCPF'))
                 estab = dataContabit[objEmpresa].get('idEstabelecimento')
                 estab = estab if estab < 5 else 1
-                for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
-                    cd_categoria = categoria.get('cdCategoria')
-                    qtd = categoria.get('qtdTrabalhador')
-                    if cd_categoria in self.categorias.keys():
-                        item = (
-                            id_empresa,
-                            qtd,
-                            estab,
-                            datadb,
-                            self.categorias.get(cd_categoria),
-                            cnpj_cpf
-                        )
-                        lista.append(item)
-                    else:
-                        empresasSemCategoria.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}, Contate a Inovação !"])
+                emp_for_valid = f"{id_empresa}/{estab}"
+                if emp_for_valid in empresasValidation:
+                    empresasDuplicadas.add(emp_for_valid)
+                    auditoriaErros.append([id_empresa, estab, f"Esta Empresa Tem um Cálculo Duplicado, estando no Questor e no Contabit simultaneamente, avalie a Situação !"])
+                else:
+                    for categoria in dataContabit[objEmpresa]['QtdTrabalhadoresCalculo']:
+                        cd_categoria = categoria.get('cdCategoria')
+                        qtd = categoria.get('qtdTrabalhador')
+                        if cd_categoria in self.categorias.keys():
+                            item = (
+                                id_empresa,
+                                qtd,
+                                estab,
+                                datadb,
+                                self.categorias.get(cd_categoria),
+                                cnpj_cpf
+                            )
+                            lista.append(item)
+                        else:
+                            auditoriaErros.append([id_empresa, estab, f"Esta Empresa Tem uma Categoria nova de Funcionário, Não cadastrada na nossa base: {cd_categoria}, Contate a Inovação !"])
 
-        df = pd.DataFrame(lista, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO", "CPFCNPJ"])
+        filtered_list = [emp for emp in lista if f"{emp[0]}/{emp[2]}" not in empresasDuplicadas]
+        df = pd.DataFrame(filtered_list, columns = ["EMPRESA", "QUANTIDADE", "FILIAL", "DATA", "TIPO CONTRATO", "CPFCNPJ"])
         
         dfResponse = pd.pivot_table(
             df,
@@ -201,10 +210,10 @@ class Controller():
         writer.sheets['Auditoria Geral'].set_column('A:C', 15, alignCenter)
         writer.sheets['Auditoria Geral'].set_column('D:L', 19, alignCenter)
         
-        dfSemCategoria = pd.DataFrame(empresasSemCategoria, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
-        dfSemCategoria.to_excel(writer, sheet_name='Sem Categorias de Funcionário', index = False)
-        writer.sheets['Sem Categorias de Funcionário'].set_column('A:B', 30, alignCenter)
-        writer.sheets['Sem Categorias de Funcionário'].set_column('C:C', 80, alignCenter)
+        dfAudErros = pd.DataFrame(auditoriaErros, columns=['CODIGO EMPRESA','CODIGO ESTAB','DESCRIÇÃO'])
+        dfAudErros.to_excel(writer, sheet_name='Auditoria de Erros', index = False)
+        writer.sheets['Auditoria de Erros'].set_column('A:B', 25, alignCenter)
+        writer.sheets['Auditoria de Erros'].set_column('C:C', 100, alignCenter)
         
         observacoes = RegrasHonorario.objects.exclude(observacoes__isnull=True).exclude(observacoes='').values('cd_empresa', 'cd_filial', 'cnpj_cpf', 'razao_social', 'observacoes')
         dfObservacoes = pd.DataFrame(list(observacoes))
