@@ -24,6 +24,9 @@ urlpatterns = [
     path('status_task_os/<str:task_id>/', OrdemServicoView.status_task),
     
     path('list_empresas_omie', login_required(EmpresasOmieView.as_view()), name="list_empresas_omie"),
+    path('update_empresa_omie', EmpresasOmieView.update_empresa_omie, name="update_empresa_omie"),
+    path('status_total_update_empresa', EmpresasOmieView.get_status_total_update_empresa, name="status_total_update_empresa"),
+    path('status_real_time_update_empresa/<str:task_id>/', EmpresasOmieView.get_status_real_time_update_empresa),
     
     path('controle_servicos_OS', login_required(ServicosView.as_view()), name="controle_servicos_OS"),
     path('buscar_servico/<int:nr_servico>/', ServicosView.buscar_servico),

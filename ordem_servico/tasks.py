@@ -3,9 +3,113 @@ from .lib.querys import gerar_arquivo_excel_auditoria_download_boletos
 import requests
 import time
 import fitz
+import pandas as pd
 from django.conf import settings
 from .models import EmpresasOmie
 from core.views import get_request_to_api_omie
+
+@shared_task(bind=True)
+def update_empresas_omie(self, empresas_request, escrit_list, empresas):
+    total = 0
+    response = ['Este CNPJ/CPF não se encontra em nosso Banco: 00.304.148/0001-10 Escritório: 501 Cliente: 11017049475','Este CNPJ/CPF não se encontra em nosso Banco: 650.040.948-53 Escritório: 502 Cliente: 4421084722','Este CNPJ/CPF não se encontra em nosso Banco: 45.372.763/0001-00 Escritório: 502 Cliente: 4421082417','Este CNPJ/CPF não se encontra em nosso Banco: 81.506.842/0001-11 Escritório: 502 Cliente: 4421085603','Este CNPJ/CPF não se encontra em nosso Banco: 59.564.932/0001-00 Escritório: 505 Cliente: 8596021541','Este CNPJ/CPF não se encontra em nosso Banco: 55.257.460/0001-91 Escritório: 505 Cliente: 8596020152','Erro ao Buscar este Cliente (8596016064) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Erro ao Buscar este Cliente (8596019650) do Escritório: 505 | Erro: SOAP-ERROR: Broken response from Application Server (BG)','Este CNPJ/CPF não se encontra em nosso Banco: 175.788.769-53 Escritório: 575 Cliente: 3835127619','Este CNPJ/CPF não se encontra em nosso Banco: 089.376.289-02 Escritório: 575 Cliente: 3830611943']
+    # response = []
+    try:
+        escritorios = escrit_list if escrit_list else ['501', '502', '505', '567', '575']
+        # if empresas_request:
+        #     for cnpj_empresa_req in empresas:
+        #         for escrit in escritorios:
+        #             data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", { "pagina": 1, "registros_por_pagina": 5, "cExibeObs": "N", "cExibirProdutos": "N", "cExibirInfoCadastro": "N", "filtrar_cnpj_cpf": cnpj_empresa_req })
+        #             result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
+        #             json_contrato = result_contrato.json()
+        #             if result_contrato.status_code == 200:
+        #                 contrato = json_contrato.get("contratoCadastro")[0]
+        #                 if contrato['cabecalho']['cCodSit'] == '10':
+        #                     time.sleep(0.2)
+        #                     data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": contrato['cabecalho']['nCodCli']})
+        #                     result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
+        #                     json_client = result_client.json()
+        #                     empresa, razaosocial, estab, cnpj = empresas[cnpj_empresa_req]
+        #                     if result_client.status_code == 200:
+        #                         email = json_client['email'] if 'email' in json_client else ""
+        #                         cd_omie_empresa = json_client.get("codigo_cliente_omie")
+        #                         try:
+        #                             enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+        #                             enterprise.escritorio = escrit
+        #                             enterprise.cd_empresa = empresa
+        #                             enterprise.estab = estab
+        #                             enterprise.name_empresa = razaosocial
+        #                             enterprise.codigo_cliente_omie = cd_omie_empresa
+        #                             enterprise.email = email
+        #                             enterprise.save()
+        #                         except Exception as err:
+        #                             response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {cd_omie_empresa} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+        #                         finally:
+        #                             break
+        #                     else:
+        #                         error_text = json_client.get('message') or json_client.get('faultstring')
+        #                         response.append(f"Erro ao Buscar este Cliente ({empresa} - {estab}) do Escritório: {escrit} | Erro: {error_text}")
+        #                         break
+        #             time.sleep(0.7)
+        #             self.update_state(
+        #                 state='PROGRESS',
+        #                 meta={'current': i + 1, 'total': total}
+        #             )
+        # else:
+        #     for escrit in escritorios:
+        #         page = 1
+        #         while True:
+        #             data_get_contrato_omie = get_request_to_api_omie(escrit, "ListarContratos", { "pagina": page, "registros_por_pagina": 500, "cExibeObs": "N", "cExibirProdutos": "N", "cExibirInfoCadastro": "N" })
+        #             result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/contrato/", json=data_get_contrato_omie, headers={'content-type': 'application/json'})
+        #             json_contrato = result_contrato.json()
+        #             if result_contrato.status_code == 200:
+        #                 codigos_client = set([i['cabecalho']['nCodCli'] for i in json_contrato['contratoCadastro'] if i['cabecalho']['cCodSit'] == '10'])
+        #                 for client in codigos_client:
+        #                     time.sleep(0.2)
+        #                     data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
+        #                     result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
+        #                     json_client = result_client.json()
+        #                     if result_client.status_code == 200:
+        #                         email = json_client['email'] if 'email' in json_client else ""
+        #                         cnpj_cpf = json_client['cnpj_cpf']
+        #                         if cnpj_cpf in empresas:
+        #                             try:
+        #                                 empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
+        #                                 enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+        #                                 enterprise.escritorio = escrit
+        #                                 enterprise.cd_empresa = empresa
+        #                                 enterprise.estab = estab
+        #                                 enterprise.name_empresa = razaosocial
+        #                                 enterprise.codigo_cliente_omie = client
+        #                                 enterprise.email = email
+        #                                 enterprise.save()
+        #                             except Exception as err:
+        #                                 response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+        #                         else:
+        #                             response.append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
+        #                     else:
+        #                         error_text = json_client.get('message') or json_client.get('faultstring')
+        #                         response.append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
+                            
+        #                 if json_contrato.get("total_de_paginas") == page:
+        #                     break
+        #             else:
+        #                 error_text = json_contrato.get('message') or json_contrato.get('faultstring')
+        #                 response.append(f"Erro ao Buscar os Contratos deste Escritório: {escrit}, Página: {page} | Erro: {error_text}")
+        #                 break
+                    
+        #             page += 1
+        #             time.sleep(0.5)
+        #             self.update_state(
+        #                 state='PROGRESS',
+        #                 meta={'current': i + 1, 'total': total}
+        #             )
+        dfErros = pd.DataFrame(response, columns=['Erro'])
+        path_file = settings.BASE_DIR / f'temp/files/financeiro/boletos/Auditoria Update Empresas.xlsx'
+        dfErros.to_excel(path_file, index=False)
+    except Exception as err:
+        raise Exception(err)
+    else:
+        return {"status": "concluido"}
 
 @shared_task(bind=True)
 def baixar_pdfs_e_processar(self, list_os, escritorio, filename):

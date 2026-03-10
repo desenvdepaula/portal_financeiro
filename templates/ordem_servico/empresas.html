@@ -35,7 +35,7 @@
               <div class="card-header">
 
                 <div class="d-flex justify-content-end mt-3 w-100">
-                  <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_atualizar_empresas()">Atualizar Empresas OMIE</a>
+                  <a class="btn btn-success ml-1" style="color:#fff;" onclick="open_modal_atualizar_empresas(event.target)">Atualizar Empresas OMIE</a>
                 </div>
 
               </div>
@@ -99,7 +99,21 @@
             <hr>
           </form>
           <div id="error_aviso_up"></div>
-          <div id="div_body_up"></div>
+          <div class="accordion w-100" id="accordion1">
+            <div class="card shadow">
+              <div class="card-header" id="heading1">
+                <a role="button" href="#collapse1" data-toggle="collapse" data-target="#collapse1" aria-expanded="false" aria-controls="collapse1">
+                  <strong>Erros de Execução / Empresas que tem Contrato Ativo no OMIE e não estão na Nossa Base Ativa...👇</strong>
+                </a>
+              </div>
+              <div id="collapse1" class="collapse" aria-labelledby="heading1" data-parent="#accordion1">
+                <div class="card-body"> <ul id="div_body_up" class="list-group"></ul> </div>
+              </div>
+            </div>
+          </div>
+          <div class="progress mt-4" id="div_progress_boletos">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress_boletos"></div>
+          </div>
           <center>
               <button class="btn btn-outline-success btn-lg mt-5" id="button_update_empresas" onclick="atualizar_empresas_omie(event)">
                 <strong>Atualizar Empresas</strong>
@@ -112,10 +126,14 @@
 
 <script>
 
-  function open_modal_atualizar_empresas(){
+  async function open_modal_atualizar_empresas(btn){
     var myModal = new bootstrap.Modal(document.getElementById('modalUpdateEmpresas'), {backdrop: 'static'});
     $('#select_empresas').empty().trigger('change');
     $('#select_escritorios').val(null).trigger('change');
+    document.getElementById('div_progress_boletos').style.display = 'none';
+    document.getElementById('collapse1').classList.remove("show");
+    button_spinner(document.getElementById('button_update_empresas'), false, "Atualizar Empresas");
+    await get_status_update_anterior(btn);
     myModal.toggle();
   }
 
@@ -127,10 +145,29 @@
     }, 5000)
   }
 
-  function fecharModal(modalClass){
-    var myModalEl = document.getElementById(modalClass);
-    var modal = bootstrap.Modal.getOrCreateInstance(myModalEl);
-    modal.hide();
+  async function get_status_update_anterior(btn){
+    document.getElementById('div_body_up').innerHTML = "";
+    button_spinner(btn, true)
+    await fetch("{% url 'status_total_update_empresa' %}")
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.errors?.length > 0){
+          document.getElementById('div_body_up').innerHTML = `${data.errors.map(tr => `<li class="list-group-item">${tr}</li>`).join("<br>")}`;
+        }
+      })
+      .catch(error => {
+        mostrarAlert('error_aviso_up', 'danger', error);
+      })
+      .finally(() => {
+        button_spinner(btn, false, 'Atualizar Empresas');
+      });
   }
 
 </script>
@@ -196,7 +233,7 @@
     button_spinner(e.target, true)
     const formulario_file = document.getElementById("form_for_dow");
     const formData = new FormData(formulario_file);
-    await fetch("{% url 'list_empresas_omie' %}", { method: "POST", body: formData })
+    await fetch("{% url 'update_empresa_omie' %}", { method: "POST", body: formData })
       .then(response => {
         if (!response.ok) {
           return response.json().then(err => {
@@ -206,18 +243,52 @@
         return response.json();
       })
       .then(data => {
-        if (data.errors?.length > 0){
-          document.getElementById('div_body_up').innerHTML = `${data.errors.map(tr => `${tr}`).join("<br>")}`;
+        if (Object.keys(data).includes('task_id')){
+          verificarStatus(data.task_id);
+          document.getElementById('div_progress_boletos').style.display = '';
+          document.getElementById('progress_boletos').style.width = '0%';
+          document.getElementById('progress_boletos').textContent = '0%';
         }else{
-          window.location.href = "{% url 'list_empresas_omie' %}";
+          mostrarAlert('error_aviso_up', 'danger', "Não retornou Corretamente a Resposta da API (ID DA TASK)");
+          button_spinner(e.target, false, "Atualizar Empresas");
         }
       })
       .catch(error => {
         mostrarAlert('error_aviso_up', 'danger', error);
+        button_spinner(e.target, false, "Atualizar Empresas");
       })
-      .finally(() => {
-        button_spinner(e.target, false, 'Atualizar Empresas');
-      });
+  }
+  
+  async function verificarStatus(taskId) {
+    const interval = setInterval(async () => {
+      const response = await fetch(`/ordem_servico/status_real_time_update_empresa/${taskId}/`);
+      const data = await response.json();
+      let pros = document.getElementById('progress_boletos');
+      let btn = document.getElementById('button_update_empresas');
+      console.log("Status:", data);
+      
+      if (data.state === "PROGRESS") {
+        pros.style.width = `${(data.info.current / data.info.total) * 100}%`;
+        pros.textContent = `${data.info.current} de ${data.info.total}`;
+      }
+
+      if (data.state === "SUCCESS") {
+        clearInterval(interval);
+        pros.style.width = `100%`;
+        pros.textContent = `Finalizado o Processo, Reinicie a Página ✅🔄`;
+        pros.className = pros.className.replace("primary", "success");
+        button_spinner(btn, true, "REINICIE 👍");
+      }
+
+      if (data.state === "FAILURE") {
+        clearInterval(interval);
+        mostrarAlert('error_aviso_up', 'danger', `Erro do CELERY: ${data.info?.message}`);
+        button_spinner(btn, false, '<strong>ERRO AO ATUALIZAR, RODE NOVAMENTE</strong>');
+        btn.className = btn.className.replace("primary", "danger");
+        pros.style.width = `0%`;
+      }
+
+    }, 10000);
   }
 
 </script>
