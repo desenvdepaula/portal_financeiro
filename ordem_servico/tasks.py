@@ -66,30 +66,33 @@ def update_empresas_omie(self, empresas_request, escrit_list, empresas):
                         total = len(codigos_client)
                         for i, client in enumerate(codigos_client):
                             time.sleep(0.2)
-                            data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
-                            result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
-                            json_client = result_client.json()
-                            if result_client.status_code == 200:
-                                email = json_client['email'] if 'email' in json_client else ""
-                                cnpj_cpf = json_client['cnpj_cpf']
-                                if cnpj_cpf in empresas:
-                                    try:
-                                        empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
-                                        enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
-                                        enterprise.escritorio = escrit
-                                        enterprise.cd_empresa = empresa
-                                        enterprise.estab = estab
-                                        enterprise.name_empresa = razaosocial
-                                        enterprise.codigo_cliente_omie = client
-                                        enterprise.email = email
-                                        enterprise.save()
-                                    except Exception as err:
-                                        response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+                            try:
+                                EmpresasOmie.objects.get( codigo_cliente_omie = client )
+                            except:
+                                data_get_client_omie = get_request_to_api_omie(escrit, "ConsultarCliente", {"codigo_cliente_omie": client})
+                                result_client = requests.post("https://app.omie.com.br/api/v1/geral/clientes/", json=data_get_client_omie, headers={'content-type': 'application/json'})
+                                json_client = result_client.json()
+                                if result_client.status_code == 200:
+                                    email = json_client['email'] if 'email' in json_client else ""
+                                    cnpj_cpf = json_client['cnpj_cpf']
+                                    if cnpj_cpf in empresas:
+                                        try:
+                                            empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
+                                            enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+                                            enterprise.escritorio = escrit
+                                            enterprise.cd_empresa = empresa
+                                            enterprise.estab = estab
+                                            enterprise.name_empresa = razaosocial
+                                            enterprise.codigo_cliente_omie = client
+                                            enterprise.email = email
+                                            enterprise.save()
+                                        except Exception as err:
+                                            response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
+                                    else:
+                                        response.append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
                                 else:
-                                    response.append(f"Este CNPJ/CPF não se encontra em nosso Banco: {cnpj_cpf} Escritório: {escrit} Cliente: {client} - {json_client['razao_social']}")
-                            else:
-                                error_text = json_client.get('message') or json_client.get('faultstring')
-                                response.append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
+                                    error_text = json_client.get('message') or json_client.get('faultstring')
+                                    response.append(f"Erro ao Buscar este Cliente ({client}) do Escritório: {escrit} | Erro: {error_text}")
                                 
                             self.update_state(
                                 state='PROGRESS',
