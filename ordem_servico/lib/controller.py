@@ -8,9 +8,9 @@ import time
 import os
 from django.conf import settings
 from pathlib import Path
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from core.views import get_request_to_api_omie
-from ..models import OrdemServico, EmpresasOmie
+from ..models import OrdemServico
 from .database import Manager
 from .querys import filter_planilha, sql_get_services_questor, get_cnpj_empresas
 from ..tasks import baixar_pdfs_e_processar, update_empresas_omie
@@ -113,7 +113,7 @@ class Controller():
         except Exception as err:
             raise Exception(err)
 
-    def update_ordem_servico(self, cleaned_data, user, empresa_db):
+    def update_ordem_servico(self, cleaned_data, user, empresa_db, aprovado=False):
         try:
             cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
             
@@ -149,28 +149,29 @@ class Controller():
                     solicitado = cleaned_data.get('solicitacao'),
                     executado = cleaned_data.get('executado'),
                     criador_os = user,
+                    aprovado = aprovado,
                     empresa = empresa_db
                 )
                 if cleaned_data.get('typeCreate') == 'ARQUIVADO':
                     ordem.arquivado = True
         except Exception as err:
-            raise err
+            return {'status' : 400, 'obj':{ 'message': f"Empresa: {empresa_db.cd_empresa}, serviço: {servicoDesc}, Erro: {str(err)}" }}
         else:
             ordem.save()
-            if cleaned_data.get('id_ordem'):
-                preco = float(ordem.valor)
-                preco_convertido = f"R$ {preco:_.2f}"
-                preco_final = preco_convertido.replace('.',',').replace('_','.')
-                return JsonResponse({
+            preco = float(ordem.valor)
+            preco_convertido = f"R$ {preco:_.2f}"
+            preco_final = preco_convertido.replace('.',',').replace('_','.')
+            return {
+                'obj': {
                     'empresa': f"{ordem.empresa.cd_empresa} - {ordem.empresa.name_empresa}",
                     'servico': ordem.servico,
                     'ds_servico': ordem.ds_servico,
                     'cobranca': ordem.data_cobranca.strftime("%d/%m/%Y"),
                     'valor': preco_final,
                     'quantidade': ordem.quantidade,
-                })
-            else:
-                return JsonResponse({})
+                },
+                'status' : 200
+            }
             
     def validar_tempo_execucao(self, execucao):
         if not ':' in execucao:

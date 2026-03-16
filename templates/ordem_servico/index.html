@@ -169,93 +169,135 @@
         </div>
         <div class="modal-body">
             <div id="error_aviso"></div>
-            <form id="form_cadastra_update_os">
-                {% csrf_token %}
+            <div class="col-md-12 mb-12">
+              <div class="card shadow">
+                <div class="card-body">
+                  <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                    <li class="nav-item">
+                      <a class="nav-link" id="unique-os-tab" data-toggle="pill" href="#unique-os" role="tab" aria-controls="unique-os" aria-selected="true">OS Individual</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="dimob-dmed-tab" data-toggle="pill" href="#dimob-dmed" role="tab" aria-controls="dimob-dmed" aria-selected="false">DIMOB / DMED</a>
+                    </li>
+                  </ul>
+                  <div class="tab-content mb-1" id="pills-tabContent">
+                    <div class="tab-pane fade" id="unique-os" role="tabpanel" aria-labelledby="unique-os-tab"> 
+                      <form id="form_cadastra_update_os">
+                          {% csrf_token %}
+          
+                          <input type="number" name="id_ordem" id="id_ordem_form" style="display: none;">
+          
+                          <div class="form-row" id="typecreate_ordem"></div>
+                          <br>
+                          <br>
+          
+                          <div class="form-row">
+                            <div class="col-12 col-sm-12">
+                              <label class="font-weight-bold" for="id_empresa">Empresa: </label>
+                              <select name="id_empresa" class="form-control select2" required id="id_empresa">
+                                <option value="" selected></option>
+                                {% for empresa in empresas %}
+                                  <option value="{{empresa.codigo_cliente_omie}}" title="{{empresa.escritorio}}">
+                                    {{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (Escritório: {{empresa.escritorio}})
+                                  </option>
+                                {% endfor %}
+                              </select>
+                              <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
+                            </div>
+                          </div>
+                          <br>
+                          <br>
+          
+                          <div class="form-row">
+                            {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
+                            {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-4 col-sm-4"  %}
+                            {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                            <div class="col-12 col-sm-12">
+                                <label class="font-weight-bold" for="id_servico">Serviço: </label>
+                                <select name="servico" class="form-control select2" required id="id_servico"></select>
+                                <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
+                            </div>
+                            <div class="card mt-2"> 
+                              <div class="card-body" id="div_service_selected" style="display: none;">
+                                Serviço Selecionado na Criação da OS: <b id="service_selected"></b>
+                              </div>
+                            </div>
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                              <div class="col-12 col-sm-12">
+                                  <label class="font-weight-bold" for="id_descricao">Descrição:</label>
+                                  <textarea name="descricao" cols="40" rows="2" class="form-control" id="id_descricao"></textarea>
+                                  <small class="form-text text-muted">Descrever a Descrição</small>
+                              </div>
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                              {% bootstrap_field form.descricao_servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                              {% bootstrap_field form.quantidade label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                              <div class="col-6 col-sm-6">
+                                  <label class="font-weight-bold" for="id_valor">Valor:</label>
+                                  <input type="text" name="valor" class="form-control input-money" required id="id_valor">
+                              </div>
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                              {% bootstrap_field form.autorizacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                              {% bootstrap_field form.solicitacaoLocal label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                          </div>
+                          <br>
+                          <br>
+                          <div class="form-row">
+                              {% bootstrap_field form.solicitacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                              {% bootstrap_field form.executado label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
+                          </div>
+                          <br>
+                          <br>
+          
+                          <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
+                              <strong>Executar</strong>
+                          </button>
+                      </form>
+                    </div>
+                    <div class="tab-pane fade" id="dimob-dmed" role="tabpanel" aria-labelledby="dimob-dmed-tab"> 
+                      <form id="form_cadastra_os_dimob_dmed">
+                          {% csrf_token %}
 
-                <input type="number" name="id_ordem" id="id_ordem_form" style="display: none;">
+                          <input type="text" name="type_file_app" style="display: none;" value="DIMOB / DMED">
+          
+                          <div class="form-row">
+                            <div class="col-12 col-sm-12">
+                              <label for="fileDimobDmed">Arquivo DIMOB ou DMED para Criação das OS </label>
+                              <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="fileDimobDmed" name="file_dmob_dmed" accept=".xlsx, .ods, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet">
+                                <label class="custom-file-label" for="fileDimobDmed">Selecione o Arquivo XLSX ou ODS</label>
+                              </div>
+                            </div>
+                          </div>
 
-                <div class="form-row" id="typecreate_ordem"></div>
-                <br>
-                <br>
-
-                <div class="form-row">
-                  <div class="col-12 col-sm-12">
-                    <label class="font-weight-bold" for="id_empresa">Empresa: </label>
-                    <select name="id_empresa" class="form-control select2" required id="id_empresa">
-                      <option value="" selected></option>
-                      {% for empresa in empresas %}
-                        <option value="{{empresa.codigo_cliente_omie}}" title="{{empresa.escritorio}}">
-                          {{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (Escritório: {{empresa.escritorio}})
-                        </option>
-                      {% endfor %}
-                    </select>
-                    <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
-                  </div>
-                </div>
-                <br>
-                <br>
-
-                <div class="form-row">
-                  {% bootstrap_field form.execucao label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
-                  {% bootstrap_field form.data label_class='font-weight-bold' form_group_class="col-4 col-sm-4"  %}
-                  {% bootstrap_field form.data_cobranca label_class='font-weight-bold' form_group_class="col-4 col-sm-4" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                  <div class="col-12 col-sm-12">
-                      <label class="font-weight-bold" for="id_servico">Serviço: </label>
-                      <select name="servico" class="form-control select2" required id="id_servico"></select>
-                      <small class="form-text text-muted">Escolha uma dentre as Opções (Campo é necessário)</small>
-                  </div>
-                  <div class="card mt-2"> 
-                    <div class="card-body" id="div_service_selected" style="display: none;">
-                      Serviço Selecionado na Criação da OS: <b id="service_selected"></b>
+                          <div id="body_erros_import_dmed_dimob" class="mt-4"></div>
+          
+                          <button class="btn btn-outline-primary mt-5" style="width: 100%;" onclick="cadastrar_ordens_dimob_dmed(event)"> 
+                              <strong>Criar OS !</strong>
+                          </button>
+                      </form>
+                      
                     </div>
                   </div>
                 </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    <div class="col-12 col-sm-12">
-                        <label class="font-weight-bold" for="id_descricao">Descrição:</label>
-                        <textarea name="descricao" cols="40" rows="2" class="form-control" id="id_descricao"></textarea>
-                        <small class="form-text text-muted">Descrever a Descrição</small>
-                    </div>
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.descricao_servico label_class='font-weight-bold' form_group_class="col-12 col-sm-12" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.quantidade label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    <div class="col-6 col-sm-6">
-                        <label class="font-weight-bold" for="id_valor">Valor:</label>
-                        <input type="text" name="valor" class="form-control input-money" required id="id_valor">
-                    </div>
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.autorizacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.solicitacaoLocal label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                </div>
-                <br>
-                <br>
-                <div class="form-row">
-                    {% bootstrap_field form.solicitacao label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                    {% bootstrap_field form.executado label_class='font-weight-bold' form_group_class="col-6 col-sm-6" placeholder=False %}
-                </div>
-                <br>
-                <br>
-
-                <button class="btn btn-outline-primary float-right mt-3" style="width: 100%;" id="id_button_for_edit_os" data-toggle="popover" data-placement="bottom" data-trigger="hover"> 
-                    <strong>Executar</strong>
-                </button>
-            </form>
+              </div>
+            </div>
         </div>
     </div>
   </div>
@@ -458,6 +500,15 @@
     }
   })
 
+  $('#fileDimobDmed').on("change", (el) => {
+    let text = el.target.nextElementSibling;
+    if (!el.target.value.includes("xlsx") && !el.target.value.includes("ods")){
+      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX ou ODS...";
+    }else{
+      text.textContent = el.target.value.split('\\').pop();
+    }
+  })
+
   $('#fileBoletos').on("change", (el) => {
     let text = el.target.nextElementSibling;
     if (!el.target.value.includes("xlsx")){
@@ -520,6 +571,7 @@
     document.getElementById('id_solicitacao').value = ordem.solicitado
     document.getElementById('id_executado').value = ordem.executado
     document.getElementById('typecreate_ordem').innerHTML = ''
+    document.getElementById('body_erros_import_dmed_dimob').innerHTML = "";
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
     myModal.toggle()
   }
@@ -607,6 +659,7 @@
         </select>
       </div>
     `
+    document.getElementById('body_erros_import_dmed_dimob').innerHTML = "";
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event)`)
     myModal.toggle()
   }
@@ -812,9 +865,37 @@
         }
       },
       error: function(data){
-        mostrarAlert('error_aviso', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
+        mostrarAlert('error_aviso', 'danger', data.responseJSON ? data.responseJSON.message : data.statusText)
       },
     })
+  }
+
+  async function cadastrar_ordens_dimob_dmed(e){
+    e.preventDefault();
+    const formulario_file = document.getElementById("form_cadastra_os_dimob_dmed");
+    const formData = new FormData(formulario_file);
+    await fetch("{% url 'list_ordem_servico' %}", { method: "POST", body: formData })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.list_erros.length > 0){
+          document.getElementById('body_erros_import_dmed_dimob').innerHTML = `${data.list_erros.map(tr => `<li>${tr}</li>`).join("<br>")}`;
+        }else{
+          mostrarAlert('error_aviso', 'success', "Importado com Sucesso !!");
+          setTimeout(() => {
+            window.location.href = "{% url 'list_ordem_servico' %}";
+          }, 900)
+        }
+      })
+      .catch(error => {
+        mostrarAlert('error_aviso', 'danger', error);
+      })
   }
 
   function mostrarAlert(div_id_class, type_alert, mensagem){

@@ -261,15 +261,52 @@ class OrdemServicoView(View):
     def post(self, request, *args, **kwargs):
         context = { 'form': self.form(request.POST or None) }
         try:
-            if context['form'].is_valid():
-                empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=request.POST.get("id_empresa"))
-                context['form'].clean_log(request.user.username, empresa_db.cd_empresa)
+            file = request.FILES.get("file_dmob_dmed").temporary_file_path() if "file_dmob_dmed" in request.FILES else None
+            if file:
+                response_file = []
+                extention_file = "ods" if ".ods" in request.FILES.get("file_dmob_dmed").name else "xlsx"
+                type_file = request.POST.get("type_file_app")
+                if extention_file == "ods":
+                    df = pd.read_excel(file, engine="odf")
+                else:
+                    df = pd.read_excel(file)
+                df.fillna(0, inplace=True)
                 controller = Controller()
-                return controller.update_ordem_servico(context['form'].cleaned_data, request.user.username, empresa_db)
+                if type_file == "DIMOB / DMED":
+                    codigos_servicos = {
+                        '501': {'DMED': "11019827066 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "11019827043 * DIMOB - ATIVIDADES IMOBILIARIA"},
+                        '502': {'DMED': "4423461903 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "4423461885 * DIMOB - ATIVIDADES IMOBILIARIA"},
+                        '505': {'DMED': "8601960788 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "8601960765 * DIMOB - ATIVIDADES IMOBILIARIA"},
+                        '567': {'DMED': "2641525825 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "2641525806 * DIMOB - ATIVIDADES IMOBILIARIA"},
+                        '575': {'DMED': "3838357573 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "3838357533 * DIMOB - ATIVIDADES IMOBILIARIA"},
+                    }
+                    for cd_empresa, name, servico, obs_servico, valor in df.values.tolist():
+                        if servico == 0 or servico == '0':
+                            continue 
+                        hoje = datetime.date.today()
+                        type_service = "DMED" if "DMED" in servico else "DIMOB"
+                        emp = EmpresasOmie.objects.filter(cd_empresa=int(cd_empresa)).first()
+                        if emp:
+                            obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username, 'servico': codigos_servicos[emp.escritorio][type_service]}
+                            os_return = controller.update_ordem_servico(obj_os, request.user.username, emp, True)
+                            if os_return['status'] != 200:
+                                response_file.append(os_return['obj']['message'])
+                        else:
+                            response_file.append(f"Empresa: {int(cd_empresa)} - {name}, Não Consta na Base de Dados OMIE")
+                            continue
+                        
+                    return JsonResponse({'list_erros': response_file})
             else:
-                raise Exception("Ocorreu um erro no Formulário, Verifique Novamente")
+                if context['form'].is_valid():
+                    empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=request.POST.get("id_empresa"))
+                    context['form'].clean_log(request.user.username, empresa_db.cd_empresa)
+                    controller = Controller()
+                    os_return = controller.update_ordem_servico(context['form'].cleaned_data, request.user.username, empresa_db)
+                    return JsonResponse(os_return['obj'], status=os_return['status'])
+                else:
+                    raise Exception("Ocorreu um erro no Formulário, Verifique Novamente")
         except Exception as ex:
-            return JsonResponse({"error": str(ex)}, status=500)
+            return JsonResponse({"message": str(ex)}, status=500)
         
     def request_get_services_escritorio(request):
         escrit = request.POST.get("escritorio")
