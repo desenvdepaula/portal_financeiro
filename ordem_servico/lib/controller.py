@@ -25,6 +25,28 @@ class Controller():
 
     #------------------ SERVIÇOS ------------------#
     
+    def get_type_file_obrigacoes(self, service_name):
+        if "DMED" in service_name:
+            return "DMED"
+        elif "DIMOB" in service_name:
+            return "DIMOB"
+        elif "ECD" in service_name:
+            return "ECD"
+        elif "ECF" in service_name:
+            return "ECF"
+        elif "DEFIS" in service_name:
+            return "DEFIS"
+        elif "IBGE" in service_name:
+            return "IBGE"
+        elif "CBE" in service_name:
+            return "CBE"
+        elif "INATIVA" in service_name:
+            return "INATIVA"
+        elif "ATA" in service_name:
+            return "ATA"
+        else:
+            raise Exception(f"Este Serviço: {service_name}, não corresponde a um Serviço Cadastrado !!")
+    
     def get_servicos_questor(self, codigos=None):
         self.manager.connect()
         try:

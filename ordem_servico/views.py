@@ -261,41 +261,42 @@ class OrdemServicoView(View):
     def post(self, request, *args, **kwargs):
         context = { 'form': self.form(request.POST or None) }
         try:
-            file = request.FILES.get("file_dmob_dmed").temporary_file_path() if "file_dmob_dmed" in request.FILES else None
+            file = request.FILES.get("file_obrigacoes").temporary_file_path() if "file_obrigacoes" in request.FILES else None
             if file:
                 response_file = []
-                extention_file = "ods" if ".ods" in request.FILES.get("file_dmob_dmed").name else "xlsx"
-                type_file = request.POST.get("type_file_app")
+                extention_file = "ods" if ".ods" in request.FILES.get("file_obrigacoes").name else "xlsx"
                 if extention_file == "ods":
                     df = pd.read_excel(file, engine="odf")
                 else:
                     df = pd.read_excel(file)
                 df.fillna(0, inplace=True)
                 controller = Controller()
-                if type_file == "DIMOB / DMED":
-                    codigos_servicos = {
-                        '501': {'DMED': "11019827066 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "11019827043 * DIMOB - ATIVIDADES IMOBILIARIA"},
-                        '502': {'DMED': "4423461903 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "4423461885 * DIMOB - ATIVIDADES IMOBILIARIA"},
-                        '505': {'DMED': "8601960788 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "8601960765 * DIMOB - ATIVIDADES IMOBILIARIA"},
-                        '567': {'DMED': "2641525825 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "2641525806 * DIMOB - ATIVIDADES IMOBILIARIA"},
-                        '575': {'DMED': "3838357573 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "3838357533 * DIMOB - ATIVIDADES IMOBILIARIA"},
-                    }
-                    for cd_empresa, name, servico, obs_servico, valor in df.values.tolist():
-                        if servico == 0 or servico == '0':
-                            continue 
-                        hoje = datetime.date.today()
-                        type_service = "DMED" if "DMED" in servico else "DIMOB"
-                        emp = EmpresasOmie.objects.filter(cd_empresa=int(cd_empresa)).first()
-                        if emp:
-                            obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username, 'servico': codigos_servicos[emp.escritorio][type_service]}
-                            os_return = controller.update_ordem_servico(obj_os, request.user.username, emp, True)
-                            if os_return['status'] != 200:
-                                response_file.append(os_return['obj']['message'])
-                        else:
-                            response_file.append(f"Empresa: {int(cd_empresa)} - {name}, Não Consta na Base de Dados OMIE")
-                            continue
-                        
-                    return JsonResponse({'list_erros': response_file})
+                codigos_servicos = {
+                    '501': {'DMED': "11019827066 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "11019827043 * DIMOB - ATIVIDADES IMOBILIARIA", 'ECD': "11019827085 * ECD - ESCRITURACAO CONTABIL DIGITAL", 'ECF': "11019827091 * ECF - ESCRITURACAO CONTABIL FISCAL", 'DEFIS': "11019827037 * DEFIS - DECLARACAO INFORMACOES SOCIOECONOMICAS E FISCAIS", 'IBGE': "11019827196 * IBGE - DECLARACAO PERIODO - ESCRITA FISCAL", 'CBE': "11019826974 * CBE - DECLARACAO DE CAPITAL BR NO EXTERIOR - OBRIGACOES ACESSORIAS", 'INATIVA': "11019827016 * DECLARACAO INATIVA - OBRIGACOES ACESSORIAS", 'ATA': "11019826883 * ATA DE REUNIAO SOCIOS - DEMONSTRACOES CONTABEIS - IMPLANTACAO"},
+                    '502': {'DMED': "4423461903 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "4423461885 * DIMOB - ATIVIDADES IMOBILIARIA", 'ECD': "4423461912 * ECD - ESCRITURACAO CONTABIL DIGITAL", 'ECF': "4423461916 * ECF - ESCRITURACAO CONTABIL FISCAL", 'DEFIS': "4423461878 * DEFIS - DECLARACAO INFORMACOES SOCIOECONOMICAS E FISCAIS", 'IBGE': "4423462116 * IBGE - DECLARACAO PERIODO - ESCRITA FISCAL", 'CBE': "4423461781 * CBE - DECLARACAO DE CAPITAL BR NO EXTERIOR - OBRIGACOES ACESSORIAS", 'INATIVA': "4423461860 * DECLARACAO INATIVA - OBRIGACOES ACESSORIAS", 'ATA': "4423461652 * ATA DE REUNIAO SOCIOS - DEMONSTRACOES CONTABEIS - IMPLANTACAO"},
+                    '505': {'DMED': "8601960788 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "8601960765 * DIMOB - ATIVIDADES IMOBILIARIA", 'ECD': "8601960808 * ECD - ESCRITURACAO CONTABIL DIGITAL", 'ECF': "8601960813 * ECF - ESCRITURACAO CONTABIL FISCAL", 'DEFIS': "8601960761 * DEFIS - DECLARACAO INFORMACOES SOCIOECONOMICAS E FISCAIS", 'IBGE': "8601960931 * IBGE - DECLARACAO PERIODO - ESCRITA FISCAL", 'CBE': "8601960537 * CBE - DECLARACAO DE CAPITAL BR NO EXTERIOR - OBRIGACOES ACESSORIAS", 'INATIVA': "8601960722 * DECLARACAO INATIVA - OBRIGACOES ACESSORIAS", 'ATA': "8601960390 * ATA DE REUNIAO SOCIOS - DEMONSTRACOES CONTABEIS - IMPLANTACAO"},
+                    '567': {'DMED': "2641525825 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "2641525806 * DIMOB - ATIVIDADES IMOBILIARIA", 'ECD': "2641525835 * ECD - ESCRITURACAO CONTABIL DIGITAL", 'ECF': "2641525845 * ECF - ESCRITURACAO CONTABIL FISCAL", 'DEFIS': "2641525800 * DEFIS - DECLARACAO INFORMACOES SOCIOECONOMICAS E FISCAIS", 'IBGE': "2641525965 * IBGE - DECLARACAO PERIODO - ESCRITA FISCAL", 'CBE': "2641525708 * CBE - DECLARACAO DE CAPITAL BR NO EXTERIOR - OBRIGACOES ACESSORIAS", 'INATIVA': "2641525777 * DECLARACAO INATIVA - OBRIGACOES ACESSORIAS", 'ATA': "2641525592 * ATA DE REUNIAO SOCIOS - DEMONSTRACOES CONTABEIS - IMPLANTACAO"},
+                    '575': {'DMED': "3838357573 * DMED - DECLARACAO DE SERVICOS MEDICOS", 'DIMOB': "3838357533 * DIMOB - ATIVIDADES IMOBILIARIA", 'ECD': "3838357593 * ECD - ESCRITURACAO CONTABIL DIGITAL", 'ECF': "3838357600 * ECF - ESCRITURACAO CONTABIL FISCAL", 'DEFIS': "3838357527 * DEFIS - DECLARACAO INFORMACOES SOCIOECONOMICAS E FISCAIS", 'IBGE': "3838357735 * IBGE - DECLARACAO PERIODO - ESCRITA FISCAL", 'CBE': "3838357276 * CBE - DECLARACAO DE CAPITAL BR NO EXTERIOR - OBRIGACOES ACESSORIAS", 'INATIVA': "3838357504 * DECLARACAO INATIVA - OBRIGACOES ACESSORIAS", 'ATA': "3838357022 * ATA DE REUNIAO SOCIOS - DEMONSTRACOES CONTABEIS - IMPLANTACAO"},
+                }
+                
+                for cd_empresa, name, servico, obs_servico, valor in df.values.tolist():
+                    if servico == 0 or servico == '0':
+                        continue 
+                    hoje = datetime.date.today()
+                    try:
+                        type_service = controller.get_type_file_obrigacoes(servico)
+                    except Exception as ex:
+                        response_file.append(str(ex))
+                        continue
+                    emp = EmpresasOmie.objects.filter(cd_empresa=int(cd_empresa)).first()
+                    if emp:
+                        obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username, 'servico': codigos_servicos[emp.escritorio][type_service]}
+                        os_return = controller.update_ordem_servico(obj_os, request.user.username, emp, True)
+                        if os_return['status'] != 200:
+                            response_file.append(os_return['obj']['message'])
+                    else:
+                        response_file.append(f"Empresa: {int(cd_empresa)} - {name}, Não Consta na Base de Dados OMIE")
+                return JsonResponse({'list_erros': response_file})
             else:
                 if context['form'].is_valid():
                     empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=request.POST.get("id_empresa"))

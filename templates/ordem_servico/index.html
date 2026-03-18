@@ -177,7 +177,7 @@
                       <a class="nav-link" id="unique-os-tab" data-toggle="pill" href="#unique-os" role="tab" aria-controls="unique-os" aria-selected="true">OS Individual</a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" id="dimob-dmed-tab" data-toggle="pill" href="#dimob-dmed" role="tab" aria-controls="dimob-dmed" aria-selected="false">DIMOB / DMED</a>
+                      <a class="nav-link" id="obrigacoes-tab" data-toggle="pill" href="#obrigacoes" role="tab" aria-controls="obrigacoes" aria-selected="false">DECLARAÇÕES ACESSÓRIAS</a>
                     </li>
                   </ul>
                   <div class="tab-content mb-1" id="pills-tabContent">
@@ -270,25 +270,23 @@
                           </button>
                       </form>
                     </div>
-                    <div class="tab-pane fade" id="dimob-dmed" role="tabpanel" aria-labelledby="dimob-dmed-tab"> 
-                      <form id="form_cadastra_os_dimob_dmed">
+                    <div class="tab-pane fade" id="obrigacoes" role="tabpanel" aria-labelledby="obrigacoes-tab"> 
+                      <form id="form_cadastra_os_obrigacoes">
                           {% csrf_token %}
-
-                          <input type="text" name="type_file_app" style="display: none;" value="DIMOB / DMED">
           
                           <div class="form-row">
                             <div class="col-12 col-sm-12">
-                              <label for="fileDimobDmed">Arquivo DIMOB ou DMED para Criação das OS </label>
+                              <label for="fileObrigacoes">Arquivo das DECLARAÇÕES ACESSÓRIAS para Criação das OS </label>
                               <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="fileDimobDmed" name="file_dmob_dmed" accept=".xlsx, .ods, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet">
-                                <label class="custom-file-label" for="fileDimobDmed">Selecione o Arquivo XLSX ou ODS</label>
+                                <input type="file" class="custom-file-input" id="fileObrigacoes" name="file_obrigacoes" accept=".xlsx, .ods, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet">
+                                <label class="custom-file-label" for="fileObrigacoes">Selecione o Arquivo XLSX ou ODS</label>
                               </div>
                             </div>
                           </div>
 
-                          <div id="body_erros_import_dmed_dimob" class="mt-4"></div>
+                          <div id="body_erros_import_obrigacoes" class="mt-4"></div>
           
-                          <button class="btn btn-outline-primary mt-5" style="width: 100%;" onclick="cadastrar_ordens_dimob_dmed(event)"> 
+                          <button class="btn btn-outline-primary mt-5" style="width: 100%;" onclick="cadastrar_ordens_obrigacoes(event)"> 
                               <strong>Criar OS !</strong>
                           </button>
                       </form>
@@ -500,7 +498,7 @@
     }
   })
 
-  $('#fileDimobDmed').on("change", (el) => {
+  $('#fileObrigacoes').on("change", (el) => {
     let text = el.target.nextElementSibling;
     if (!el.target.value.includes("xlsx") && !el.target.value.includes("ods")){
       text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX ou ODS...";
@@ -571,7 +569,7 @@
     document.getElementById('id_solicitacao').value = ordem.solicitado
     document.getElementById('id_executado').value = ordem.executado
     document.getElementById('typecreate_ordem').innerHTML = ''
-    document.getElementById('body_erros_import_dmed_dimob').innerHTML = "";
+    document.getElementById('body_erros_import_obrigacoes').innerHTML = "";
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event, ${ordem.id},'${tr_id}')`)
     myModal.toggle()
   }
@@ -659,7 +657,7 @@
         </select>
       </div>
     `
-    document.getElementById('body_erros_import_dmed_dimob').innerHTML = "";
+    document.getElementById('body_erros_import_obrigacoes').innerHTML = "";
     document.getElementById('id_button_for_edit_os').setAttribute('onclick', `editar_ordem(event)`)
     myModal.toggle()
   }
@@ -870,9 +868,9 @@
     })
   }
 
-  async function cadastrar_ordens_dimob_dmed(e){
+  async function cadastrar_ordens_obrigacoes(e){
     e.preventDefault();
-    const formulario_file = document.getElementById("form_cadastra_os_dimob_dmed");
+    const formulario_file = document.getElementById("form_cadastra_os_obrigacoes");
     const formData = new FormData(formulario_file);
     await fetch("{% url 'list_ordem_servico' %}", { method: "POST", body: formData })
       .then(response => {
@@ -885,7 +883,7 @@
       })
       .then(data => {
         if (data.list_erros.length > 0){
-          document.getElementById('body_erros_import_dmed_dimob').innerHTML = `${data.list_erros.map(tr => `<li>${tr}</li>`).join("<br>")}`;
+          document.getElementById('body_erros_import_obrigacoes').innerHTML = `${data.list_erros.map(tr => `<li class="text-danger">${tr}</li>`).join("<br>")}`;
         }else{
           mostrarAlert('error_aviso', 'success', "Importado com Sucesso !!");
           setTimeout(() => {
