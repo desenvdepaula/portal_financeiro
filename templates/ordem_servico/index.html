@@ -174,14 +174,14 @@
                 <div class="card-body">
                   <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item">
-                      <a class="nav-link" id="unique-os-tab" data-toggle="pill" href="#unique-os" role="tab" aria-controls="unique-os" aria-selected="true">OS Individual</a>
+                      <a class="nav-link active" id="unique-os-tab" data-toggle="pill" href="#unique-os" role="tab" aria-controls="unique-os" aria-selected="true">OS Individual</a>
                     </li>
                     <li class="nav-item">
                       <a class="nav-link" id="obrigacoes-tab" data-toggle="pill" href="#obrigacoes" role="tab" aria-controls="obrigacoes" aria-selected="false">DECLARAÇÕES ACESSÓRIAS</a>
                     </li>
                   </ul>
                   <div class="tab-content mb-1" id="pills-tabContent">
-                    <div class="tab-pane fade" id="unique-os" role="tabpanel" aria-labelledby="unique-os-tab"> 
+                    <div class="tab-pane fade show active" id="unique-os" role="tabpanel" aria-labelledby="unique-os-tab"> 
                       <form id="form_cadastra_update_os">
                           {% csrf_token %}
           
@@ -541,18 +541,18 @@
 
   function open_modal_update(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalEditOrdem'), {backdrop: 'static'});
+    document.getElementById('div_service_selected').style.display = "block";
+    document.getElementById('service_selected').textContent = ordem.servico;
+    document.getElementById('service_selected').style.color = "red";
     if (typeof ordem.empresa != 'object'){
       $("#form_cadastra_update_os").find('input, textarea, select, button').prop('disabled', true);
       $('#id_empresa').val(null).trigger('change');
+      $('#id_servico').empty().trigger('change');
     }else{
       $('#id_empresa').val(`${ordem.empresa.codigo_cliente_omie}`).trigger('change');
-      selecionar_empresa(ordem.empresa.escritorio, ordem.cd_servico + ' * ' + ordem.servico);
+      selecionar_empresa(ordem.empresa.escritorio, ordem.servico);
     }
-    $('#id_servico').empty().trigger('change');
     document.getElementById('id_empresa').disabled = false;
-    document.getElementById('div_service_selected').style.display = "block";
-    document.getElementById('service_selected').textContent = ordem.servico;
-    document.getElementById('service_selected').style.color = "rgb(23, 162, 184)";
     document.getElementById('modalEditOrdemLabel').textContent = `Editar Esta Ordem da ${ordem.empresa?.cd_empresa} - ${ordem.empresa?.name_empresa}`
     document.getElementById('id_ordem_form').value = parseInt(ordem.id)
     document.getElementById('id_execucao').value = ordem.hora_trabalho
@@ -979,8 +979,9 @@
 
 <script>
 
-  async function selecionar_empresa(escritorio, selected=null){
+  async function selecionar_empresa(escritorio, selected='null'){
     active_spinner_div('error_aviso');
+    let selected_service = null;
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
     formData.append('escritorio', escritorio);
@@ -999,12 +1000,16 @@
         $('#id_servico').append(newOptionVazio).trigger('change');
         for(row of data.servicos){
           let id_text = row[0] + " * " + row[1];
+          if (selected.trim() === row[1].trim()){
+            selected_service = id_text;
+          }
           var newOption = new Option(row[1], id_text, false, false);
           $('#id_servico').append(newOption).trigger('change');
         }
         $("#form_cadastra_update_os").find('input, textarea, select, button').prop('disabled', false);
-        if (selected){
-          $('#id_servico').val(`${selected}`).trigger('change');
+        if (selected_service){
+          $('#id_servico').val(`${selected_service}`).trigger('change');
+          document.getElementById('service_selected').style.color = "#4bed4b";
         }
         desactive_spinner_div('error_aviso');
       })
@@ -1029,7 +1034,7 @@
     var data = e.params.data;
     var service_atual = document.getElementById('service_selected').textContent;
     if (data.text == service_atual){
-      document.getElementById('service_selected').style.color = "green";
+      document.getElementById('service_selected').style.color = "#4bed4b";
     }else{
       document.getElementById('service_selected').style.color = "red";
     }

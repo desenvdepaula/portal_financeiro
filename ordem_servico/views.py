@@ -288,6 +288,7 @@ class OrdemServicoView(View):
                     except Exception as ex:
                         response_file.append(str(ex))
                         continue
+                    obs_servico = obs_servico.replace("–","-")
                     emp = EmpresasOmie.objects.filter(cd_empresa=int(cd_empresa)).first()
                     if emp:
                         obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username, 'servico': codigos_servicos[emp.escritorio][type_service]}
