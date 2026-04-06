@@ -26,19 +26,6 @@ def gerar_arquivo_excel_auditoria_download_boletos(errors, escritorio):
     except Exception as err:
         raise Exception(err)
 
-def sql_get_services_questor(codigos):
-    sql = f"""
-        select
-            codigoservicoescrit,
-            descrservicoescrit
-        from
-            servicoescrit
-        {f"where codigoservicoescrit not in {codigos}" if codigos else ""}
-        order by
-            2
-    """
-    return sql
-
 def filter_planilha(filtros):
     try:
         dados = OrdemServico.objects.all()
@@ -73,6 +60,8 @@ def filter_planilha(filtros):
 
         if 'status' in filtros:
             status = filtros.get('status').upper()
+            if status == 'OS AVULSA':
+                dados = dados.filter(cod_os_omie="OS AVULSA")
             if status == 'DEBITADO':
                 dados = dados.filter(cod_os_omie__isnull=False)
             if status == 'DEBITAR':

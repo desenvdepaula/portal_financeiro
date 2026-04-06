@@ -17,7 +17,7 @@
             <div id="alert_geral_sucesso"></div>
             <div class="card shadow" id="cardOs">
               <div class="card-header d-flex justify-content-between">
-                <a class="btn btn-success float-right" style="color:#fff;" onclick="open_modal_create_service()">Adicionar Serviço</a>
+                <a class="btn btn-success float-right" style="color:#fff;" onclick="open_modal_update_all_services()">Atualizar Serviços</a>
                 <select class="custom-select ml-2" style="max-width: 300px" id="find_status" onchange="search()">
                   <option value="">CLASSIFICAÇÕES DE SERVIÇOS...</option>
                   {% for filtro in filters %}
@@ -41,7 +41,7 @@
                   <tbody>
                     {% for servico in servicos %}
                       <tr>
-                        <td class="h6">{{servico.cd_servico}} - {{servico.name_servico}}</td>
+                        <td class="h6">{{servico.escritorio}} - {{servico.name_servico}}</td>
                         <td class="h6 {% if not servico.tipo_servico %} text-info {% endif %}">{% if servico.tipo_servico %} {{servico.tipo_servico.classificacao}} {% else %} NENHUMA CLASSIFICAÇÃO {% endif %}</td>
 
                         {% if servico.considera_custo %}
@@ -115,6 +115,41 @@
   </div> <!-- .container-fluid -->
 </main> <!-- main -->
 
+<!-- MODAL Create Regra -->
+<div class="modal fade" id="modalUpdateService" role="dialog" aria-labelledby="modalUpdateServiceLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalUpdateServiceLabel"></h5>
+            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="error_aviso_modal_update"></div>
+            <form method="POST" id="form_update_services">
+                {% csrf_token %}
+
+                <div class="mt-2">
+                  <label for="select_escritorio" class="font-weight-bold">Selecione o Escritório:</label>
+                  <select class="custom-select" id="select_escritorio" name="escritorio">
+                    <option value="all">ATUALIZAR TODOS OS ESCRITÓRIOS</option>
+                    <option value="501">501</option>
+                    <option value="502">502</option>
+                    <option value="505">505</option>
+                    <option value="567">567</option>
+                    <option value="575">575</option>
+                  </select>
+                </div>
+
+                <button class="btn btn-outline-success float-right mt-5" style="width: 100%;" onclick="atualizar_servicos_omie(event)"> 
+                    <strong>Atualizar</strong>
+                </button>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL Create Regra -->
 <div class="modal fade" id="modalService" role="dialog" aria-labelledby="modalServiceLabel" aria-hidden="true">
@@ -134,15 +169,6 @@
                 <input type="number" name="nr_service" id="id_nr_service_form" style="display: none;">
 
                 <div class="form-group">
-                  <label for="servico_select">Código do Questor: </label>
-                  <select class="form-control select2-single" required id="servico_select" name="servico">
-                    {% for codigo in servicos_questor %}
-                      <option value="{{codigo.0}} *** {{codigo.1}}" title="{{codigo.1}}">{{codigo.0}} - {{codigo.1}}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <div class="form-group mt-5">
                   <label for="departamentos_select">Selecione os Departamentos: </label>
                   <select class="form-control select2-multiple" id="departamentos_select" name="departamentos"></select>
                 </div>
@@ -223,10 +249,46 @@
     document.getElementById('id_classificacao').required=event.target.checked
   })
 
+  async function atualizar_servicos_omie(e){
+    e.preventDefault();
+    button_spinner(e.target, true);
+    const formulario_file = document.getElementById("form_update_services");
+    const formData = new FormData(formulario_file);
+    await fetch("{% url 'update_all_services_omie' %}", { method: "POST", body: formData })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        button_spinner(e.target, true, "Concluído...");
+        mostrarAlert('error_aviso_modal_update', 'success', "Atualizado com Sucesso !!");
+        setTimeout(() => {
+          window.location.href = "{% url 'controle_servicos_OS' %}";
+        }, 1500)
+      })
+      .catch(error => {
+        mostrarAlert('error_aviso_modal_update', 'danger', error);
+        button_spinner(e.target, false, "Atualizar");
+      })
+  }
+
+  function button_spinner(button, active, html=''){
+    button.innerHTML = active ? `
+      <center>
+        <div class="spinner-border justify-center" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+      </center>
+    ` : `${html}`;
+    button.disabled = active;
+  }
+
   function clean_or_set_inputs_form(id=null, departamentos=[], tipo_servico=null, classificacao=null, custo=false, ativo=true, obs=""){
     document.getElementById('id_nr_service_form').value = !id ? "" : id
-    $('#servico_select').val(null).trigger('change');
-    document.getElementById('servico_select').disabled = !id ? false : true
     $('#id_tipo_servico').val(tipo_servico).trigger('change');
     document.getElementById('id_classificacao').value = !classificacao ? "" : classificacao
     document.getElementById('id_classificacao').disabled = !classificacao ? true : false
@@ -249,17 +311,17 @@
     }
   }
 
-  function open_modal_create_service(){
-    var myModal = new bootstrap.Modal(document.getElementById('modalService'));
-    document.getElementById('modalServiceLabel').textContent = `Cadastrar Serviço no Controle`;
-    clean_or_set_inputs_form();
+  function open_modal_update_all_services(){
+    var myModal = new bootstrap.Modal(document.getElementById('modalUpdateService'), {backdrop: 'static'});
+    document.getElementById('modalUpdateServiceLabel').textContent = `Atualizar Serviços !!`;
+    document.getElementById('select_escritorio').value = "all";
     myModal.toggle();
   }
 
   function open_modal_update_service(data){
-    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos } = data
+    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos, escritorio } = data;
     var myModal = new bootstrap.Modal(document.getElementById('modalService'));
-    document.getElementById('modalServiceLabel').textContent = `Alterar o Serviço: ${cd_servico} - ${name_servico}`;
+    document.getElementById('modalServiceLabel').textContent = `Alterar o Serviço: ${name_servico} (${escritorio})`;
     clean_or_set_inputs_form(cd_servico, departamentos, tipo_servico_id, classificacao, considera_custo, ativo, observacoes);
     myModal.toggle();
   }
@@ -272,9 +334,9 @@
   }
 
   function abrir_modal_view_service(data){
-    let { cd_servico, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos } = data
+    let { escritorio, name_servico, tipo_servico_id, tipo_servico, considera_custo, ativo, classificacao, observacoes, departamentos } = data;
     var myModal = new bootstrap.Modal(document.getElementById('modalViewService'));
-    document.getElementById('modalViewServiceLabel').textContent = `Visualizar dados do Serviço: ${cd_servico} - ${name_servico}`;
+    document.getElementById('modalViewServiceLabel').textContent = `Serviço: ${name_servico} ( ${escritorio} )`;
     document.getElementById('view_service').innerHTML = `
       <p class="h5 mt-3">REGRA ${ativo ? "ATIVA" : "INATIVA"}</p>
       <p class="h5 mt-3">Tipo do Serviço: ${tipo_servico_id ? tipo_servico : "Sem Classificação de Serviço"}</p>
@@ -415,7 +477,7 @@
         }
       },
       error: function(data){
-        mostrarAlert('alert_geral_sucesso', 'danger', data.statusText)
+        mostrarAlert('alert_geral_sucesso', 'danger', data.responseJSON ? data.responseJSON.statusText : data.statusText)
       },
     })
   }

@@ -17,6 +17,7 @@ urlpatterns = [
     path('debitar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_debitar_ordem_servico),
     path('aprovar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_aprovar_ordem_servico),
     path('arquivar_ordem_servico/<int:id_ordem>/', OrdemServicoView.request_arquivar_ordem_servico),
+    path('set_os_avulso/<int:id_ordem>/', OrdemServicoView.request_avulso_ordem_servico),
     path('download_boletos_escritorio/', OrdemServicoView.request_download_boletos_escritorio, name="download_boletos_escritorio"),
     path('baixar_planilha_ordens_servico', OrdemServicoView.request_download_planilha, name="baixar_planilha_ordens_servico"),
     path('baixar_boletos_os/<str:escritorio>/', OrdemServicoView.request_download_pdfs_boletos),
@@ -29,8 +30,9 @@ urlpatterns = [
     path('status_real_time_update_empresa/<str:task_id>/', EmpresasOmieView.get_status_real_time_update_empresa),
     
     path('controle_servicos_OS', login_required(ServicosView.as_view()), name="controle_servicos_OS"),
-    path('buscar_servico/<int:nr_servico>/', ServicosView.buscar_servico),
+    path('buscar_servico/<str:nr_servico>/', ServicosView.buscar_servico),
     path('delete_servico_OS', ServicosView.delete_service, name="delete_servico_OS"),
+    path('update_all_services_omie', ServicosView.request_update_all_services_omie, name="update_all_services_omie"),
     
     path('create_department', Departamento.create, name="create_department"),
     path('update_department', Departamento.update, name="update_department"),

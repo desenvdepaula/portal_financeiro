@@ -22,6 +22,9 @@
   .text-micolor{
     color: #00FFFF;
   }
+  .text-micoloravulso{
+    color: #73ff00;
+  }
 </style>
 
 <main role="main" class="main-content">
@@ -44,6 +47,7 @@
                     <option value="DEBITAR">DEBITAR</option>
                     <option value="DEBITADO">DEBITADO</option>
                     <option value="ARQUIVADO">ARQUIVADO</option>
+                    <option value="OS AVULSA">OS AVULSA</option>
                     <option value="SEM SERVIÇO SELECIONADO">SEM SERVIÇO SELECIONADO</option>
                   </select>
                   <div class="d-flex flex-row">
@@ -91,19 +95,21 @@
                     {% for ordem in ordens %}
                       {% with counter=forloop.counter0 %}
                         <tr id="tr_{{counter}}">
-                          <td title="empresa" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} / {{ordem.empresa.estab}} - {{ordem.empresa.name_empresa}}</td>
+                          <td title="empresa" class="h6 {% if ordem.os_avulsa %} text-micoloravulso {% elif ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.empresa.cd_empresa}} / {{ordem.empresa.estab}} - {{ordem.empresa.name_empresa}}</td>
                           {% if ordem.cd_servico == 0 or ordem.cd_servico == '0' %}
                             <td title="servico" class="h6 text-danger">
                               SEM SERVIÇO SELECIONADO - (desc.: {{ordem.servico}}) <b>*PRECISA TRATAR*</b>
                             </td>
                           {% else %}
-                            <td title="servico" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}"> {{ordem.servico}} - (desc.: {{ordem.ds_servico}}) </td>
+                            <td title="servico" class="h6 {% if ordem.os_avulsa %} text-micoloravulso {% elif ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}"> {{ordem.servico}} - (desc.: {{ordem.ds_servico}}) </td>
                           {% endif %}
-                          <td title="cobranca" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
-                          <td title="valor" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
+                          <td title="cobranca" class="h6 {% if ordem.os_avulsa %} text-micoloravulso {% elif ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.data_cobranca}}</td>
+                          <td title="valor" class="h6 {% if ordem.os_avulsa %} text-micoloravulso {% elif ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}">{{ordem.valor}} (qtd: {{ordem.quantidade}})</td>
 
-                          <td title="status" class="h6 {% if ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
-                            {% if ordem.cod_os_omie %} 
+                          <td title="status" class="h6 {% if ordem.os_avulsa %} text-micoloravulso {% elif ordem.cod_os_omie %} text-success {% elif ordem.aprovado %} text-micolor {% elif not ordem.arquivado %} text-warning {% endif %}" id="status"> 
+                            {% if ordem.os_avulsa %} 
+                              OS AVULSA
+                            {% elif ordem.cod_os_omie %} 
                               DEBITADO
                             {% elif ordem.arquivado %} 
                               ARQUIVADO 
@@ -395,6 +401,7 @@
           <button type="button" id="button_arquive_view"></button>
           <button type="button" id="button_aprovar_view"></button>
           <button type="button" id="button_debito_view"></button>
+          <button type="button" id="button_avulso_view"></button>
         </div>
     </div>
   </div>
@@ -664,6 +671,8 @@
 
   function abrir_modal_view_ordem(ordem, tr_id){
     var myModal = new bootstrap.Modal(document.getElementById('modalViewOrdem'))
+    let button_avulso = document.getElementById('button_avulso_view')
+    button_avulso.style.display = 'block';
     let button_debito = document.getElementById('button_debito_view')
     button_debito.style.display = 'block';
     let button_arquive = document.getElementById('button_arquive_view')
@@ -691,6 +700,7 @@
     `
     if (ordem.arquivado){
       button_debito.style.display = 'none'
+      button_avulso.style.display = 'none'
       button_aprova.style.display = 'none'
       button_arquive.textContent = "Remover do Arquivado"
       button_arquive.className = 'btn btn-danger text-white'
@@ -715,10 +725,14 @@
     if (ordem.cod_os_omie || ordem.cd_servico == '0'){
       button_debito.style.display = 'none';
       button_aprova.style.display = 'none';
+      button_avulso.style.display = 'none';
     }else{
       button_debito.textContent = 'Lançar OS na OMIE'
       button_debito.className = 'btn btn-success text-white'
       button_debito.setAttribute('onclick', `debitar_os(event, ${ordem.id}, '${tr_id}')`)
+      button_avulso.textContent = 'OS AVULSA'
+      button_avulso.className = 'btn btn-primary text-white'
+      button_avulso.setAttribute('onclick', `set_os_avulsa(event, ${ordem.id}, '${tr_id}')`)
     }
     
     myModal.toggle()
@@ -778,6 +792,25 @@
       },
       error: function(data){
         desactive_spinner_div('li_spinner');
+        mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
+      },
+    })
+  }
+
+  function set_os_avulsa(e, id_ordem, tr_id){
+    e.preventDefault();
+    $.ajax({
+      url: `/ordem_servico/set_os_avulso/${id_ordem}`,
+      type: 'GET',
+      success: function(data){
+        if (Object.values(data).includes('sucesso')){
+          fecharModal('modalViewOrdem')
+          alteraLinhaTable(tr_id, 'OS AVULSA')
+        }else{
+          mostrarAlert('error_aviso_view', 'danger', "Algo deu errado !!")
+        }
+      },
+      error: function(data){
         mostrarAlert('error_aviso_view', 'danger', data.responseJSON ? data.responseJSON.error : data.statusText)
       },
     })
@@ -919,7 +952,15 @@
       let linha = document.getElementById(tr_id);
       for (child of linha.children){
         if (child.className.includes("h6")){
-          if (type == 'DEBITADO'){
+          if (type == 'OS AVULSA'){
+            child.className = "h6 text-micoloravulso"
+            if (child.title == 'status'){
+              child.innerText = "OS AVULSA"
+            }
+            if (child.title == 'check'){
+              child.innerHTML = ""
+            }
+          }else if (type == 'DEBITADO'){
             child.className = "h6 text-success"
             if (child.title == 'status'){
               child.innerText = "DEBITADO"

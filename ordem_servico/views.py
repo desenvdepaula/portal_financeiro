@@ -108,10 +108,8 @@ class ServicosView(View):
 
     def get(self, request, *args, **kwargs):
         context = { 'form': self.form() }
-        controller = Controller()
         context['filters'] = set()
         context['servicos'] = Servico.objects.all()
-        context['servicos_questor'] = controller.get_servicos_questor(context['servicos'])
         context['departamentos'] = DepartamentosControle.objects.all()
         context['classificacoes'] = ClassificacaoServicos.objects.all()
         for classificacao in context['classificacoes']:
@@ -176,7 +174,7 @@ class ServicosView(View):
             departamentos = [i.nome_departamento for i in service.departamentos.all()]
             service = vars(service)
             del service['_state']
-            service['observacoes'] = "\n".join(service['observacoes'].split("\r\n"))
+            service['observacoes'] = "\n".join(service['observacoes'].split("\r\n")) if service['observacoes'] else ''
             service['departamentos'] = departamentos
             service['tipo_servico'] = ""
             classificacao = service.get('tipo_servico_id')
@@ -197,36 +195,33 @@ class ServicosView(View):
         
     def dowload_relatorio_servicos_classificacoes(request):
         try:
-            controller = Controller()
-            servicos = controller.get_servicos_questor()
-            dfServicos = pd.DataFrame(servicos, columns=['CODIGO', 'DESCRICAO']).sort_values(by=['CODIGO'])
-            
             servicos_classificados = []
             for raw in Servico.objects.all():
                 departamentos_service = " | ".join([depart.nome_departamento for depart in raw.departamentos.all()])
                 servicos_classificados.append([
+                    int(raw.escritorio),
                     int(raw.cd_servico),
+                    raw.name_servico,
                     raw.tipo_servico.classificacao if raw.tipo_servico else '',
                     departamentos_service,
                     "ATIVO" if raw.ativo else "INATIVO",
                     "SIM" if raw.considera_custo else "NÃO",
-                    raw.classificacao
+                    raw.classificacao,
+                    raw.observacoes
                 ])
             
-            dfClassificacoes = pd.DataFrame(servicos_classificados, columns=['CODIGO', 'CLASSIFICAÇÃO DO SERVIÇO', 'DEPARTAMENTOS', 'STATUS', 'CONSIDERA NO CUSTO', 'CLASSIFICAÇÃO NO CUSTO'])
-            
-            df = dfServicos.merge(dfClassificacoes, how='left', on='CODIGO')
-            df.fillna(" ", inplace=True)
+            df = pd.DataFrame(servicos_classificados, columns=['ESCRITÓRIO', 'CODIGO', 'SERVIÇO', 'CLASSIFICAÇÃO DO SERVIÇO', 'DEPARTAMENTOS', 'STATUS', 'CONSIDERA NO CUSTO', 'CLASSIFICAÇÃO NO CUSTO', 'OBSERVAÇÕES'])
             with BytesIO() as b:
                 writer = pd.ExcelWriter(b, engine='xlsxwriter')
                 pd.set_option('max_colwidth', None)
                 workbook = writer.book
                 alignCenter = workbook.add_format({'align': 'left'})
                 df.to_excel(writer, sheet_name='Comparação', index = False)
-                writer.sheets['Comparação'].set_column('A:A', 15, alignCenter)
-                writer.sheets['Comparação'].set_column('B:C', 60, alignCenter)
-                writer.sheets['Comparação'].set_column('D:D', 50, alignCenter)
-                writer.sheets['Comparação'].set_column('E:G', 30, alignCenter)
+                writer.sheets['Comparação'].set_column('A:B', 15, alignCenter)
+                writer.sheets['Comparação'].set_column('C:C', 75, alignCenter)
+                writer.sheets['Comparação'].set_column('D:E', 60, alignCenter)
+                writer.sheets['Comparação'].set_column('F:H', 30, alignCenter)
+                writer.sheets['Comparação'].set_column('I:I', 120, alignCenter)
                 writer.close()
                 filename = 'Relatório Serviços e Classificações.xlsx'
                 response = HttpResponse(
@@ -238,6 +233,36 @@ class ServicosView(View):
         except Exception as err:
             messages.error(request, f"Erro ao Baixar O Relatório: {str(err)}")
             return redirect('controle_servicos_OS')
+
+    def request_update_all_services_omie(request):
+        if request.method == 'GET':
+            escritorios = ['501', '502', '505', '567', '575']
+        else:
+            escritorios = ['501', '502', '505', '567', '575'] if request.POST.get("escritorio") == 'all' else request.POST.getlist("escritorio")
+        try:
+            for escrit in escritorios:
+                page = 1
+                while True:
+                    data_get_service = get_request_to_api_omie(escrit, "ListarCadastroServico", {"nPagina": page, "nRegPorPagina": 500, "inativo": "N", "cExibirProdutos": "N"})
+                    result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/servico/", json=data_get_service, headers={'content-type': 'application/json'})
+                    json_contrato = result_contrato.json()
+                    if result_contrato.status_code == 200:
+                        for serv in json_contrato.get("cadastros"):
+                            servico, _ = Servico.objects.get_or_create( cd_servico = serv['intListar'].get("nCodServ") )
+                            servico.name_servico = serv['descricao'].get("cDescrCompleta")
+                            servico.escritorio = escrit
+                            servico.save()
+                        if json_contrato.get("nTotPaginas") == page:
+                            break
+                    else:
+                        raise Exception(f"Erro ao Buscar os Serviços da {escrit} página {page}: {json_contrato}")
+                    
+                    page += 1
+                    time.sleep(0.7)
+        except Exception as err:
+            return JsonResponse({"message": f"Erro na Operação: {err}"}, status=400)
+        else:
+            return JsonResponse({})
     
 class OrdemServicoView(View):
     
@@ -255,6 +280,8 @@ class OrdemServicoView(View):
             preco_convertido = f"R$ {preco:_.2f}"
             preco_final = preco_convertido.replace('.',',').replace('_','.')
             ordem.valor = preco_final
+            if ordem.cod_os_omie == 'OS AVULSA':
+                ordem.os_avulsa = True
             
         return render(request, self.template, context)
 
@@ -311,24 +338,10 @@ class OrdemServicoView(View):
             return JsonResponse({"message": str(ex)}, status=500)
         
     def request_get_services_escritorio(request):
-        escrit = request.POST.get("escritorio")
         try:
             response = {'servicos': []}
-            page = 1
-            while True:
-                data_get_service = get_request_to_api_omie(escrit, "ListarCadastroServico", {"nPagina": page, "nRegPorPagina": 500, "inativo": "N", "cExibirProdutos": "N"})
-                result_contrato = requests.post("https://app.omie.com.br/api/v1/servicos/servico/", json=data_get_service, headers={'content-type': 'application/json'})
-                json_contrato = result_contrato.json()
-                if result_contrato.status_code == 200:
-                    for serv in json_contrato.get("cadastros"):
-                        response['servicos'].append([serv['intListar'].get("nCodServ"), serv['descricao'].get("cDescrCompleta")])
-                    if json_contrato.get("nTotPaginas") == page:
-                        break
-                else:
-                    raise Exception(f"Erro ao Buscar os Serviços: {json_contrato}")
-                
-                page += 1
-                time.sleep(0.7)
+            for service in Servico.objects.filter(escritorio=request.POST.get("escritorio")):
+                response['servicos'].append([service.cd_servico, service.name_servico])
         except Exception as err:
             return JsonResponse({"message": f"Erro na Operação: {err}"}, status=400)
         else:
@@ -409,6 +422,16 @@ class OrdemServicoView(View):
             ordem = OrdemServico.objects.get(id=int(id_ordem))
             ordem.arquivado = not ordem.arquivado
             ordem.aprovado = False
+            ordem.save()
+        except Exception as err:
+            return JsonResponse({"error": str(err)}, status=500)
+        else:
+            return JsonResponse({"msg": 'sucesso'}, status=200)
+        
+    def request_avulso_ordem_servico(request, id_ordem):
+        try:
+            ordem = OrdemServico.objects.get(id=int(id_ordem))
+            ordem.cod_os_omie = 'OS AVULSA'
             ordem.save()
         except Exception as err:
             return JsonResponse({"error": str(err)}, status=500)

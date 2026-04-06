@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from core.views import get_request_to_api_omie
 from ..models import OrdemServico
 from .database import Manager
-from .querys import filter_planilha, sql_get_services_questor, get_cnpj_empresas
+from .querys import filter_planilha, get_cnpj_empresas
 from ..tasks import baixar_pdfs_e_processar, update_empresas_omie
 
 class Controller():
@@ -46,17 +46,6 @@ class Controller():
             return "ATA"
         else:
             raise Exception(f"Este Serviço: {service_name}, não corresponde a um Serviço Cadastrado !!")
-    
-    def get_servicos_questor(self, codigos=None):
-        self.manager.connect()
-        try:
-            if codigos:
-                codigos = tuple([i.cd_servico for i in codigos])
-            return self.manager.run_query_for_select(sql_get_services_questor(codigos))
-        except Exception as err:
-            raise Exception(err)
-        finally:
-            self.manager.disconnect()
     
     def gerarPlanilhasOrdens(self, filtros):
         try:
@@ -111,14 +100,15 @@ class Controller():
                 df2.to_excel(writer, sheet_name='Ordens de Serviços', index = False)
                 writer.sheets['Ordens de Serviços'].set_column('A:A', 8, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('B:C', 16, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('D:E', 60, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('D:E', 70, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('F:F', 75, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('G:M', 14, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('N:O', 35, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('P:Q', 17, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('N:O', 30, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('P:Q', 15, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('R:R', 18, alignCenter)
                 writer.sheets['Ordens de Serviços'].set_column('S:S', 15, alignCenter)
-                writer.sheets['Ordens de Serviços'].set_column('T:T', 65, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('T:T', 20, alignCenter)
+                writer.sheets['Ordens de Serviços'].set_column('U:U', 80, alignCenter)
                 
                 writer.close()
                 
