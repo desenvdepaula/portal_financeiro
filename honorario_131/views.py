@@ -7,6 +7,7 @@ import os
 from django.contrib import messages
 from django.views import View
 from weasyprint import HTML
+from datetime import date
 
 from .forms import RelatorioHonorariosForm, RegrasHonorariosForm, RegrasHonorariosUpdateForm, RealizarCalculoForm
 
@@ -156,6 +157,7 @@ class RegrasHonorarioView(View):
                 if regrasCalculadas:
                     messages.error(request, f'Existem Regras Calculadas na Empresa {regra.cd_empresa} nas Filiais: {[int(row.cd_filial) for row in regrasCalculadas]}')
                 else:
+                    regra.history = f"Última Atualização: Limite de {regra.limite} | Valor Anterior: {regra.valor} | Alterado em: {date.today().strftime('%d/%m/%Y')}"
                     regra.calcular = True if 'calcular_update' in request.POST else False
                     regra.somar_filiais = True if 'somar_filiais_update' in request.POST else False
                     regra.limite = context['form'].cleaned_data['limite_update']

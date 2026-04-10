@@ -85,6 +85,7 @@ class Controller():
                             "SOMA FILIAIS" if regra.somar_filiais else "NÃO SOMA FILIAIS",
                             regra.limite,
                             regra.valor,
+                            regra.history,
                             regra.observacoes,
                         ])
                         
@@ -102,13 +103,13 @@ class Controller():
                 writer.sheets['Regras Inválidas'].set_column('E:F', 20, alignCenter)
                 writer.sheets['Regras Inválidas'].set_column('G:G', 60, alignCenter)
                 
-                dfRegrasGerais = pd.DataFrame(RegrasGerais, columns=['CNPJ_CPF', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA", "SOMA FILIAIS ?", "LIMITE", "VALOR", "OBSERVAÇÕES"])
+                dfRegrasGerais = pd.DataFrame(RegrasGerais, columns=['CNPJ_CPF', 'CD_EMPRESA', "CD_FILIAL",'NOME', "CALCULA", "SOMA FILIAIS ?", "LIMITE", "VALOR", "HISTÓRICO de ALTERAÇÕES", "OBSERVAÇÕES"])
                 dfRegrasGerais.to_excel(writer, sheet_name='Regras Ativas', index = False)
                 writer.sheets['Regras Ativas'].set_column('A:C', 20, alignCenter)
                 writer.sheets['Regras Ativas'].set_column('D:D', 80, alignCenter)
                 writer.sheets['Regras Ativas'].set_column('E:F', 20, alignCenter)
                 writer.sheets['Regras Ativas'].set_column('G:H', 15, alignCenter)
-                writer.sheets['Regras Ativas'].set_column('I:I', 60, alignCenter)
+                writer.sheets['Regras Ativas'].set_column('I:J', 80, alignCenter)
                 
                 writer.close()
                 

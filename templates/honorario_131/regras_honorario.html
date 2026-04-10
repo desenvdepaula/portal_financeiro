@@ -91,7 +91,7 @@
                           </button>
                           <div class="dropdown-menu dropdown-menu-right">
                             {% if regra.have_rule  %}
-                              <button class="dropdown-item text-primary" onclick="open_modal_update('{{regra.cnpj_cpf}}', '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}', `{{regra.observacoes}}`)"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
+                              <button class="dropdown-item text-primary" onclick="open_modal_update('{{regra.cnpj_cpf}}', '{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, '{{regra.calcular}}', '{{regra.somar_filiais}}', '{{regra.limite}}', '{{regra.valor}}', '{{regra.history}}', `{{regra.observacoes}}`)"><i class="fe fe-edit fe-16 mr-2"></i> Editar Regra</button>
                             {% else %}
                               <button class="dropdown-item text-primary" onclick="open_modal_visualizer('{{regra.cd_empresa}}', '{{regra.cd_filial}}', `{{regra.razao_social}}`, `{{regra.observacoes}}`)"><i class="fe fe-eye fe-16 mr-2"></i> Visualizar </button>
                             {% endif %}
@@ -256,6 +256,12 @@
                       <input type="text" id="valor_update" name="valor_update" class="form-control input-money" placeholder="Valor Unitário:" required>
                   </div>
                 </div>
+                <div class="form-row mt-5" style="display: none;" id="div_history">
+                  <div class="col-12 col-sm-12">
+                    <label class="font-weight-bold" for="history_input">Histórico de Alteração de Valores: </label>
+                    <input type="text" id="history_input" class="form-control" readonly>
+                  </div>
+                </div>
                 <div class="form-row mt-5">
                   <div class="col-12 col-sm-12">
                     <label class="font-weight-bold" for="observacoes_update">Observações sobre a Regra: (*Opcional*)</label>
@@ -406,8 +412,14 @@
     myModal.toggle()
   }
 
-  function open_modal_update(cpf_cnpj, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor, observacoes){
+  function open_modal_update(cpf_cnpj, cd_empresa, cd_filial, razao_social, calcular, somar_filiais, limite, valor, history, observacoes){
       var myModal = new bootstrap.Modal(document.getElementById('modalEditRegra'))
+      if (history === 'None'){
+        document.getElementById('div_history').style.display = 'none';
+      }else{
+        document.getElementById('div_history').style.display = '';
+        document.getElementById('history_input').value = history;
+      }
       document.getElementById('modalEditRegraLabel').textContent = `Editar Regra de Honorário da ${cd_empresa}/${cd_filial} - ${razao_social}`
       document.getElementById('somar_filiais_update').checked = somar_filiais === 'SOMAR FILIAIS'
       document.getElementById('calcular_update').checked = calcular === 'CALCULAR'

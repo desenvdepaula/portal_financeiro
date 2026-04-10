@@ -16,3 +16,4 @@ class RegrasHonorario(models.Model):
     
     #OBSERVACOES
     observacoes = models.TextField(blank=True, null=True)
+    history = models.CharField(max_length=255, null=True, default=None)
