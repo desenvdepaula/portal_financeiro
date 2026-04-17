@@ -44,6 +44,8 @@ class Controller():
             return "INATIVA"
         elif "ATA" in service_name:
             return "ATA"
+        elif "DIRPF" in service_name:
+            return "DIRPF"
         else:
             raise Exception(f"Este Serviço: {service_name}, não corresponde a um Serviço Cadastrado !!")
     
