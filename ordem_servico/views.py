@@ -576,11 +576,13 @@ class OrdensProvisoriasView(View):
             del ordem['os_criada']
             del ordem['arquivado']
             del ordem['id']
+            del ordem['nome_empresa']
             if ordem.get("cd_empresa") == '0':
                 raise Exception("Nenhuma EMPRESA foi Selecionada Nesta Ordem de Serviço")
             if ordem.get("cd_servico") == '0':
                 raise Exception("Nenhuma SERVIÇO foi Selecionado Nesta Ordem de Serviço")
             empresa_db = EmpresasOmie.objects.get(codigo_cliente_omie=ordem['cd_empresa'])
+            del ordem['cd_empresa']
             new_order = OrdemServico(**ordem)
             new_order.empresa = empresa_db
             new_order.save()
