@@ -132,7 +132,7 @@ class Controller():
             departamento = 'INTERNO',
             cd_servico = cd_servico,
             servico = 'HONORÁRIO Nº FOLHAS PROCESSADAS',
-            ds_servico = f'{quantidade} FOLHA(S) PROCESSADA(S) - {compet}',
+            ds_servico = f'HONORÁRIO Nº FOLHAS PROCESSADAS - {quantidade} FOLHA(S) PROCESSADA(S) - {compet}',
             observacoes_servico = '',
             data_realizado = hoje,
             data_cobranca = hoje,
