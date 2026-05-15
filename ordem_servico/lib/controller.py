@@ -46,6 +46,8 @@ class Controller():
             return "ATA"
         elif "DIRPF" in service_name:
             return "DIRPF"
+        elif "REEMBOLSO" in service_name:
+            return "REEMBOLSO"
         else:
             raise Exception(f"Este Serviço: {service_name}, não corresponde a um Serviço Cadastrado !!")
     
@@ -129,7 +131,10 @@ class Controller():
 
     def update_ordem_servico(self, cleaned_data, user, empresa_db, aprovado=False):
         try:
-            cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
+            if "*" in cleaned_data.get('servico'):
+                cd_servico, servicoDesc = cleaned_data.get('servico').split(" * ")
+            else:
+                cd_servico, servicoDesc = [None, cleaned_data.get('servico')]
             
             if cleaned_data.get('id_ordem'):
                 ordem = OrdemServico.objects.get(id=cleaned_data.get('id_ordem'))

@@ -318,7 +318,11 @@ class OrdemServicoView(View):
                     obs_servico = obs_servico.replace("–","-")
                     emp = EmpresasOmie.objects.filter(cd_empresa=int(cd_empresa)).first()
                     if emp:
-                        obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username, 'servico': codigos_servicos[emp.escritorio][type_service]}
+                        obj_os = {'descricao': obs_servico, 'descricao_servico': obs_servico, 'data': hoje, 'data_cobranca': hoje, 'quantidade': 1, 'execucao': '00:08', 'valor': valor, 'autorizacao': True, 'solicitacaoLocal': 'INTERNA', 'solicitacao': request.user.username, 'executado': request.user.username}
+                        if type_service == 'REEMBOLSO':
+                            obj_os['servico'] = f"{servico}"
+                        else:
+                            obj_os['servico'] = codigos_servicos[emp.escritorio][type_service]
                         os_return = controller.update_ordem_servico(obj_os, request.user.username, emp, True)
                         if os_return['status'] != 200:
                             response_file.append(os_return['obj']['message'])
