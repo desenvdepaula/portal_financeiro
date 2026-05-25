@@ -9,6 +9,7 @@ class EmpresasOmie(models.Model):
     name_empresa = models.CharField(max_length=255)
     cnpj_cpf = models.CharField(primary_key=True, max_length=28)
     email = models.CharField(max_length=255, blank=True, null=True)
+    ativa = models.BooleanField(default=True)
     
 class DepartamentosControle(models.Model):
     nome_departamento = models.CharField(max_length=255, unique=True)

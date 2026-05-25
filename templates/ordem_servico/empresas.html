@@ -52,9 +52,9 @@
                   <tbody>
                     {% for empresa in empresas %}
                       <tr id="tr_{{empresa.codigo_cliente_omie}}">
-                        <td class="h6">{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (CNPJ/CPF: {{empresa.cnpj_cpf}})</td>
-                        <td class="h6">{{empresa.escritorio}}</td>
-                        <td class="h6">{{empresa.codigo_cliente_omie}}</td>
+                        <td class="h6 {% if not empresa.ativa %} text-danger {% endif %}">{{empresa.cd_empresa}} / {{empresa.estab}} - {{empresa.name_empresa}} (CNPJ/CPF: {{empresa.cnpj_cpf}}) {% if not empresa.ativa %} - INATIVA {% endif %}</td>
+                        <td class="h6 {% if not empresa.ativa %} text-danger {% endif %}">{{empresa.escritorio}}</td>
+                        <td class="h6 {% if not empresa.ativa %} text-danger {% endif %}">{{empresa.codigo_cliente_omie}}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
