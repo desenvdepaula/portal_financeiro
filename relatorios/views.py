@@ -1,14 +1,8 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render
 from django.views import View
-from django.contrib import messages
-from django.template import engines
 from django.http import JsonResponse
 
-from .lib.controller import Controller
 from .models import ClassificacaoServicos
-from ordem_servico.models import DepartamentosControle, Servico
-from .forms import RelatorioFaturamentoServicoForm
 
 class ClassificacoesServicos(View):
     template_form = "./relatorios/classificacoes/form.html"
@@ -45,30 +39,3 @@ class ClassificacoesServicos(View):
             return JsonResponse({'msg': str(err)}, status=401)
         else:
             return JsonResponse({'status': 200}, status=200)
-    
-class RelatorioFaturamentoServico(View):
-    template_form = "./relatorios/relatorio_faturamento/form.html"
-    
-    def get(self, request):
-        context={}
-        context['servicos'] = Servico.objects.filter(ativo=True)
-        context['classificacoes'] = ClassificacaoServicos.objects.all()
-        context['departamentos'] = DepartamentosControle.objects.all()
-        return render(request, self.template_form, context)
-    
-    def post(self, request):
-        try:
-            controller = Controller()
-            codigos_servicos = set()
-            valid_dados = RelatorioFaturamentoServicoForm(kwargs=request.POST)
-            inicio, fim = valid_dados.valid_datas()
-            classificacoes = valid_dados.valid_classificacoes()
-            servicos = valid_dados.valid_servicos()
-            departamentos = valid_dados.valid_departamentos()
-            for i in classificacoes+servicos+departamentos:
-                codigos_servicos.add(i)
-                
-            return controller.build_planilha_faturamento_servico(inicio, fim, codigos_servicos)
-        except Exception as err:
-            messages.error(request, err)
-        return redirect('request_relatorio_faturamento')

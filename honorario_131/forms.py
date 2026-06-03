@@ -44,9 +44,6 @@ class RegrasHonorariosUpdateForm(forms.Form):
         observacoes = self.cleaned_data['observacoes']
         dados = f"CNPJ / CPF: {cpf_cnpj} | Calcular: {calcular}, Somar: {somar_filiais}, limite: {limite}, valor: {valor}, observações: {observacoes}"
         request_project_log(int(cd_empresa), dados, "HONORARIO 131 / EDITAR REGRA", username)
-
-class RelatorioHonorariosForm(forms.Form):
-    empresa = forms.IntegerField(max_value=9999, label="COD. Empresa", required=False)
     
 class RealizarCalculoForm(forms.Form):
     compet = forms.CharField(label="Período de Competência (Mês e Ano)", help_text="Período de Competência (* Exemplo: 07/2022 *)")

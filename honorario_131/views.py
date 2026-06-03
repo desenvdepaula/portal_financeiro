@@ -9,7 +9,7 @@ from django.views import View
 from weasyprint import HTML
 from datetime import date
 
-from .forms import RelatorioHonorariosForm, RegrasHonorariosForm, RegrasHonorariosUpdateForm, RealizarCalculoForm
+from .forms import RegrasHonorariosForm, RegrasHonorariosUpdateForm, RealizarCalculoForm
 
 from .lib.controller import Controller
 from .models import RegrasHonorario
@@ -189,70 +189,3 @@ class RegrasHonorarioView(View):
                 return JsonResponse({'msg': 'Ocorreu um Erro no Servidor', 'status': 400})
         except:
             raise Exception('Invalid')
-            
-class RelatorioHonorarioView(View):
-
-    template = "./honorario_131/relatorioHonorario.html"
-    template_contrato = "./honorario_131/contrato.html"
-    form = RelatorioHonorariosForm
-
-    def get(self, request, *args, **kwargs):
-        context = { 'form': self.form(request.POST or None) }
-        return render(request, self.template, context)
-
-    def post(self, request, *args, **kwargs):
-        context = { 'form': self.form(request.POST or None), 'validation_errors': [] }
-        empresas = request.POST.getlist('cod_emp')
-        if context['form'].is_valid():
-            if len(empresas) == 0 or empresas == None:
-                controller = Controller()
-                return controller.gerar_relatorio_full_131()
-            else:
-                try:
-                    controller = Controller(True)
-                    lista = list(filter(None, empresas))
-                    pdfs = {}
-
-                    for empresa in lista:
-                        context = controller.gerarRelatorioHonorarios(empresa)
-                        contrato_pdf = self.get_pdf_contrato(request, context)
-                        pdfs[empresa] = contrato_pdf
-
-                    if len(lista) > 1:
-                        response = self.get_zipped_file(request, pdfs)
-                    else:
-                        pdf = self.get_pdf_contrato(request, context)
-                        response = self.get_file_response(pdf, f"Relatorio Numero de Empregados - {lista[0]}")
-
-                    return response
-
-                except Exception as ex:
-                    messages.error(request, f"Ocorreu um erro durante a operação: {ex}")
-        return render(request, self.template, context)
-
-    def get_zipped_file(self,request, listPdf):
-        zipfile_name = 'temp/files/honorario131.zip'
-        path = str( settings.BASE_DIR / zipfile_name )
-        zip_file = zipfile.ZipFile(path, 'w')
-
-        for empresa in listPdf.keys():
-            zip_file.writestr(f'Relatorio Numero de Empregados - {empresa}.pdf', listPdf[empresa])
-
-        zip_file = open(path, 'rb')
-        response = HttpResponse(zip_file, content_type="application/zip")
-        response['Content-Disposition'] = 'filename="%s"' % 'honorario.zip'
-        os.remove(path)
-        return response
-
-    def get_pdf_contrato(self, request, context):
-        html_string = render_to_string(self.template_contrato, context)
-        html = HTML(string=html_string, base_url=request.build_absolute_uri())
-        pdf = html.write_pdf()
-        return pdf
-
-    def get_file_response(self, file, filename):
-        response = HttpResponse(file)
-        response['Content-Type'] = 'application/pdf'
-        response['Content-Disposition'] = 'filename="{0}.pdf"'.format(filename)
-        return response
-

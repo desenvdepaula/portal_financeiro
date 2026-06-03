@@ -24,10 +24,9 @@ urlpatterns = [
 
     path('', include('core.urls')),
     path('usuario/', include('usuarios.urls') ),
-    path('utilitarios/', include('utilitarios.urls') ),
     path('geradoc/', include('geradoc.urls') ),
-    path('recibimentos_empresarial/', include('recibimentos_empresarial.urls') ),
     path('honorario_131/', include('honorario_131.urls') ),
+    path('honorario_omie/', include('honorario_omie.urls') ),
     path('ordem_servico/', include('ordem_servico.urls') ),
     path('relatorios/', include('relatorios.urls') ),
 ]
