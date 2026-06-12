@@ -134,13 +134,21 @@ p{
               <div class="card-body">
                 <form id="formulario" onsubmit="update_database(event)"> 
                   {% csrf_token %}
-                  <div class="form-row mb-4 mt-4">
+                  <div class="form-row mb-4">
                     {% bootstrap_field form.data_inicial label_class='font-weight-bold' form_group_class="col" %}
                     {% bootstrap_field form.data_final label_class='font-weight-bold' form_group_class="col" %}
                   </div>
-                  <button class="btn btn-outline btn-lg v2 w-100 mt-4" id="btn_form">
-                    <i class="fas fa-sync mr-1"></i> <strong>Atualizar Database Honorários </strong>
-                  </button>
+                  <div class="form-row mb-4 mt-4">
+                    {% bootstrap_field form.rotas label_class='font-weight-bold' form_group_class="col" %}
+                  </div>
+                  <div class="form-row mt-5 d-flex flex-row justify-content-around">
+                    <button class="btn btn-outline-success btn-lg text-white" style="width: 38%; display: none;" onclick="baixar_relatorio(event)" id="btn_down_rel">
+                      <i class="fas fa-download mr-1"></i> Baixar Relatório Atualizado
+                    </button>
+                    <button class="btn btn-outline btn-lg v2" id="btn_form" style="width: 60%;">
+                      <i class="fas fa-sync mr-1"></i> <strong>Atualizar Database Honorários </strong>
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
@@ -172,6 +180,14 @@ p{
 <script>
   const terminal = document.getElementById("terminal-body");
 
+  $("#id_rotas").on('change', (event) => {
+    if (event.target.value === 'faturamentos'){
+      document.getElementById("btn_down_rel").style.display = "";
+    }else{
+      document.getElementById("btn_down_rel").style.display = "none";
+    }
+  })
+
   function addLog(message, type = "info") {
     const line = document.createElement("div");
 
@@ -200,6 +216,44 @@ p{
       return null;
     }
     button_spinner(button, true);
+    const socket = new WebSocket(`ws://localhost:8001/ws/update_${formData.get('rotas')}`);
+
+    socket.onopen = (event) => {
+      document.getElementById("div_terminal").style.display = '';
+      terminal.innerHTML = '';
+      socket.send(JSON.stringify({ action: 'subscribe', data_inicial: formData.get('data_inicial'), data_final: formData.get('data_final') }));
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.event === "finished") { return null; }
+
+      if (data.event === "error") {
+        console.error(data.message);
+        addLog(data.message, "error");
+        return null;
+      }
+
+      addLog(data.message, data.level);
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+      mostrarAlert('alert_geral', 'danger', "Falha de conexão ou Erro no WebSocket !!");
+    };
+
+    socket.onclose = () => {
+      console.log("Processo finalizado");
+      button_spinner(button, false, '<i class="fas fa-sync mr-1"></i> <strong>Atualizar Database Honorários </strong>');
+    };
+
+  }
+  
+  async function baixar_relatorio(e){
+    e.preventDefault();
+    const formulario_file = document.getElementById("formulario");
+    const formData = new FormData(formulario_file);
     await fetch("{% url 'honorario_api_omie' %}", { method: "POST", body: formData})
       .then(response => {
         if (!response.ok) {
@@ -210,32 +264,37 @@ p{
         return response.json();
       })
       .then(data => {
-        console.log(data)
-        document.getElementById("div_terminal").style.display = '';
-        //if (Object.keys(data).includes('task_id')){
-        //  verificarStatus(data.task_id, data.escritorio);
-        //  document.getElementById('div_progress_boletos').style.display = '';
-        //  document.getElementById('progress_boletos').style.width = '0%';
-        //  document.getElementById('progress_boletos').textContent = '0%';
-        //}else{
-        //  mostrarAlert('alert_geral', 'danger', "Não retornou Corretamente a Resposta da API (ID DA TASK)");
-        //}
-        //const socket = new WebSocket(
-        //  `ws://localhost:8000/ws/logs/abc123/`
-        //)
-        //
-        //socket.onmessage = function(event) {
-        //  const data = JSON.parse(event.data)
-        //  console.log(data.message)
-        //  addLogToScreen(data)
-        //}
+        if (Object.keys(data).includes('auditoria')){
+          baixar_arquivo(data.auditoria);
+        }else{
+          mostrarAlert('alert_geral', 'danger', "Não retornou Corretamente a Resposta !");
+        }
       })
       .catch(error => {
         mostrarAlert('alert_geral', 'danger', error);
       })
-      .finally(() => {
-        button_spinner(button, false, '<i class="fas fa-sync mr-1"></i> <strong>Atualizar Database Honorários </strong>');
-      })
+  }
+
+  function baixar_arquivo(data){
+    try{
+      const byteCharacters = atob(data.file);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }catch (e) {
+      mostrarAlert('alert_geral', 'danger', e.message || "Houve Algum Erro no Processo");
+    }
   }
 
   function validData(periodo_inicial, periodo_final){

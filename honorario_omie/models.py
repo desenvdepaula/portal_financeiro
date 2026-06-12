@@ -1,19 +1,23 @@
 from django.db import models
 
-# class RegrasHonorario(models.Model):
-#     # Dados Da Empresa
-#     cnpj_cpf = models.CharField(primary_key=True, max_length=28, unique=True)
-#     cd_empresa = models.CharField(max_length=6)
-#     cd_filial = models.CharField(max_length=2)
-#     razao_social = models.CharField(max_length=255)
-    
-#     #REGRAS
-#     have_rule = models.BooleanField(default=True)
-#     calcular = models.BooleanField(default=True, null=True)
-#     somar_filiais = models.BooleanField(default=False, null=True)
-#     limite = models.IntegerField(default=0)
-#     valor = models.FloatField(default=0)
-    
-#     #OBSERVACOES
-#     observacoes = models.TextField(blank=True, null=True)
-#     history = models.CharField(max_length=255, null=True, default=None)
+class HonorarioOMIEFaturadas(models.Model):
+    escritorio = models.CharField(max_length=6, blank=True, null=True)
+    etapa = models.CharField(max_length=100, blank=True, null=True)
+    num_os = models.CharField(max_length=100, blank=True, null=True)
+    cnpj_cpf = models.CharField(max_length=30, blank=True, null=True)
+    razao_social = models.CharField(max_length=255, blank=True, null=True)
+    dt_previsao = models.CharField(max_length=20, blank=True, null=True)
+    faturada = models.CharField(max_length=2, blank=True, null=True)
+    dt_faturamento = models.CharField(max_length=20, blank=True, null=True)
+    categoria = models.CharField(max_length=255, blank=True, null=True)
+    cod_servico = models.CharField(max_length=50, blank=True, null=True)
+    descr_serv = models.TextField(blank=True, null=True)
+    descricao_completa = models.TextField(blank=True, null=True)
+    quantidade = models.IntegerField(default=0, blank=True, null=True)
+    valor_unit = models.FloatField(default=0, blank=True, null=True)
+    valor_acrescimos = models.FloatField(default=0, blank=True, null=True)
+    valor_desconto = models.FloatField(default=0, blank=True, null=True)
+    valor_retencoes = models.FloatField(default=0, blank=True, null=True)
+    valor_total_serv = models.FloatField(default=0, blank=True, null=True)
+    valor_total = models.FloatField(default=0, blank=True, null=True)
+    valor_total_imp_ret = models.FloatField(default=0, blank=True, null=True)

@@ -20,7 +20,6 @@ class Controller():
         self.manager.connect()
         try:
             empresa = Empresa.instance_from_database_args(self.manager.fetchmap(self.manager.get_empresa(codigo_empresa, codigo_estabelecimento), True, True))    
-            self.manager.disconnect()
             if not empresa:
                 raise Exception("A empresa não foi encontrada")
             return empresa
@@ -33,7 +32,6 @@ class Controller():
         self.manager.connect()
         try:
             socio = self.manager.fetchmap(self.manager.get_socio_administrador(codigo_empresa), True, True) 
-            self.manager.disconnect()
             if not socio:
                 raise Exception("O sócio administrador não foi encontrado")
             return Socio.instance_from_database_args(socio, True)
