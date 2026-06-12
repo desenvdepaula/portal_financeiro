@@ -151,6 +151,9 @@ p{
                   </div>
                 </form>
               </div>
+              <button type="button" class="btn btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#modalComparation">
+                Análise e Comparação de Arquivos de Auditoria !
+              </button>
             </div>
           </div> <!-- simple table -->
         </div>
@@ -177,8 +180,62 @@ p{
   </div> <!-- .container-fluid -->
 </main> <!-- main -->
 
+<div class="modal fade" id="modalComparation" tabindex="-1" role="dialog" aria-labelledby="modalComparationLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+          <h5 class="modal-title" id="modalComparationLabel">Conferência Relatório API x Relatório Sistema</h5>
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+          </button>
+      </div>
+      <div class="modal-body">
+        <div id="error_modal"></div>
+        <form enctype="multipart/form-data" id="form_for_comparition">
+          {% csrf_token %}
+          <label for="file_api">Relatório Recebimento por Serviço (Relatório SISTEMA):</label>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="file_api" name="file_api" accept=".xlsx" required>
+            <label class="custom-file-label" for="file_api">Selecione o Arquivo</label>
+          </div>
+          </br>
+          </br>
+          <label for="file_omie">Arquivo da OMIE (Relatório API): </label>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="file_omie" name="file_omie" accept=".xlsx" required>
+            <label class="custom-file-label" for="file_omie">Selecione o Arquivo</label>
+          </div>
+          <center>
+            <button class="btn btn-primary mt-5" onclick="gerar_relatorio(event)">
+              <strong>Gerar Auditoria <i class="fe fe-upload fe-16 ml-2"></i></strong>
+            </button>
+          </center>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   const terminal = document.getElementById("terminal-body");
+
+  $('#file_api').on("change", (el) => {
+    let text = el.target.nextElementSibling;
+    if (!el.target.value.includes("xlsx")){
+      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
+    }else{
+      text.textContent = el.target.value.split('\\').pop();
+    }
+  })
+
+  $('#file_omie').on("change", (el) => {
+    let text = el.target.nextElementSibling;
+    if (!el.target.value.includes("xlsx")){
+      text.textContent = "Formato Inválido, Selecione apenas Arquivos XLSX...";
+    }else{
+      text.textContent = el.target.value.split('\\').pop();
+    }
+  })
 
   $("#id_rotas").on('change', (event) => {
     if (event.target.value === 'faturamentos'){
@@ -272,6 +329,35 @@ p{
       })
       .catch(error => {
         mostrarAlert('alert_geral', 'danger', error);
+      })
+  }
+
+  async function gerar_relatorio(e){
+    e.preventDefault();
+    const formulario_file = document.getElementById("form_for_comparition");
+    const formData = new FormData(formulario_file);
+    if (!formData.get('file_api').name.toLowerCase().includes("xlsx") || !formData.get('file_omie').name.toLowerCase().includes("xlsx")){
+      mostrarAlert('error_modal', 'danger', "Passe os Arquivos Corretamente em Formato XLSX !!");
+      return null;
+    }
+    await fetch("{% url 'gerar_analise_relatorios_omie' %}", { method: "POST", body: formData})
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {
+            throw new Error(`${err.message}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (Object.keys(data).includes('auditoria')){
+          baixar_arquivo(data.auditoria);
+        }else{
+          mostrarAlert('error_modal', 'danger', "Não retornou Corretamente a Resposta !");
+        }
+      })
+      .catch(error => {
+        mostrarAlert('error_modal', 'danger', error);
       })
   }
 
