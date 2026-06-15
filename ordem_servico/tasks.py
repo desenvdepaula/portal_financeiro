@@ -33,13 +33,15 @@ def update_empresas_omie(self, empresas_request, escrit_list, empresas):
                                 email = json_client['email'] if 'email' in json_client else ""
                                 cd_omie_empresa = json_client.get("codigo_cliente_omie")
                                 try:
-                                    enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+                                    enterprise, created = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
                                     enterprise.escritorio = escrit
                                     enterprise.cd_empresa = empresa
                                     enterprise.estab = estab
                                     enterprise.name_empresa = razaosocial
                                     enterprise.codigo_cliente_omie = cd_omie_empresa
                                     enterprise.email = email
+                                    if created:
+                                        enterprise.ativa = True
                                     enterprise.save()
                                 except Exception as err:
                                     response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {cd_omie_empresa} Empresa: {empresa}/{estab} | Erro:{str(err)}")
@@ -78,13 +80,15 @@ def update_empresas_omie(self, empresas_request, escrit_list, empresas):
                                     if cnpj_cpf in empresas:
                                         try:
                                             empresa, razaosocial, estab, cnpj = empresas[cnpj_cpf]
-                                            enterprise, _ = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
+                                            enterprise, created = EmpresasOmie.objects.get_or_create( cnpj_cpf = cnpj )
                                             enterprise.escritorio = escrit
                                             enterprise.cd_empresa = empresa
                                             enterprise.estab = estab
                                             enterprise.name_empresa = razaosocial
                                             enterprise.codigo_cliente_omie = client
                                             enterprise.email = email
+                                            if created:
+                                                enterprise.ativa = True
                                             enterprise.save()
                                         except Exception as err:
                                             response.append(f"Erro ao Criar a Empresa: ({cnpj}) Cliente: {client} Empresa: {empresa}/{estab} | Erro:{str(err)}")
