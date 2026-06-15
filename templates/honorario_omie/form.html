@@ -284,7 +284,12 @@ p{
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.event === "finished") { return null; }
+      if (data.event === "finished") {
+        if (formData.get('rotas') === 'recebimentos'){
+          baixar_arquivo(data.auditoria);
+        }
+        return null;
+      }
 
       if (data.event === "error") {
         console.error(data.message);
