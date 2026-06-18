@@ -273,7 +273,7 @@ p{
       return null;
     }
     button_spinner(button, true);
-    const socket = new WebSocket(`ws://localhost:8001/ws/update_${formData.get('rotas')}`);
+    const socket = new WebSocket(`ws://192.168.1.43:8001/ws/update_${formData.get('rotas')}`);
 
     socket.onopen = (event) => {
       document.getElementById("div_terminal").style.display = '';
