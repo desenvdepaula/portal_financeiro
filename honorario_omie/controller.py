@@ -97,14 +97,15 @@ class AnaliseRelatorio:
             .drop(columns=[
                 "Data (No Extrato)", "Categoria", "Conta Corrente", "Valor da Conta"
             ])
+            .query("num_os != 'N/D'")
             .assign(
                 escritorio=lambda x: x["escritorio"].map(self._de_para_escritorio, na_action="ignore"),
-                num_os=lambda x: x["num_os"].astype(int),
+                num_os=lambda x: x["num_os"].astype(int, errors="ignore"),
                 valor_liquido=lambda x: x["valor_liquido"].astype(float).round(2)
             )
             .groupby(["escritorio", "num_os", "cliente"], as_index=False)["valor_liquido"].sum()
         )
-    
+
         return df_report
        
     def gerar_analise_relatorio(self) -> None:

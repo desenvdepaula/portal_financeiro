@@ -193,14 +193,14 @@ p{
         <div id="error_modal"></div>
         <form enctype="multipart/form-data" id="form_for_comparition">
           {% csrf_token %}
-          <label for="file_api">Relatório Recebimento por Serviço (Relatório SISTEMA):</label>
+          <label for="file_api">Relatório Recebimento por Serviço (Relatório API):</label>
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="file_api" name="file_api" accept=".xlsx" required>
             <label class="custom-file-label" for="file_api">Selecione o Arquivo</label>
           </div>
           </br>
           </br>
-          <label for="file_omie">Arquivo da OMIE (Relatório API): </label>
+          <label for="file_omie">Arquivo da OMIE (Relatório SISTEMA): </label>
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="file_omie" name="file_omie" accept=".xlsx" required>
             <label class="custom-file-label" for="file_omie">Selecione o Arquivo</label>
