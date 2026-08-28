@@ -10,7 +10,7 @@ from django.conf import settings
 from pathlib import Path
 from django.http import HttpResponse
 from core.views import get_request_to_api_omie
-from ..models import OrdemServico
+from ..models import OrdemServico, EmpresasOmie
 from .database import Manager
 from .querys import filter_planilha, get_cnpj_empresas
 from ..tasks import baixar_pdfs_e_processar, update_empresas_omie
@@ -387,7 +387,12 @@ class Controller():
                     
                 for codigo_cliente_validation in clientes_escritorio:
                     if codigo_cliente_validation not in validation_clientes_lancamento:
-                        erros_gerais.append([codigo_escritorio, f"Esta Empresa ({codigo_cliente_validation}) não teve suas OS Lançadas, pois não foi encontrado este Cliente na Etapa 20 da API da OMIE, contate a INOVAÇÃO !"])
+                        try:
+                            emp = EmpresasOmie.objects.get(codigo_cliente_omie=codigo_cliente_validation)
+                            enterprise = f"{emp.cd_empresa}/{emp.estab} - {emp.name_empresa} (CNPJ: {emp.cnpj_cpf})"
+                        except:
+                            enterprise = f"{codigo_cliente_validation}"
+                        erros_gerais.append([codigo_escritorio, f"Esta Empresa ({enterprise}) não teve suas OS Lançadas, pois não foi encontrado este Cliente na Etapa 20 da API da OMIE, contate a INOVAÇÃO !"])
                     else:
                         continue
                 
