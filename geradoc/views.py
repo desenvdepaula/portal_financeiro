@@ -20,47 +20,10 @@ from .lib.controller import Controller
 from .lib.sql import InadimplenciaSqls
 from .objects import InadimplenciaObj
 from .models import Inadimplencia
-from .forms import ContratoHonorarioForm, DistratoForm
+from .forms import DistratoForm
 import locale
 import re
 import numero_por_extenso # type: ignore
-
-class ContratoHonorarioView(PDFFileView):
-    template = "./geradoc/contrato_honorario/request_contrato_honorario.html"
-    template_contrato = "./geradoc/contrato_honorario/contrato.html"
-    template_contrato_condominio = "./geradoc/contrato_honorario/contrato_cond.html"
-    template_empresas_paralisadas = "./geradoc/contrato_honorario/empresas_paralisadas.html"
-    template_termo_aditivo = "./geradoc/contrato_honorario/termo_aditivo.html"
-    form_class = ContratoHonorarioForm
-
-    def get(self, request):
-        form = self.form_class()
-        return render(request, self.template, {'form': form})
-
-    def post(self, request):
-        form = self.form_class(request.POST or None)
-        locale.setlocale(locale.LC_ALL, "pt_BR.UTF-8")
-        if form.is_valid():
-            # form.clean_log(request.user.username)
-            try:
-                controller = Controller()
-                context = controller.get_dados_honorario(**form.cleaned_data)
-                context.update(form.cleaned_data)
-                context['data_inicio_contrato'] = context['data_inicio_contrato'].strftime('%d/%m/%Y')
-                if form.cleaned_data['opcoes'] == 'empresa':
-                    contrato_pdf = self.get_pdf_file(request, self.template_contrato, context)
-                elif form.cleaned_data['opcoes'] == 'emp_paralisadas':
-                    contrato_pdf = self.get_pdf_file(request, self.template_empresas_paralisadas, context)
-                elif form.cleaned_data['opcoes'] == 'termo':
-                    context['list_clausulas'] = request.POST.getlist("clausulas_select")
-                    contrato_pdf = self.get_pdf_file(request, self.template_termo_aditivo, context)
-                else:
-                    contrato_pdf = self.get_pdf_file(request, self.template_contrato_condominio, context)
-                
-                return self.get_file_response(contrato_pdf, f"Contrato Honorário - {form.cleaned_data.get('codigo_empresa')}")
-            except Exception as ex:
-                messages.error(request, "Ocorreu um erro ao executar esta operação: {0}".format(ex))
-        return render(request, self.template, {'form': form})
 
 class InadimplentesView(View):
     template_form = "./geradoc/inadimplentes/form.html"
